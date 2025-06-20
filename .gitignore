@@ -85,3 +85,4 @@ alembic.ini.bak
 # Temporary files
 tmp/
 temp/
+node_modules/
