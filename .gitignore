@@ -86,3 +86,4 @@ alembic.ini.bak
 tmp/
 temp/
 node_modules/
+Frontend/node_modules/
