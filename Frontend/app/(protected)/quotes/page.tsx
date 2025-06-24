@@ -1,48 +1,58 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { useEffect, useState } from "react"
-
-type Quote = {
-  id: string
-  contractor: string
-  amount: string
-  status: "Approved" | "Pending" | "Rejected"
-}
+import { useEffect } from "react"
+import { useQuoteStore } from "@/store/quoteStore"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 export default function QuotesPage() {
-  const [quotes, setQuotes] = useState<Quote[]>([])
+  const quotes = useQuoteStore((state) => state.quotes)
+  const addQuote = useQuoteStore((state) => state.addQuote)
 
+  // Add sample quotes once
   useEffect(() => {
-    setQuotes([
-      { id: "1", contractor: "John", amount: "5000", status: "Approved" },
-      { id: "2", contractor: "Alex", amount: "3000", status: "Rejected" },
-      { id: "3", contractor: "Sara", amount: "7000", status: "Pending" },
-    ])
+    if (quotes.length === 0) {
+      addQuote({ id: "1", contractor: "John", amount: "5000", status: "Approved" })
+      addQuote({ id: "2", contractor: "Alex", amount: "3000", status: "Rejected" })
+      addQuote({ id: "3", contractor: "Sara", amount: "7000", status: "Pending" })
+    }
   }, [])
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "text-green-600"
-      case "Rejected":
-        return "text-red-600"
-      case "Pending":
-        return "text-yellow-600"
-      default:
-        return "text-gray-600"
-    }
-  }
-
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {quotes.map((quote) => (
-        <Card key={quote.id} className="p-4">
-          <p><strong>Contractor:</strong> {quote.contractor}</p>
-          <p><strong>Amount:</strong> ${quote.amount}</p>
-          <p className={getStatusColor(quote.status)}><strong>Status:</strong> {quote.status}</p>
+        <Card key={quote.id}>
+          <CardHeader>
+            <CardTitle className="text-base">Quote #{quote.id}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Contractor</p>
+              <p>{quote.contractor}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Amount</p>
+              <p>${quote.amount}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Status</p>
+              <Badge variant={getStatusVariant(quote.status)}>{quote.status}</Badge>
+            </div>
+          </CardContent>
         </Card>
       ))}
     </div>
   )
+}
+
+function getStatusVariant(status: string) {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "default" 
+    case "rejected":
+      return "destructive"
+    case "pending":
+    default:
+      return "secondary"
+  }
 }
