@@ -1,44 +1,35 @@
 "use client"
 
-import { useEffect } from "react"
-import { useClientStore } from "@/store/clientStore"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { v4 as uuid } from "uuid"
+import { Card } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+
+type Client = {
+  id: string
+  name: string
+  email: string
+  company: string
+}
 
 export default function ClientsPage() {
-  const clients = useClientStore((state) => state.clients)
-  const addClient = useClientStore((state) => state.addClient)
+  const [clients, setClients] = useState<Client[]>([])
 
   useEffect(() => {
-    if (clients.length === 0) {
-      addClient({ id: uuid(), name: "John Doe", email: "john@example.com", phone: "1234567890" })
-      addClient({ id: uuid(), name: "Jane Smith", email: "jane@example.com", phone: "9876543210" })
-    }
+    setClients([
+      { id: "1", name: "John Doe", email: "john@example.com", company: "ABC Corp" },
+      { id: "2", name: "Sara Smith", email: "sara@example.com", company: "XYZ Ltd" },
+      { id: "3", name: "Alex Johnson", email: "alex@example.com", company: "Delta Inc" },
+    ])
   }, [])
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-6">Clients</h1>
-
-      {clients.length === 0 ? (
-        <p className="text-gray-500">No clients found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {clients.map((client) => (
-            <Card key={client.id}>
-              <CardHeader>
-                <CardTitle>{client.name}</CardTitle>
-                <Badge variant="outline">Client</Badge>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm text-gray-700">
-                <p>📧 {client.email}</p>
-                <p>📞 {client.phone}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {clients.map((client) => (
+        <Card key={client.id} className="p-4">
+          <h2 className="text-lg font-semibold">{client.name}</h2>
+          <p className="text-sm text-muted-foreground">{client.email}</p>
+          <p className="text-sm">{client.company}</p>
+        </Card>
+      ))}
     </div>
   )
 }

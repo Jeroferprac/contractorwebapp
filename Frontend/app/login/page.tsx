@@ -1,103 +1,84 @@
-import LoginForm from "@/components/forms/LoginForm"
+"use client"
+
+import * as z from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/store/authStore"
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password is required"),
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+  })
+
+  const router = useRouter()
+  const { setToken } = useAuth()
+
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      })
+      const result = await res.json()
+
+      if (!res.ok) {
+        toast.error("❌ Login failed")
+        return
+      }
+
+      setToken(result.access_token)
+      toast.success("✅ Logged in successfully")
+      router.push("/dashboard")
+    } catch (err) {
+      console.error("Login Error:", err)
+      toast.error("❌ Something went wrong")
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <LoginForm />
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
+      <div className="absolute right-4 top-4 md:right-8 md:top-8">
+        <Link href="/register">
+          <Button variant="ghost">Register</Button>
+        </Link>
+      </div>
+
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-sm text-muted-foreground">Enter your email to login</p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+          <div>
+            <Input placeholder="Email" {...register("email")} />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          </div>
+
+          <div>
+            <Input type="password" placeholder="Password" {...register("password")} />
+            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+          </div>
+
+          <Button type="submit" className="w-full">Login</Button>
+        </form>
+      </div>
     </div>
   )
 }
-
-/* 
-/app
-│
-├─ layout.tsx                  # Root layout with Geist font, etc.
-├─ page.tsx                    # Landing or homepage
-│
-├─ login/                      # /login page
-│  └─ page.tsx                 # Renders <LoginForm />
-│
-├─ register/                   # /register page
-│  └─ page.tsx                 # Renders <RegisterForm />
-│
-├─ (protected)/                # Authenticated-only routes
-│  ├─ layout.tsx               # Authenticated layout with sidebar + navbar
-│  ├─ dashboard/
-│  │   └─ page.tsx             # Main dashboard
-│  ├─ profile/
-│  │   └─ page.tsx             # View & edit user profile
-│  ├─ contractors/
-│  │   ├─ page.tsx             # Contractor list/search
-│  │   └─ [id]/page.tsx        # Contractor detail view
-│  ├─ projects/
-│  │   ├─ page.tsx             # List of projects
-│  │   ├─ new/page.tsx         # Create new project
-│  │   └─ [id]/page.tsx        # Project details
-│  ├─ quotes/
-│  │   ├─ page.tsx             # List of quote requests
-│  │   ├─ new/page.tsx         # Create a new quote
-│  │   └─ [id]/page.tsx        # Quote details / submission
-│  ├─ reviews/
-│  │   └─ page.tsx             # User reviews list or form
-│  └─ settings/
-│      └─ page.tsx             # Account/password settings
-
-/components
-│
-├─ forms/
-│   ├─ LoginForm.tsx
-│   ├─ RegisterForm.tsx
-│   ├─ NewQuoteForm.tsx
-│   ├─ ContractorProfileForm.tsx
-│   ├─ ProjectForm.tsx
-│   └─ ReviewForm.tsx
-│
-├─ ui/
-│   ├─ button.tsx              # Shadcn style button
-│   ├─ input.tsx
-│   ├─ textarea.tsx
-│   ├─ select.tsx
-│   ├─ modal.tsx
-│   └─ card.tsx
-│
-├─ layout/
-│   ├─ Sidebar.tsx
-│   ├─ Navbar.tsx
-│   └─ Breadcrumbs.tsx
-│
-├─ shared/
-│   └─ Avatar.tsx
-│   └─ Loader.tsx
-│   └─ FileUpload.tsx
-
-/lib/
-│
-├─ api.ts                     # API wrapper
-├─ fetcher.ts                 # SWR/fetch utils
-├─ auth.ts                    # session/token helpers
-├─ formSchemas.ts             # Zod schemas
-├─ constants.ts               # role constants, etc.
-
-public/
-│
-├─ favicon.ico
-├─ google-icon.svg
-└─ github-icon.svg
-
-/store/
-│
-├─ authStore.ts               # Zustand store for auth
-├─ userStore.ts               # Profile / role / session
-└─ quoteStore.ts              # Manage quote drafts etc.
-
-/types/
-│
-├─ auth.d.ts
-├─ user.d.ts
-├─ quote.d.ts
-└─ contractor.d.ts
-
-/styles/
-├─ globals.css                # Tailwind base
-└─ tailwind.config.ts         # Theme setup
-*/
