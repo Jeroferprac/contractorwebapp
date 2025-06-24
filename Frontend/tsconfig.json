@@ -16,12 +16,12 @@
     "baseUrl": ".",
     "paths": {
     "@/*": ["./app/*"],
-    "@components/*": ["./components/*"],
-    "@store/*": ["./store/*"],
-    "@types/*": ["./types/*"],
-    "@lib/*": ["./lib/*"],        
+    "@components/*": ["./app/components/*"],
+    "@store/*": ["app/store/*"],
+    "@types/*": ["app/types/*"],
+    "@lib/*": ["app/lib/*"]
   }
-    ,
+,
     "plugins": [{ "name": "next" }]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
