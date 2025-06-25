@@ -1,17 +1,17 @@
 import enum
 from sqlalchemy import Column, String, Text, Boolean, Enum as SQLEnum
-from sqlalchemy.orm import declarative_base
+#from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
-#from .base import BaseModel
+from .base import BaseModel
 
-Base = declarative_base()
+#Base = declarative_base()
 
 class RoleEnum(str, enum.Enum):
     contractor = "contractor"
     company = "company"
     admin = "admin"
 
-class User(Base):
+class User(BaseModel):
     __tablename__ = "users"
     
     email = Column(String(255), unique=True, nullable=False, index=True)

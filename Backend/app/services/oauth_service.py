@@ -3,6 +3,7 @@ from starlette.config import Config
 from typing import Dict, Any, Optional
 from app.core.config import settings
 from .user_service import UserService
+from fastapi import Request
 
 class OAuthService:
     def __init__(self):
@@ -33,10 +34,10 @@ class OAuthService:
                 client_kwargs={'scope': 'user:email'},
             )
     
-    def get_authorization_url(self, provider: str, redirect_uri: str) -> str:
+    def get_authorization_url(self, request: Request,provider: str, redirect_uri: str) -> str:
         """Get OAuth authorization URL"""
         client = getattr(self.oauth, provider)
-        return client.authorize_redirect_uri(redirect_uri)
+        return client.authorize_redirect(request,redirect_uri)
     
     async def get_user_info(self, provider: str, code: str, redirect_uri: str) -> Optional[Dict[str, Any]]:
         """Get user info from OAuth provider"""

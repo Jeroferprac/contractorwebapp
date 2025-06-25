@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, OAuthRequest
 from app.schemas.user import UserResponse
-from app.models.user import User
+from app.models.user import User,RoleEnum
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
 from app.services.oauth_service import OAuthService
 from app.api.deps import get_current_active_user
 from typing import Dict, Any
+from typing import List
 
 router = APIRouter()
 
@@ -97,18 +98,26 @@ async def get_current_user_info(
     """Get current user information"""
     return UserResponse.from_orm(current_user)
 
+@router.get("/roles", response_model=List[RoleEnum])
+async def get_roles():
+    """
+    Return all possible role names.
+    """
+    return list(RoleEnum)
+
 @router.get("/oauth/{provider}")
-async def oauth_login(provider: str, redirect_uri: str):
+async def oauth_login(request: Request,provider: str, redirect_uri: str):
     """Initiate OAuth login"""
     if provider not in ['google', 'github']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported OAuth provider"
-        )
+            detail="Unsupported OAuth provider")
+        
     
     oauth_service = OAuthService()
     try:
-        auth_url = oauth_service.get_authorization_url(provider, redirect_uri)
+        auth_url = await oauth_service.get_authorization_url(request,provider, redirect_uri)
+        print(auth_url)
         return {"auth_url": auth_url}
     except Exception as e:
         raise HTTPException(

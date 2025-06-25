@@ -5,6 +5,9 @@ from app.api.v1 import api_router
 from app.core.database import Base, engine
 from app.models.user import User
 from app.models.session import UserSession
+from starlette.middleware.sessions import SessionMiddleware
+
+
 
 # Create tables (only for development - use Alembic in production)
 # Base.metadata.create_all(bind=engine)
@@ -16,6 +19,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+app.add_middleware(SessionMiddleware, secret_key="YOUR_RANDOM_SECRET")
 
 # Set up CORS
 app.add_middleware(
