@@ -38,12 +38,12 @@ export default function LoginPage() {
       const result = await res.json()
 
       if (!res.ok) {
-        toast.error("❌ Login failed")
+        toast.error("Login failed")
         return
       }
 
       setToken(result.access_token)
-      toast.success("✅ Logged in successfully")
+      toast.success("Logged in successfully")
       router.push("/dashboard")
     } catch (err) {
       console.error("Login Error:", err)
