@@ -2,7 +2,7 @@ import enum
 from sqlalchemy import Column, String, Text, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
-from .base import BaseModel
+#from .base import BaseModel
 
 Base = declarative_base()
 
