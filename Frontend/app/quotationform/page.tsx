@@ -1,28 +1,31 @@
-'use client'
+"use client";
 
 import React, { useState } from "react";
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from "@/components/ui/button"
-import FormField from "@/components/forms/FormField"
-import TextareaField from "@/components/forms/TextareaField"
-import FileField from "@/components/forms/FileField"
-import { Label } from "@/components/ui/label"
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import FormField from "@/components/forms/FormField";
+import TextareaField from "@/components/forms/TextareaField";
+import FileField from "@/components/forms/FileField";
 
 const schema = z.object({
-  title: z.string().min(3, "Title is required"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   budgetMin: z.string(),
   budgetMax: z.string(),
   deadline: z.string(),
-})
+});
 
 const QuotationFormPage = () => {
   const [form, setForm] = useState({
     name: "",
     email: "",
     description: "",
+    budgetMin: "",
+    budgetMax: "",
+    deadline: "",
     file: null as File | null,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -34,7 +37,7 @@ const QuotationFormPage = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
-  })
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -52,7 +55,15 @@ const QuotationFormPage = () => {
     setTimeout(() => {
       setSubmitting(false);
       setSuccess(true);
-      setForm({ name: "", email: "", description: "", file: null });
+      setForm({
+        name: "",
+        email: "",
+        description: "",
+        budgetMin: "",
+        budgetMax: "",
+        deadline: "",
+        file: null,
+      });
     }, 1500);
   };
 
@@ -87,6 +98,27 @@ const QuotationFormPage = () => {
           value={form.description}
           onChange={handleChange}
           required
+        />
+        <FormField
+          label="Estimated Budget Min"
+          name="budgetMin"
+          type="number"
+          value={form.budgetMin}
+          onChange={handleChange}
+        />
+        <FormField
+          label="Estimated Budget Max"
+          name="budgetMax"
+          type="number"
+          value={form.budgetMax}
+          onChange={handleChange}
+        />
+        <FormField
+          label="Deadline"
+          name="deadline"
+          type="date"
+          value={form.deadline}
+          onChange={handleChange}
         />
         <FileField
           label="Attachment (optional)"
