@@ -19,7 +19,7 @@
     "@components/*": ["./components/*"],
     "@store/*": ["./store/*"],
     "@types/*": ["./types/*"],
-    "@lib/*": ["./lib/*"],        
+    "@lib/*": ["./app/lib/*"],        
   }
     ,
     "plugins": [{ "name": "next" }]
