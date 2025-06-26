@@ -72,3 +72,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+.react-phone-input .highlight {
+  background-color: #27272a; /* bg-muted */
+  color: #ffff;              /* text-foreground */
+}
+

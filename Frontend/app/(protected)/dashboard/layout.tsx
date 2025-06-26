@@ -1,51 +1,76 @@
-"use client"
-import { useAuth } from "@/store/authStore"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import Sidebar from "@/components/layout/sidebar"
-import Navbar from "@/components/layout/navbar"
-import Link from "next/link"
+// app/(protected)/dashboard/layout.tsx
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { token, logout } = useAuth()
-  const router = useRouter()
+"use client"
+
+import { ReactNode, useState, useEffect } from "react"
+import { useTheme } from "next-themes"
+import Link from "next/link"
+import { Menu, Sun, Moon, Bell } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useUserStore } from "@/store/userStore"
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const { user } = useUserStore() // ✅ fix: access user from store
 
   useEffect(() => {
-    if (!token) {
-      router.push("/login")
-    }
-  }, [token])
+    setMounted(true)
+  }, [])
 
-  const handleLogout = () => {
-    logout()
-    router.push("/login")
-  }
+  if (!mounted) return null
 
   return (
-    <main className="flex min-h-screen">
-      <aside className="w-64 bg-gray-900 text-white p-4">
-        <h2 className="text-xl font-bold mb-4">ContractorHub</h2>
-        <nav className="space-y-2">
-          <Link href="/dashboard" className="block hover:underline">Dashboard</Link>
-          <Link href="/quotes" className="block hover:underline">Quotes</Link>
-          <Link href="/clients" className="block hover:underline">Clients</Link>
-          <button
-            onClick={handleLogout}
-            className="block w-full text-left hover:underline text-red-300 mt-4"
-          >
-            Logout
-          </button>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-background">
+      {/* Top Navbar */}
+      <header className="border-b bg-background sticky top-0 z-50 shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-2xl font-bold">
+              ContractorHub
+            </Link>
+            <nav className="hidden md:flex gap-6 text-sm font-medium">
+              <Link href="/dashboard" className="hover:text-primary transition-colors">
+                Dashboard
+              </Link>
+              <Link href="/clients" className="hover:text-primary transition-colors">
+                Clients
+              </Link>
+              <Link href="/contractors" className="hover:text-primary transition-colors">
+                Contractors
+              </Link>
+              <Link href="/quotes" className="hover:text-primary transition-colors">
+                Quotes
+              </Link>
+            </nav>
+          </div>
 
-      <section className="flex-1 bg-gray-50 p-6">
-        <header className="mb-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <span className="text-sm text-gray-600">
-            {token ? "✅ Logged In" : "❌ Not Logged In"}
-          </span>
-        </header>
-        {children}</section>
-    </main>
+          <div className="flex items-center gap-4">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </Button>
+            <Button size="icon" variant="ghost">
+              <Bell className="h-5 w-5" />
+            </Button>
+            <Link href="/profile">
+              <Avatar className="cursor-pointer">
+                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} />
+                <AvatarFallback>VV</AvatarFallback>
+              </Avatar>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {children}
+      </main>
+    </div>
   )
 }

@@ -18,11 +18,17 @@ import {
 } from "@/components/ui/form"
 import { toast } from "sonner"
 import { useAuth } from "@/store/authStore"
+import PhoneInput from "react-phone-input-2"
+import "react-phone-input-2/lib/style.css"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  phone: z.string().min(8, "Phone number is required"),
+  country: z.string().min(1, "Country is required"),
+  role: z.enum(["client", "company", "contractor"]),
 })
 
 type FormData = z.infer<typeof schema>
@@ -33,7 +39,14 @@ export default function RegisterPage() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      phone: "",
+      country: "India",
+      role: "client",
+    },
   })
 
   const onSubmit = async (data: FormData) => {
@@ -44,15 +57,24 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: data.email,
           password: data.password,
-          full_name: data.name, // ✅ match real API spec
-          role: "company"        // optional, default is company
+          full_name: data.name,
+          phone: `+${data.phone}`,
+          role: data.role,
         }),
       })
+
       const result = await res.json()
+
       if (!res.ok) {
-        toast.error("❌ Registration failed")
-        throw new Error("Registration failed")
+        const errorMessage =
+          Array.isArray(result)
+            ? result.map((e) => e.msg).join("\n")
+            : result?.detail || result?.message || "❌ Registration failed"
+
+        toast.error(errorMessage)
+        throw new Error(errorMessage)
       }
+
       toast.success("✅ Registered successfully")
       setToken(result.access_token)
       router.push("/dashboard")
@@ -64,14 +86,12 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
-      {/* Top Right Login Button */}
       <div className="absolute right-4 top-4 md:right-8 md:top-8">
         <Link href="/login">
           <Button variant="ghost">Login</Button>
         </Link>
       </div>
 
-      {/* Centered Card Layout */}
       <div className="mx-auto flex w-full max-w-md flex-col justify-center space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
@@ -91,9 +111,7 @@ export default function RegisterPage() {
                   <FormControl>
                     <Input placeholder="Your name" {...field} />
                   </FormControl>
-                  <FormMessage>
-                    {form.formState.errors.name && form.formState.errors.name.message}
-                  </FormMessage>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -107,9 +125,7 @@ export default function RegisterPage() {
                   <FormControl>
                     <Input placeholder="you@example.com" {...field} />
                   </FormControl>
-                  <FormMessage>
-                    {form.formState.errors.email && form.formState.errors.email.message}
-                  </FormMessage>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -123,9 +139,68 @@ export default function RegisterPage() {
                   <FormControl>
                     <Input type="password" placeholder="********" {...field} />
                   </FormControl>
-                  <FormMessage>
-                    {form.formState.errors.password && form.formState.errors.password.message}
-                  </FormMessage>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      country={"in"}
+                      enableSearch
+                      value={field.value}
+                      onChange={field.onChange}
+                      inputClass="!bg-background !text-foreground !w-full"
+                      buttonClass="!bg-muted"
+                      containerClass="!w-full"
+                      dropdownClass="!bg-popover !text-foreground"
+                      searchClass="!bg-background !text-foreground"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Country" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="company">Company</SelectItem>
+                      <SelectItem value="contractor">Contractor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -136,7 +211,6 @@ export default function RegisterPage() {
           </form>
         </Form>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
@@ -154,11 +228,11 @@ export default function RegisterPage() {
         </Button>
 
         <p className="px-8 text-center text-sm text-muted-foreground">
-          By clicking continue, you agree to our{" "}
+          By clicking continue, you agree to our{' '}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Terms of Service
-          </Link>{" "}
-          and{" "}
+          </Link>{' '}
+          and{' '}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Privacy Policy
           </Link>.
