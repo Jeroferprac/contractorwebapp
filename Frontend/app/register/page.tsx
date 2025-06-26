@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -20,7 +21,14 @@ import { toast } from "sonner"
 import { useAuth } from "@/store/authStore"
 import PhoneInput from "react-phone-input-2"
 import "react-phone-input-2/lib/style.css"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { API } from "@/lib/api"
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -28,7 +36,7 @@ const schema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().min(8, "Phone number is required"),
   country: z.string().min(1, "Country is required"),
-  role: z.enum(["client", "company", "contractor"]),
+  role: z.string().min(1, "Role is required"),
 })
 
 type FormData = z.infer<typeof schema>
@@ -36,6 +44,9 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPage() {
   const router = useRouter()
   const { setToken } = useAuth()
+
+  const [roles, setRoles] = useState<string[]>([])
+  const [loadingRoles, setLoadingRoles] = useState(true)
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -45,13 +56,30 @@ export default function RegisterPage() {
       password: "",
       phone: "",
       country: "India",
-      role: "client",
+      role: "",
     },
   })
 
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch(API.ROLES)
+        const data = await res.json()
+        setRoles(Array.isArray(data) ? data : data.roles || [])
+      } catch (error) {
+        console.error("Failed to load roles:", error)
+        toast.error("⚠️ Could not load roles from server")
+        setRoles(["client", "company", "contractor"])
+      } finally {
+        setLoadingRoles(false)
+      }
+    }
+    fetchRoles()
+  }, [])
+
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/register", {
+      const res = await fetch(API.REGISTER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,6 +111,13 @@ export default function RegisterPage() {
       console.error("Registration error:", error)
     }
   }
+ const handleGitHubLogin = () => {
+  const redirectUri = `${window.location.origin}/auth/callback`  // ✅ e.g. http://localhost:3000/auth/callback
+  const githubUrl = API.OAUTH("github", encodeURIComponent(redirectUri)) // ✅ encode it!
+  window.location.href = githubUrl
+}
+
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
@@ -107,9 +142,9 @@ export default function RegisterPage() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel htmlFor="name">Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} />
+                    <Input id="name" autoComplete="name" placeholder="Your name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,9 +156,9 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel htmlFor="email">Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input id="email" autoComplete="email" placeholder="you@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -135,9 +170,9 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel htmlFor="password">Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
+                    <Input id="password" type="password" autoComplete="new-password" placeholder="********" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -149,10 +184,11 @@ export default function RegisterPage() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel htmlFor="phone">Phone</FormLabel>
                   <FormControl>
                     <PhoneInput
-                      country={"in"}
+                      inputProps={{ id: "phone", name: "phone", autoComplete: "tel" }}
+                      country="in"
                       enableSearch
                       value={field.value}
                       onChange={field.onChange}
@@ -173,9 +209,9 @@ export default function RegisterPage() {
               name="country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country</FormLabel>
+                  <FormLabel htmlFor="country">Country</FormLabel>
                   <FormControl>
-                    <Input placeholder="Country" {...field} />
+                    <Input id="country" autoComplete="country-name" placeholder="Country" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,17 +223,25 @@ export default function RegisterPage() {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel htmlFor="role">Role</FormLabel>
+                  <Select disabled={loadingRoles} onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger id="role">
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="client">Client</SelectItem>
-                      <SelectItem value="company">Company</SelectItem>
-                      <SelectItem value="contractor">Contractor</SelectItem>
+                      {loadingRoles ? (
+                        <SelectItem value="loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : (
+                        roles.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -222,7 +266,11 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <Button variant="outline" className="w-full">
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleGitHubLogin()}
+        >
           <Icons.gitHub className="mr-2 h-4 w-4" />
           GitHub
         </Button>
@@ -231,8 +279,7 @@ export default function RegisterPage() {
           By clicking continue, you agree to our{' '}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Terms of Service
-          </Link>{' '}
-          and{' '}
+          </Link>{' '}and{' '}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Privacy Policy
           </Link>.
