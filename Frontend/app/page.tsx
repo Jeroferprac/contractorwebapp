@@ -1,7 +1,3 @@
 export default function Home() {
-  return (
-    <h1 className="text-3xl font-bold text-red-500 bg-yellow-300">
-      Contractor web App
-    </h1>
-  );
+  return <h1 className="text-3xl font-bold text-blue-600">CONTRACTOR QUOTTATION</h1>
 }
