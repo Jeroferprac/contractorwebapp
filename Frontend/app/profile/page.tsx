@@ -8,6 +8,8 @@ import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/store/authStore"
+import { signOut } from "next-auth/react"
+import { API } from "@/lib/api"
 
 interface User {
   full_name: string
@@ -101,6 +103,21 @@ const ProfilePage = () => {
     }
   }
 
+  async function handleSignOut() {
+    try {
+      // Notify backend
+      await fetch(API.LOGOUT, {
+        method: "POST",
+        credentials: "include", // if your backend uses cookies
+      });
+    } catch (err) {
+      // Optionally handle/log error
+      console.error("Backend logout failed:", err);
+    }
+    // End NextAuth session
+    await signOut();
+  }
+
   if (!user) {
     return (
       <div className="text-center py-12">
@@ -156,6 +173,8 @@ const ProfilePage = () => {
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Save Changes
       </Button>
+
+      <Button onClick={handleSignOut}>Sign out</Button>
     </div>
   )
 }

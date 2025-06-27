@@ -1,5 +1,3 @@
-// app/(protected)/dashboard/layout.tsx
-
 "use client"
 
 import { ReactNode, useState, useEffect } from "react"
