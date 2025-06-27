@@ -10,8 +10,7 @@ import TextareaField from "@/components/forms/TextareaField";
 import FileField from "@/components/forms/FileField";
 
 const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
+
   description: z.string().min(10, "Description must be at least 10 characters"),
   budgetMin: z.string(),
   budgetMax: z.string(),
@@ -20,8 +19,7 @@ const schema = z.object({
 
 const QuotationFormPage = () => {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
+  
     description: "",
     budgetMin: "",
     budgetMax: "",
@@ -54,8 +52,6 @@ const QuotationFormPage = () => {
       setSubmitting(false);
       setSuccess(true);
       setForm({
-        name: "",
-        email: "",
         description: "",
         budgetMin: "",
         budgetMax: "",
@@ -74,22 +70,7 @@ const QuotationFormPage = () => {
         </div>
       )}
       <form onSubmit={handleSubmitForm} className="space-y-5">
-        <FormField
-          label="Name"
-          name="name"
-          type="text"
-          value={form.name}
-          onChange={handleChange}
-          required
-        />
-        <FormField
-          label="Email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+        
         <TextareaField
           label="Project Description"
           name="description"
