@@ -32,9 +32,7 @@ const QuotationFormPage = () => {
   const [success, setSuccess] = useState(false);
 
   const {
-    register,
-    handleSubmit,
-    formState: { errors },
+    
   } = useForm({
     resolver: zodResolver(schema),
   });
