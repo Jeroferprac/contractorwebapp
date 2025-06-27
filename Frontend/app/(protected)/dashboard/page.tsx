@@ -1,14 +1,23 @@
-// app/(protected)/dashboard/page.tsx
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/api/auth/[...nextauth]/route"
-import { redirect } from "next/navigation"
-import DashboardClient from "./DashboardClient"
+"use client";
 
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    redirect("/login")
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
+import DashboardClient from "./DashboardClient";
+import { useRouter } from "next/navigation";
+
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
   }
 
-  return <DashboardClient session={session} />
+  return <DashboardClient session={session} />;
 }

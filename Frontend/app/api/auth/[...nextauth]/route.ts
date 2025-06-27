@@ -1,7 +1,7 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
 import { NextAuthOptions } from "next-auth"
+import { API } from "@/lib/api"
 
 
 export const authOptions: NextAuthOptions = {
@@ -15,14 +15,12 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, account, user }) {
-      // First-time login (only when account and user are defined)
       if (account && user) {
         token.accessToken = account.access_token
         token.id = user.id
 
-        // ✅ Use native fetch to call your backend API
         try {
-          await fetch("http://localhost:8000/api/v1/auth/oauth/github/callback", {
+          await fetch(API.OAUTH_CALLBACK("github"), {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
