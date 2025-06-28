@@ -10,7 +10,7 @@ import TextareaField from "@/components/forms/TextareaField";
 import FileField from "@/components/forms/FileField";
 
 const schema = z.object({
-
+  projectTitle: z.string().min(1, "Project Title is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   budgetMin: z.string(),
   budgetMax: z.string(),
@@ -19,7 +19,7 @@ const schema = z.object({
 
 const QuotationFormPage = () => {
   const [form, setForm] = useState({
-  
+    projectTitle: "",
     description: "",
     budgetMin: "",
     budgetMax: "",
@@ -29,9 +29,7 @@ const QuotationFormPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const {
-    
-  } = useForm({
+  const { } = useForm({
     resolver: zodResolver(schema),
   });
 
@@ -52,6 +50,7 @@ const QuotationFormPage = () => {
       setSubmitting(false);
       setSuccess(true);
       setForm({
+        projectTitle: "",
         description: "",
         budgetMin: "",
         budgetMax: "",
@@ -70,7 +69,14 @@ const QuotationFormPage = () => {
         </div>
       )}
       <form onSubmit={handleSubmitForm} className="space-y-5">
-        
+        <FormField
+          label="Project Title"
+          name="projectTitle"
+          type="text"
+          value={form.projectTitle}
+          onChange={handleChange}
+          required
+        />
         <TextareaField
           label="Project Description"
           name="description"
