@@ -1,11 +1,11 @@
-'use client'
+"use client"
 
 import { Session } from "next-auth"
-import {
-  Bell, Search, Settings, BarChart3, ShoppingBag, Table, Layers,
-  UserCircle, LogIn, TrendingUp, DollarSign, CreditCard, ChevronDown,
-} from "lucide-react"
 import { useEffect, useState } from "react"
+import {
+  BarChart3, Bell, ChevronDown, CreditCard, DollarSign, Layers, LogIn,
+  Search, Settings, ShoppingBag, Table, TrendingUp, UserCircle,
+} from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,8 +13,6 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { DashboardStatsCard } from "@/components/cards/DashboardStatsCard"
 import { API } from "@/lib/api"
-
-
 
 export default function DashboardClient({ session }: { session: Session | null }) {
   const [stats, setStats] = useState({
@@ -25,10 +23,12 @@ export default function DashboardClient({ session }: { session: Session | null }
     tasks: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<any>(null)
   const [revenueChartData, setRevenueChartData] = useState<
     { month: string; thisMonth: number; lastMonth: number }[]
   >([])
-   useEffect(() => {
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setStats({
         earnings: 23450,
@@ -38,17 +38,16 @@ export default function DashboardClient({ session }: { session: Session | null }
         tasks: 154,
       })
       setRevenueChartData([
-        { month: 'SEP', thisMonth: 100, lastMonth: 60 },
-        { month: 'OCT', thisMonth: 120, lastMonth: 70 },
-        { month: 'NOV', thisMonth: 90, lastMonth: 50 },
-        { month: 'DEC', thisMonth: 110, lastMonth: 60 },
-        { month: 'JAN', thisMonth: 130, lastMonth: 80 },
-        { month: 'FEB', thisMonth: 95, lastMonth: 65 },
+        { month: "SEP", thisMonth: 100, lastMonth: 60 },
+        { month: "OCT", thisMonth: 120, lastMonth: 70 },
+        { month: "NOV", thisMonth: 90, lastMonth: 50 },
+        { month: "DEC", thisMonth: 110, lastMonth: 60 },
+        { month: "JAN", thisMonth: 130, lastMonth: 80 },
+        { month: "FEB", thisMonth: 95, lastMonth: 65 },
       ])
       setLoading(false)
     }, 1000)
 
-    // Store user details to backend when session and accessToken are available
     if (session?.accessToken && session.user) {
       fetch(API.PROFILE, {
         method: "GET",
@@ -56,19 +55,21 @@ export default function DashboardClient({ session }: { session: Session | null }
           Authorization: `Bearer ${session.accessToken}`,
         },
       })
-        .then(res => res.json())
-        .then(data => {
-          // Do something with the user profile data
-          console.log(data);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch user profile:", err)
-        })
-    }
+    .then((res) => {
+      if (!res.ok) throw new Error("User not found")
+      return res.json()
+    })
+    .then((data) => {
+      setUserProfile(data)
+      console.log("✅ Fetched profile:", data)
+    })
+    .catch((err) => {
+      console.error("❌ Error fetching user profile:", err)
+    })
+}
 
     return () => clearTimeout(timer)
   }, [session])
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 p-4">

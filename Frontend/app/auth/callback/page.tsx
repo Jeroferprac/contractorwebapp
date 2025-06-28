@@ -14,11 +14,24 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const code = params.get("code")
-      if (!code) return toast.error("No OAuth code found")
+      console.log("OAuth code from URL:", code)
+
+      if (!code) {
+        toast.error("No OAuth code found")
+        return
+      }
+
+      const redirectUri = `${window.location.origin}/auth/callback`
+      console.log("Redirect URI being sent:", redirectUri)
 
       try {
-        const res = await fetch(`${API.OAUTH_CALLBACK("github")}?code=${code}`)
+        const url = `${API.OAUTH_CALLBACK("github")}?code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`
+        console.log("Calling backend callback URL:", url)
+
+        const res = await fetch(url)
         const data = await res.json()
+
+        console.log("Backend callback response:", data)
 
         if (!res.ok) {
           toast.error(data.message || "OAuth callback failed")
@@ -29,7 +42,7 @@ export default function AuthCallbackPage() {
         toast.success("✅ Logged in with GitHub")
         router.push("/dashboard")
       } catch (error) {
-        console.error(error)
+        console.error("Error during OAuth callback:", error)
         toast.error("⚠️ OAuth login failed")
       }
     }

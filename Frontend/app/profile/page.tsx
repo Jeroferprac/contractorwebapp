@@ -32,7 +32,7 @@ const ProfilePage = () => {
     const fetchUser = async () => {
       if (!token) return
       try {
-        const res = await fetch("http://localhost:8000/api/v1/auth/me", {
+        const res = await fetch(API.PROFILE, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -81,7 +81,7 @@ const ProfilePage = () => {
       formData.append("phone", phone)
       if (file) formData.append("profile_picture", file)
 
-      const res = await fetch("http://localhost:8000/api/v1/users/profile", {
+      const res = await fetch(API.PROFILE, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
