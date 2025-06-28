@@ -23,6 +23,6 @@ class QuotationAttachment(Base):
     quotation_id = Column(String, ForeignKey("quotations.id", ondelete="CASCADE"))
     filename = Column(String, nullable=False)
     content_type = Column(String, nullable=False)
-    data_b64 = Column(Text, nullable=False)
+    base64 = Column(Text, nullable=False)
 
     quotation = relationship("Quotation", back_populates="attachments")

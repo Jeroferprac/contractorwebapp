@@ -1,12 +1,11 @@
-from pydantic import BaseModel, Field, confloat, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import date
-from typing import List,Annotated
+from typing import List, Annotated
 
 class QuotationAttachmentOut(BaseModel):
     filename: str
     content_type: str
     base64: str
-    
 
 class QuotationCreate(BaseModel):
     project_title: str = Field(..., min_length=1, max_length=200)
@@ -33,12 +32,19 @@ class QuotationCreate(BaseModel):
     @model_validator(mode="after")
     @classmethod
     def validate_budget_ratio(cls, values):
+        # In this context values is a dict, so .get works fine
         min_b = values.get("estimated_budget_min")
         max_b = values.get("estimated_budget_max")
         if min_b is not None and max_b is not None and max_b / (min_b or 1) > 10:
             raise ValueError("Budget range too wide (max/min > 10)")
         return values
 
-class QuotationOut(QuotationCreate):
+class QuotationOut(BaseModel):
     id: str
+    project_title: str
+    estimated_budget_min: float
+    estimated_budget_max: float
+    description: str
+    deadline: date
     attachments: List[QuotationAttachmentOut] = []
+    # No validators here!

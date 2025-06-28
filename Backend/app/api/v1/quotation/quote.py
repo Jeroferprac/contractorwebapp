@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status
-from typing import Optional, List
+from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException, status
+from typing import Annotated, List, Optional
 from datetime import date
 import base64
 from sqlalchemy.orm import Session
 
-from app.schemas.quotation import QuotationCreate, QuotationOut, QuotationAttachmentOut
+from app.schemas.quotation import QuotationOut, QuotationAttachmentOut
 from app.models.quotation import Quotation, QuotationAttachment
 from app.api.deps import get_db
+from app.api.deps import get_current_active_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -15,18 +17,29 @@ ALLOWED = {"image/jpeg", "image/png", "application/pdf"}
 
 @router.post("/quote", response_model=QuotationOut, status_code=status.HTTP_201_CREATED)
 async def create_quotation(
-    payload: QuotationCreate = Depends(),
-    attachments: Optional[List[UploadFile]] = File(None),
-    db: Session = Depends(get_db),
+    project_title: Annotated[str, Form(...)],
+    estimated_budget_min: Annotated[float, Form(..., ge=0)],
+    estimated_budget_max: Annotated[float, Form(..., ge=0)],
+    description: Annotated[str, Form(...)],
+    deadline: Annotated[date, Form(...)],
+    attachments: List[UploadFile] = File([]),
+    db: Session = Depends(get_db),current_user: User = Depends(get_current_active_user),
 ):
-    if payload.deadline < date.today():
+    # Validate deadline and budget logic
+    if deadline < date.today():
         raise HTTPException(status_code=400, detail="Deadline must be in the future")
+    if estimated_budget_max < estimated_budget_min:
+        raise HTTPException(status_code=400, detail="Max must be >= min")
+    if estimated_budget_max / (estimated_budget_min or 1) > 10:
+        raise HTTPException(status_code=400, detail="Budget range too wide (max/min > 10)")
 
+    # Save the Quotation
     quote = Quotation(
-        estimated_budget_min=payload.estimated_budget_min,
-        estimated_budget_max=payload.estimated_budget_max,
-        description=payload.description,
-        deadline=payload.deadline,
+        project_title=project_title,
+        estimated_budget_min=estimated_budget_min,
+        estimated_budget_max=estimated_budget_max,
+        description=description,
+        deadline=deadline,
     )
     db.add(quote)
     db.commit()
@@ -35,24 +48,27 @@ async def create_quotation(
     saved_attachments = []
     if attachments:
         for file in attachments:
+            # Content type and size validation
             if file.content_type not in ALLOWED:
                 raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
             content = await file.read()
             if len(content) > MAX_SIZE:
-                raise HTTPException(status_code=400, detail=f"'{file.filename}' exceeds 10 MB limit")
-            data_b64 = base64.b64encode(content).decode()
+                raise HTTPException(status_code=400, detail=f"'{file.filename}' exceeds 10 MB limit")
+            encoded = base64.b64encode(content).decode()
             att = QuotationAttachment(
                 quotation_id=quote.id,
                 filename=file.filename,
                 content_type=file.content_type,
-                data_b64=data_b64,
+                base64=encoded,
             )
             db.add(att)
             saved_attachments.append(att)
         db.commit()
 
+    # Return all required fields for QuotationOut
     return QuotationOut(
         id=quote.id,
+        project_title=quote.project_title,
         estimated_budget_min=quote.estimated_budget_min,
         estimated_budget_max=quote.estimated_budget_max,
         description=quote.description,
@@ -61,10 +77,11 @@ async def create_quotation(
             QuotationAttachmentOut(
                 filename=a.filename,
                 content_type=a.content_type,
-                data_b64=a.data_b64
+                base64=a.base64
             ) for a in saved_attachments
         ]
     )
+
 
 
 
