@@ -1,4 +1,5 @@
 @import "@fontsource/geist-sans";
+
 :root {
   --font-sans: "Geist Sans", sans-serif;
 }
@@ -73,8 +74,18 @@
   }
 }
 
-.react-phone-input .highlight {
-  background-color: #27272a; /* bg-muted */
-  color: #ffff;              /* text-foreground */
+html {
+  @apply bg-white text-black;
 }
 
+.dark html {
+  @apply bg-gray-900 text-white;
+}
+
+
+.react-phone-input .highlight {
+  background-color: #27272a;
+  /* bg-muted */
+  color: #ffff;
+  /* text-foreground */
+}

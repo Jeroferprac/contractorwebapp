@@ -37,7 +37,7 @@ export default function LoginPage() {
   // ✅ Redirect if already logged in
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/(protected)/dashboard")
+      router.push("/dashboard")
     }
   }, [status, router])
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
 
       toast.success("✅ Logged in successfully")
       setToken(result.access_token)
-      router.push("/(protected)/dashboard")
+      router.push("/dashboard")
       form.reset()
     } catch (error) {
       console.error("Login error:", error)
@@ -78,16 +78,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
+      {/* Top Right Register Link */}
       <div className="absolute right-4 top-4 md:right-8 md:top-8">
         <Link href="/register">
           <Button variant="ghost">Register</Button>
         </Link>
       </div>
 
+      {/* Login Form */}
       <div className="mx-auto w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Enter your credentials to login</p>
+          <p className="text-sm text-muted-foreground">
+            Enter your credentials to login
+          </p>
         </div>
 
         <Form {...form}>
@@ -127,17 +131,17 @@ export default function LoginPage() {
         </Form>
       </div>
 
-      {/* GitHub SSO Button */}
+      {/* GitHub SSO Button (Backend OAuth flow) */}
       <div className="mx-auto w-full max-w-md mt-6">
         <Button
           type="button"
           variant="outline"
           className="w-full flex items-center justify-center gap-2"
-          onClick={() =>
-            signIn("github", {
-              callbackUrl: "/(protected)/dashboard",
-            })
-          }
+          onClick={() => {
+            const redirectUri = `${window.location.origin}/auth/callback`
+            const backendOAuthUrl = `http://localhost:8000/api/v1/auth/oauth/github?redirect_uri=${encodeURIComponent(redirectUri)}`
+            window.location.href = backendOAuthUrl
+          }}
         >
           <svg
             height="20"
