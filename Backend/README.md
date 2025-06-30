@@ -48,7 +48,7 @@ contractor_portal/
 │   │       └── users.py     # User management routes
 |   |       ├── quotation/   # Quotation routes
 │   │          ├── __init__.py  
-│   │          ├── quote.py  
+│   │          └──  quote.py  
 │   ├── core/
 │   │   ├── __init__.py      # Init file settings
 │   │   ├── config.py        # Configuration settings
@@ -59,7 +59,7 @@ contractor_portal/
 │   │   ├── base.py          # Base model class
 │   │   ├── quotation.py     # quotation model
 │   │   ├── user.py          # User model
-│   │   └── session.py       # Session model
+│   │   └── session.py       # Session model 
 │   ├── schemas/
 │   │   ├── __init__.py      # Init file
 │   │   ├── auth.py          # Auth request/response schemas
