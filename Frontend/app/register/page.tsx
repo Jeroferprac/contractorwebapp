@@ -111,14 +111,6 @@ export default function RegisterPage() {
       console.error("Registration error:", error)
     }
   }
-  const handleGitHubLogin = () => {
-    const redirectUri = `${window.location.origin}/auth/callback`  // ✅ e.g. http://localhost:3000/auth/callback
-    const githubUrl = API.OAUTH("github", encodeURIComponent(redirectUri)) // ✅ encode it!
-    window.location.href = githubUrl
-  }
-
-
-
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
@@ -267,8 +259,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-
-        <div className="mx-auto w-full max-w-md mt-6">
+        <div className="mx-auto w-full max-w-md">
           <Button
             type="button"
             variant="outline"

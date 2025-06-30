@@ -1,3 +1,4 @@
+// store/authStore.ts
 import { create } from "zustand"
 
 type User = {
@@ -18,7 +19,10 @@ type AuthState = {
 }
 
 export const useAuth = create<AuthState>((set) => ({
-  token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+  token:
+    typeof window !== "undefined"
+      ? localStorage.getItem("token")
+      : null,
   user: null,
 
   setToken: (token) => {
