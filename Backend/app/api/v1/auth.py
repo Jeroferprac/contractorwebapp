@@ -127,6 +127,7 @@ async def oauth_login(request: Request,provider: str, redirect_uri: str):
 
 @router.get("/oauth/{provider}/callback")
 async def oauth_callback(
+    request: Request,
     provider: str,
     code: str,
     redirect_uri: str,
@@ -145,7 +146,7 @@ async def oauth_callback(
     auth_service = AuthService(db)
     
     # Get user info from OAuth provider
-    user_info = await oauth_service.get_user_info(provider, code, redirect_uri)
+    user_info = await oauth_service.get_user_info(request,provider, code, redirect_uri)
     if not user_info:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
