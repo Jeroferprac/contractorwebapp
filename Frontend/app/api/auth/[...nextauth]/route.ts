@@ -1,8 +1,7 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
-import type { NextAuthOptions } from "next-auth"
 import { API } from "@/lib/api"
+import { NextAuthOptions } from "next-auth"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,55 +13,47 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async jwt({ token, account, user }) {
-      console.log("JWT callback - token:", token);
-      console.log("JWT callback - account:", account);
-      console.log("JWT callback - user:", user);
+    async jwt({ token, account }) {
+      // Only on initial login
+      if (account?.provider === "github" && account.access_token) {
+        const githubAccessToken = account.access_token
 
-      if (account && user) {
-        token.accessToken = account.access_token
-        token.id = user.id
+        const redirectUri =
+          process.env.NEXT_PUBLIC_REDIRECT_URI ??
+          `${process.env.NEXTAUTH_URL}/api/auth/callback/github`
+
+        const backendURL = API.OAUTH_CALLBACK("github", githubAccessToken, redirectUri)
+
+        console.log("✅ GitHub Access Token:", githubAccessToken)
+        console.log("🌐 Redirect URI:", redirectUri)
+        console.log("🔄 Calling backend at:", backendURL)
 
         try {
-          const res = await fetch(API.OAUTH_CALLBACK("github"), {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${account.access_token}`,
-            },
-            body: JSON.stringify({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              accessToken: account.access_token,
-            }),
-          })
+          const response = await fetch(backendURL, { method: "GET" })
+          const data = await response.json()
 
-          if (!res.ok) {
-            console.error("❌ Backend sync failed:", await res.text())
+          console.log("📦 Backend Response:", data)
+
+          if (!response.ok) {
+            console.error("❌ Backend Error:", data)
+            throw new Error(data?.message || "Backend GitHub auth failed")
           }
-        } catch (err) {
-          console.error("❌ Backend sync error:", err)
+
+          token.backendAccessToken = data.access_token ?? undefined
+          token.userId = data.user?.id ?? undefined
+        } catch (error) {
+          console.error("🚨 GitHub backend sync failed:", error)
         }
       }
-      return token
+
+      return token // ✅ always return token
     },
 
     async session({ session, token }) {
-      console.log("Session callback - session:", session);
-      console.log("Session callback - token:", token);
-
-      session.accessToken = token.accessToken as string
-      if (session.user) {
-        session.user.id = token.id as string
-      }
+      console.log("⚙️ Populating session from token")
+      session.backendAccessToken = token.backendAccessToken ?? undefined
+      session.userId = token.userId ?? undefined
       return session
-    },
-
-    async redirect({ baseUrl }) {
-      console.log("Redirect callback - baseUrl:", baseUrl);
-      return baseUrl + "/dashboard"
     },
   },
 }

@@ -5,15 +5,14 @@ import { Session } from "next-auth"
 import { API } from "@/lib/api"
 
 import Sidebar from "@/components/layout/sidebar"
-import HeaderBar from "@/components/layout/navbar"
-
+import { Header } from "@/components/dashboard/header/Header"
 import DashboardStats from "@/components/dashboard/stats/DashboardStats"
 import RevenueLineChart from "@/components/dashboard/charts/RevenueLineChart"
 import WeeklyRevenueChart from "@/components/dashboard/charts/WeeklyRevenueChart"
 import DailyTrafficChart from "@/components/dashboard/charts/DailyTrafficChart"
 import PieChartCard from "@/components/dashboard/charts/PieChartCard"
 import CheckTable from "@/components/dashboard/tables/CheckTable"
-import ComplexTable from "@/components/dashboard/tables/ComplexTable"
+import {ComplexTable} from "@/components/dashboard/tables/ComplexTable"
 import TasksCard from "@/components/dashboard/widgets/TasksCard"
 import TeamMembersCard from "@/components/dashboard/widgets/TeamMembersCard"
 import SecurityCard from "@/components/dashboard/widgets/SecurityCard"
@@ -45,6 +44,7 @@ export default function DashboardClient({ session }: { session: Session | null }
         balance: 1000,
         tasks: 154,
       })
+
       setRevenueChartData([
         { month: "SEP", thisMonth: 100, lastMonth: 60 },
         { month: "OCT", thisMonth: 120, lastMonth: 70 },
@@ -53,84 +53,81 @@ export default function DashboardClient({ session }: { session: Session | null }
         { month: "JAN", thisMonth: 130, lastMonth: 80 },
         { month: "FEB", thisMonth: 95, lastMonth: 65 },
       ])
+
       setLoading(false)
     }, 1000)
 
-    if (session?.accessToken && session.user) {
-      fetch(API.PROFILE, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("User not found")
-          return res.json()
+    const fetchProfile = async () => {
+      if (!session?.backendAccessToken) return
+
+      try {
+        const res = await fetch(API.PROFILE, {
+          headers: {
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
         })
-        .then((data) => {
-          setUserProfile(data)
-          console.log("✅ Fetched profile:", data)
-        })
-        .catch((err) => {
-          console.error("❌ Error fetching user profile:", err)
-        })
+
+        if (!res.ok) throw new Error("User not found")
+
+        const data = await res.json()
+        setUserProfile(data)
+        console.log("✅ Fetched profile:", data)
+      } catch (error) {
+        console.error("❌ Error fetching user profile:", error)
+      }
     }
 
+    fetchProfile()
     return () => clearTimeout(timer)
   }, [session])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 p-4">
-      <div className="mx-auto max-w-7xl">
-        {/* Branding */}
-        <div className="mb-6 text-center">
-          <h1 className="text-4xl font-bold text-white">
-            Contractor<span className="rounded bg-white px-2 py-1 text-blue-600">HUB</span>
-          </h1>
-          <p className="text-white mt-2">Welcome, {session?.user?.name}</p>
-        </div>
+    <div className="min-h-screen bg-[#f4f7fe] p-4">
+      <div className="mx-auto max-w-7xl rounded-3xl bg-white p-6 shadow-2xl">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <Sidebar />
 
-        {/* Main Dashboard */}
-        <div className="rounded-3xl bg-white p-6 shadow-2xl">
-          <div className="flex gap-6">
-            {/* Sidebar */}
-            <Sidebar />
+          {/* Main Content */}
+          <div className="flex-1 space-y-6">
+            {/* Final header with search, theme toggle, avatar, etc. */}
+            <Header session={session} />
 
-            {/* Main Content */}
-            <div className="flex-1 space-y-6">
-              <HeaderBar />
-              <DashboardStats stats={stats} loading={loading} />
+            {/* Stats Section */}
+            <DashboardStats stats={stats} loading={loading} />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <RevenueLineChart
-                  data={revenueChartData.map((item) => ({
-                    month: item.month,
-                    value: item.thisMonth // or item.lastMonth based on what you want
-                  }))}
-                />
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <RevenueLineChart
+                data={revenueChartData.map((item) => ({
+                  month: item.month,
+                  value: item.thisMonth,
+                }))}
+              />
+              <WeeklyRevenueChart />
+            </div>
 
-                <WeeklyRevenueChart />
+            {/* Check Table + Traffic + Pie Chart */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <CheckTable />
+              <div className="space-y-4">
+                <DailyTrafficChart />
+                <PieChartCard />
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <CheckTable />
-                <div className="space-y-4">
-                  <DailyTrafficChart />
-                  <PieChartCard />
-                </div>
-              </div>
+            {/* Widgets Row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <TasksCard />
+              <TeamMembersCard />
+              <SecurityCard />
+              <PromoCard />
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <TasksCard />
-                <TeamMembersCard />
-                <SecurityCard />
-                <PromoCard />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ComplexTable />
-                <BusinessDesignCard />
-              </div>
+            {/* Bottom Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ComplexTable />
+              <BusinessDesignCard />
             </div>
           </div>
         </div>
@@ -138,3 +135,4 @@ export default function DashboardClient({ session }: { session: Session | null }
     </div>
   )
 }
+

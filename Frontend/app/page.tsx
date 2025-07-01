@@ -1,3 +1,5 @@
-export default function Home() {
-  return <h1 className="text-3xl font-bold text-blue-600">CONTRACTOR QUOTTATION</h1>
-}
+// import HumanVerification from "../human-verification"
+
+// export default function Page() {
+//   return <HumanVerification />
+// }

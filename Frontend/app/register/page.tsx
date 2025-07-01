@@ -18,8 +18,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { toast } from "sonner"
-import { useAuth } from "@/store/authStore"
 import PhoneInput from "react-phone-input-2"
+import { useAuth } from "@/store/authStore"
 import "react-phone-input-2/lib/style.css"
 import {
   Select,
@@ -111,6 +111,10 @@ export default function RegisterPage() {
       console.error("Registration error:", error)
     }
   }
+
+
+
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">

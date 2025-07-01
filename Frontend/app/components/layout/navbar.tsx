@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
+
 export default function HeaderBar() {
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
@@ -57,6 +58,7 @@ export default function HeaderBar() {
           <AvatarImage src={session?.user?.image ?? ""} alt="User avatar" />
           <AvatarFallback>{session?.user?.name?.[0] ?? "U"}</AvatarFallback>
         </Avatar>
+        
       </div>
     </div>
   )
