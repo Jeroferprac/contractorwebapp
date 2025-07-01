@@ -1,14 +1,15 @@
-from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException, status, Query
 from typing import Annotated, List, Optional
 from datetime import date
 import base64
 from sqlalchemy.orm import Session
 
-from app.schemas.quotation import QuotationOut, QuotationAttachmentOut
+from app.schemas.quotation import QuotationOut, QuotationAttachmentOut, PaginatedQuotationResponse
 from app.models.quotation import Quotation, QuotationAttachment
 from app.api.deps import get_db
 from app.api.deps import get_current_active_user
 from app.models.user import User
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -35,6 +36,7 @@ async def create_quotation(
 
     # Save the Quotation
     quote = Quotation(
+        user_id=current_user.id,
         project_title=project_title,
         estimated_budget_min=estimated_budget_min,
         estimated_budget_max=estimated_budget_max,
@@ -67,12 +69,14 @@ async def create_quotation(
 
     # Return all required fields for QuotationOut
     return QuotationOut(
-        id=quote.id,
+        id=str(quote.id),
+        user_id=str(quote.user_id),
         project_title=quote.project_title,
         estimated_budget_min=quote.estimated_budget_min,
         estimated_budget_max=quote.estimated_budget_max,
         description=quote.description,
         deadline=quote.deadline,
+        created_at=quote.created_at, 
         attachments=[
             QuotationAttachmentOut(
                 filename=a.filename,
@@ -82,29 +86,53 @@ async def create_quotation(
         ]
     )
 
+      ### Pagination route
 
+@router.get("/quotes", response_model=PaginatedQuotationResponse,tags=["quotation"],summary="Get my submitted quotations (paginated)")
+def list_my_quotations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+     # Total count
+        total = db.query(func.count(Quotation.id))\
+              .filter(Quotation.user_id == current_user.id)\
+              .scalar()
+     # Paginated fetch
+        quotes = (
+        db.query(Quotation)
+          .filter(Quotation.user_id == current_user.id)
+          .order_by(Quotation.created_at.desc())
+          .limit(limit)
+          .offset(offset)
+          .all()
+        )
+        items = [
+    {
+        "id": str(q.id),
+        "user_id": str(q.user_id) if q.user_id is not None else None,
+        "project_title": q.project_title,
+        "estimated_budget_min": q.estimated_budget_min,
+        "estimated_budget_max": q.estimated_budget_max,
+        "description": q.description,
+        "deadline": q.deadline,
+        "created_at": q.created_at,
+        "attachments": [
+            {
+                "filename": a.filename,
+                "content_type": a.content_type,
+                "base64": a.base64
+            }
+            for a in q.attachments
+        ],
+    }
+    for q in quotes
+]
+        return PaginatedQuotationResponse(
+        total=total,
+        items=items,
+        limit=limit,
+        offset=offset,
+    )
 
-
-
-
-# from fastapi import APIRouter, HTTPException,Depends
-# from pydantic import BaseModel, Field, conint, confloat
-# from datetime import date, datetime
-# from typing import Annotated
-# from app.models.quotation import Quotation
-# from app.schemas.quotation import QuotationCreate, QuotationRead
-# from sqlalchemy.orm import Session
-# from app.core.database import get_db
-
-# router = APIRouter()
-
-# @router.post("/", response_model=QuotationRead)
-# def create_quote(q: QuotationCreate,   db: Session = Depends(get_db)):
-#     if q.deadline < date.today():
-#         raise HTTPException(400, "Deadline must be in the future")
-#     db_q = Quotation(**q.dict())
-#     db.add(db_q)
-#     db.commit()
-#     db.refresh(db_q)
-#     return db_q
-            

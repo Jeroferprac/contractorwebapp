@@ -25,8 +25,7 @@ app.add_middleware(SessionMiddleware, secret_key="YOUR_RANDOM_SECRET")
 # Set up CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    #   if settings.DEBUG else ["http://localhost:3000"],
+    allow_origins=["*"] if settings.DEBUG else ["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
