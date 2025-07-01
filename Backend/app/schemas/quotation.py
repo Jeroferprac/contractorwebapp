@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
-from datetime import date
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from datetime import date,  datetime
 from typing import List, Annotated
+from uuid import UUID
 
 class QuotationAttachmentOut(BaseModel):
     filename: str
@@ -38,13 +39,25 @@ class QuotationCreate(BaseModel):
         if min_b is not None and max_b is not None and max_b / (min_b or 1) > 10:
             raise ValueError("Budget range too wide (max/min > 10)")
         return values
-
+    
 class QuotationOut(BaseModel):
     id: str
+    user_id: UUID | str                 
     project_title: str
     estimated_budget_min: float
     estimated_budget_max: float
     description: str
     deadline: date
+    ##created_at: datetime       # Add this for ordering/pagination
+    created_at: datetime = Field(default_factory=datetime.now)
     attachments: List[QuotationAttachmentOut] = []
-    # No validators here!
+    model_config = ConfigDict(from_attributes=True)
+
+        #class Config:
+        #orm_mode = True
+
+class PaginatedQuotationResponse(BaseModel):
+    total: int
+    items: List[QuotationOut]
+    limit: int
+    offset: int
