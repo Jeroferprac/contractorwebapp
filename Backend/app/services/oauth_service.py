@@ -37,13 +37,13 @@ class OAuthService:
     def get_authorization_url(self, request: Request,provider: str, redirect_uri: str) -> str:
         """Get OAuth authorization URL"""
         client = getattr(self.oauth, provider)
-        return client.authorize_redirect(request,redirect_uri)
+        return client.authorize_redirect(request,redirect_uri,state=None)
     
     async def get_user_info(self, request: Request,provider: str, code: str, redirect_uri: str) -> Optional[Dict[str, Any]]:
         """Get user info from OAuth provider"""
         try:
             client = getattr(self.oauth, provider)
-            token = await client.authorize_access_token(request,code=code, redirect_uri=redirect_uri)
+            token = await client.authorize_access_token(request,code=code, redirect_uri=redirect_uri,state=None)
             
             if provider == 'google':
                 user_info = token.get('userinfo')
