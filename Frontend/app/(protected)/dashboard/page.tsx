@@ -1,23 +1,24 @@
-"use client";
+"use client"
 
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
-import DashboardClient from "./DashboardClient";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import DashboardClient from "./DashboardClient"
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  console.log("💡 Session in Dashboard:", session)
+  console.log("🔐 Backend token:", session?.backendAccessToken)
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/login")
     }
-  }, [status, router]);
+  }, [status, router])
 
   if (status === "loading") {
-    return <div>Loading...</div>;
+    return <p>Loading...</p>
   }
 
-  return <DashboardClient session={session} />;
+  return <DashboardClient session={session} />
 }

@@ -1,27 +1,25 @@
-import Sidebar from "@/components/layout/sidebar"
-import { Header } from "@/components/dashboard/header/Header"
-import { ProfileHeader } from "@/components/profile/profile-header"
-import { StorageWidget } from "@/components/profile/storage-widget"
-import { UploadWidget } from "@/components/profile/upload-widget"
-import { CompleteProfileWidget } from "@/components/profile/complete-profile-widget"
-import { ProjectsSection } from "@/components/profile/projects-section"
-import { GeneralInformation } from "@/components/profile/general-information"
-import { NotificationsSection } from "@/components/profile/notifications-section"
-import { Session } from "next-auth"
+import { Sidebar } from "./components/sidebar"
+import { Header } from "./components/header"
+import { ProfileHeader } from "./components/profile-header"
+import { StorageWidget } from "./components/storage-widget"
+import { UploadWidget } from "./components/upload-widget"
+import { CompleteProfileWidget } from "./components/complete-profile-widget"
+import { ProjectsSection } from "./components/projects-section"
+import { GeneralInformation } from "./components/general-information"
+import { NotificationsSection } from "./components/notifications-section"
 
-
-export default function ProfilePage({ session }: { session: Session | null }) {
+export default function ProfilePage() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-            <Header session={session} />
+        <Header />
 
         <main className="flex-1 overflow-auto p-6">
           {/* Profile Header */}
           <div className="mb-6">
-            <ProfileHeader session={session}/>
+            <ProfileHeader />
           </div>
 
           {/* Top Widgets Row */}

@@ -2,53 +2,47 @@
 
 import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
-import { useAuth } from "@/store/authStore"
+import { signIn } from "next-auth/react"
 import { API } from "@/lib/api"
 
-export default function AuthCallbackPage() {
+export default function GitHubCallbackPage() {
   const router = useRouter()
-  const params = useSearchParams()
-  const { setToken } = useAuth()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    const handleOAuthCallback = async () => {
-      const code = params.get("code")
-      console.log("OAuth code from URL:", code)
+    const syncWithBackend = async () => {
+      const code = searchParams.get("code")
+      const state = searchParams.get("state")
 
-      if (!code) {
-        toast.error("No OAuth code found")
+      if (!code || !state) {
+        router.replace("/login?error=MissingCode")
         return
       }
 
-      const redirectUri = `${window.location.origin}/auth/callback`
-      console.log("Redirect URI being sent:", redirectUri)
-
       try {
-        const url = `${API.OAUTH_CALLBACK("github")}?code=${code}&redirect_uri=${encodeURIComponent(redirectUri)}`
-        console.log("Calling backend callback URL:", url)
+        console.log("🔁 Backend sync starting with code:", code)
 
-        const res = await fetch(url)
+        const res = await fetch(
+          API.OAUTH_CALLBACK("github", code, `${window.location.origin}/auth/github/callback`)
+        )
+
         const data = await res.json()
+        console.log("✅ Backend response:", data)
 
-        console.log("Backend callback response:", data)
+        if (!res.ok) throw new Error(data?.message || "GitHub backend sync failed")
 
-        if (!res.ok) {
-          toast.error(data.message || "OAuth callback failed")
-          return
-        }
-
-        setToken(data.access_token)
-        toast.success("✅ Logged in with GitHub")
-        router.push("/dashboard")
-      } catch (error) {
-        console.error("Error during OAuth callback:", error)
-        toast.error("⚠️ OAuth login failed")
+        // ✅ Now trigger GitHub sign-in again to get token into session
+        await signIn("github", {
+          callbackUrl: "/dashboard",
+        })
+      } catch (err) {
+        console.error("❌ GitHub callback error:", err)
+        router.replace("/login?error=CallbackFailed")
       }
     }
 
-    handleOAuthCallback()
-  }, [params])
+    syncWithBackend()
+  }, [router, searchParams])
 
-  return <p className="text-center mt-10">Processing GitHub login...</p>
+  return <p className="text-center mt-12">Signing in via GitHub...</p>
 }
