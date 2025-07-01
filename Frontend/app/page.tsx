@@ -1,5 +1,5 @@
-import HumanVerification from "../human-verification"
+// import HumanVerification from "../human-verification"
 
-export default function Page() {
-  return <HumanVerification />
-}
+// export default function Page() {
+//   return <HumanVerification />
+// }
