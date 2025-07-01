@@ -131,7 +131,6 @@ async def oauth_callback(
     provider: str,
     code: str,
     redirect_uri: str,
-    request: Request,
     db: Session = Depends(get_db)
 ):
     """Handle OAuth callback"""
