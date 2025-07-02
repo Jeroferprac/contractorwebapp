@@ -1,5 +1,7 @@
-// import HumanVerification from "../human-verification"
+"use client"
 
-// export default function Page() {
-//   return <HumanVerification />
-// }
+import ProfileDashboard from "../profile-dashboard"
+
+export default function Page() {
+  return <ProfileDashboard />
+}

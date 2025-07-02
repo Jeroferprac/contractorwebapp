@@ -1,48 +1,52 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Session } from "next-auth"
+import type { Session } from "next-auth"
 import { API } from "@/lib/api"
 
-import Sidebar from "@/components/layout/sidebar"
-import { Header } from "@/components/dashboard/header/Header"
-import DashboardStats from "@/components/dashboard/stats/DashboardStats"
-import RevenueLineChart from "@/components/dashboard/charts/RevenueLineChart"
-import WeeklyRevenueChart from "@/components/dashboard/charts/WeeklyRevenueChart"
-import DailyTrafficChart from "@/components/dashboard/charts/DailyTrafficChart"
-import PieChartCard from "@/components/dashboard/charts/PieChartCard"
-import CheckTable from "@/components/dashboard/tables/CheckTable"
-import {ComplexTable} from "@/components/dashboard/tables/ComplexTable"
-import TasksCard from "@/components/dashboard/widgets/TasksCard"
-import TeamMembersCard from "@/components/dashboard/widgets/TeamMembersCard"
-import SecurityCard from "@/components/dashboard/widgets/SecurityCard"
-import PromoCard from "@/components/dashboard/widgets/PromoCard"
-import BusinessDesignCard from "@/components/dashboard/bottom/BusinessDesignCard"
-
+// Import the new main dashboard components
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { MetricsCards } from "@/components/cards/metrics-cards"
+import { RevenueChart } from "@/components/dashboard/charts/revenue-chart"
+import { WeeklyRevenueChart } from "@/components/dashboard/charts/weekly-revenue-chart"
+import { CheckTable } from "@/components/dashboard/tables/check-table"
+import { ComplexTable } from "@/components/dashboard/tables/complex-table"
+import { DailyTrafficChart } from "@/components/dashboard/charts/daily-traffic-chart"
+import { PieChart } from "@/components/dashboard/charts/pie-chart"
+import { TasksWidget } from "@/components/dashboard/widgets/tasks-widget"
+import { CalendarWidget } from "@/components/dashboard/widgets/calendar-widget"
+import { TeamMembers } from "@/components/dashboard/widgets/team-members"
+import { SecurityCard } from "@/components/dashboard/widgets/security-card"
+import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card"
+import { LessonCard } from "@/components/dashboard/bottom/lesson-card"
 export default function DashboardClient({ session }: { session: Session | null }) {
+  // Your existing state management
   const [stats, setStats] = useState({
     earnings: 0,
     spend: 0,
     sales: 0,
     balance: 0,
     tasks: 0,
+    projects: 0, // Added for the new design
   })
 
-  const [revenueChartData, setRevenueChartData] = useState<
-    { month: string; thisMonth: number; lastMonth: number }[]
-  >([])
+  const [revenueChartData, setRevenueChartData] = useState<{ month: string; thisMonth: number; lastMonth: number }[]>(
+    [],
+  )
 
   const [loading, setLoading] = useState(true)
   const [userProfile, setUserProfile] = useState<any>(null)
 
+  // Your existing useEffect logic
   useEffect(() => {
     const timer = setTimeout(() => {
       setStats({
-        earnings: 23450,
-        spend: 4250,
-        sales: 1510,
+        earnings: 350.4, // Updated to match main dashboard format
+        spend: 642.39,
+        sales: 574.34,
         balance: 1000,
         tasks: 154,
+        projects: 2935, // Added for new design
       })
 
       setRevenueChartData([
@@ -66,7 +70,6 @@ export default function DashboardClient({ session }: { session: Session | null }
             Authorization: `Bearer ${session.backendAccessToken}`,
           },
         })
-
         if (!res.ok) throw new Error("User not found")
 
         const data = await res.json()
@@ -78,61 +81,54 @@ export default function DashboardClient({ session }: { session: Session | null }
     }
 
     fetchProfile()
+
     return () => clearTimeout(timer)
   }, [session])
 
   return (
-    <div className="min-h-screen bg-[#f4f7fe] p-4">
-      <div className="mx-auto max-w-7xl rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <Sidebar />
+    <DashboardLayout session={session} userProfile={userProfile}>
+      <div className="space-y-6">
+        {/* Metrics Cards - Your stats with new design */}
+        <MetricsCards stats={stats} loading={loading} />
 
-          {/* Main Content */}
-          <div className="flex-1 space-y-6">
-            {/* Final header with search, theme toggle, avatar, etc. */}
-            <Header session={session} />
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RevenueChart data={revenueChartData} loading={loading} />
+          </div>
+          <div>
+            <WeeklyRevenueChart />
+          </div>
+        </div>
 
-            {/* Stats Section */}
-            <DashboardStats stats={stats} loading={loading} />
+        {/* Tables and Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CheckTable />
+          <div className="space-y-6">
+            <DailyTrafficChart />
+            <PieChart />
+          </div>
+        </div>
 
-            {/* Charts Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <RevenueLineChart
-                data={revenueChartData.map((item) => ({
-                  month: item.month,
-                  value: item.thisMonth,
-                }))}
-              />
-              <WeeklyRevenueChart />
-            </div>
+        {/* Complex Table and Widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ComplexTable />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TasksWidget />
+            <CalendarWidget />
+          </div>
+        </div>
 
-            {/* Check Table + Traffic + Pie Chart */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <CheckTable />
-              <div className="space-y-4">
-                <DailyTrafficChart />
-                <PieChartCard />
-              </div>
-            </div>
-
-            {/* Widgets Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <TasksCard />
-              <TeamMembersCard />
-              <SecurityCard />
-              <PromoCard />
-            </div>
-
-            {/* Bottom Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ComplexTable />
-              <BusinessDesignCard />
-            </div>
+        {/* Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
+          <LessonCard />
+          <TeamMembers />
+          <div className="space-y-6">
+            <SecurityCard />
+            <StarbucksCard />
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
-

@@ -2,19 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Kanban,
-  User,
-  LogIn,
-  CreditCard,
-  LogOut,
-} from "lucide-react"
+import { LayoutDashboard, Users, FileText, Kanban, User, LogIn, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
-import { signOut } from "next-auth/react"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -25,66 +15,65 @@ const navItems = [
   { name: "Sign In", href: "/login", icon: LogIn },
 ]
 
-export default function Sidebar() {
+export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 h-screen bg-white border-r border-gray-200 p-4 flex flex-col">
-      {/* Brand */}
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-navy-900">
-          <span className="text-blue-600">HORIZON</span> FREE
-        </h1>
+    <div className="w-64 bg-white dark:bg-[#0b1437] transition-colors duration-200 border-r border-gray-200 dark:border-zinc-700 flex flex-col -screen">
+      {/* Brand Header */}
+      <div className="p-6">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg"></div>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">HORIZON</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
+        </div>
       </div>
 
-      {/* Nav Items */}
-      <nav className="flex-1 space-y-2">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href)
-          return (
-            <Link href={item.href} key={item.name}>
-              <div
-                className={clsx(
-                  "flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer transition-colors",
-                  isActive
-                    ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                    : "text-gray-600 hover:bg-gray-50"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="font-medium">{item.name}</span>
-              </div>
-            </Link>
-          )
-        })}
+      {/* Navigation Items */}
+      <nav className="flex-1 px-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href)
+
+            return (
+              <li key={item.name}>
+                <Link href={item.href}>
+                  <Button
+                    variant="ghost"
+                    className={clsx(
+                      "w-full justify-start transition-all duration-200",
+                      isActive
+                        ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600"
+                        : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800",
+                    )}
+                  >
+                    <item.icon className="w-5 h-5 mr-3 " />
+                    {item.name}
+                  </Button>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+        
       </nav>
 
-      {/* Sign out button */}
-      <div className="mt-4">
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span className="font-medium">Sign out</span>
-        </button>
-      </div>
+      {/* Sign Out Button */}
+        
 
       {/* Upgrade Card */}
-      <div className="mt-6">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 text-white text-center">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3">
-            <CreditCard className="h-6 w-6 text-blue-600" />
+      <div className="p-4">
+        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CreditCard className="w-6 h-6 text-white" />
           </div>
           <h3 className="font-semibold mb-2">Upgrade to PRO</h3>
-          <p className="text-xs mb-3 opacity-90">
-            to get access to all features! Connect with Venus World
-          </p>
-          <Button className="w-full bg-white text-blue-600 hover:bg-gray-100">
+          <p className="text-sm opacity-90 mb-4">to get access to all features! Connect with Venus World!</p>
+          <Button className="w-full bg-white text-purple-600 hover:bg-gray-100 font-medium" size="sm">
             Get Started
           </Button>
         </div>
       </div>
-    </aside>
+    </div>
   )
 }
