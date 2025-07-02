@@ -1,121 +1,143 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import FormField from "@/components/forms/FormField";
 import TextareaField from "@/components/forms/TextareaField";
 import FileField from "@/components/forms/FileField";
+import { submitQuotation, QuotationData } from "@/lib/quotation";
+import { useAuth } from "@/store/authStore";
+import { toast } from "sonner";
 
 const schema = z.object({
   projectTitle: z.string().min(1, "Project Title is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
-  budgetMin: z.string(),
-  budgetMax: z.string(),
-  deadline: z.string(),
+  budgetMin: z.string().optional(),
+  budgetMax: z.string().optional(),
+  deadline: z.string().min(1, "Deadline is required"),
+  file: z.instanceof(File).optional(),
 });
 
-const QuotationFormPage = () => {
-  const [form, setForm] = useState({
-    projectTitle: "",
-    description: "",
-    budgetMin: "",
-    budgetMax: "",
-    deadline: "",
-    file: null as File | null,
-  });
+type FormData = z.infer<typeof schema>;
+
+export default function QuotationFormPage() {
+  const { backendAccessToken } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const { } = useForm({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      projectTitle: "",
+      description: "",
+      budgetMin: "",
+      budgetMax: "",
+      deadline: "",
+      file: undefined,
+    },
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleSubmitForm = async (data: FormData) => {
+    if (!backendAccessToken) {
+      toast.error("⚠️ You must be logged in to submit a quotation.");
+      return;
+    }
 
-  const handleFileChange = (file: File | null) => {
-    setForm((prev) => ({ ...prev, file }));
-  };
-
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
     setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const formattedData: QuotationData = {
+        projectTitle: data.projectTitle,
+        description: data.description,
+        budgetMin: data.budgetMin,
+        budgetMax: data.budgetMax,
+        deadline: data.deadline,
+        file: data.file ?? null,
+      };
+
+      await submitQuotation(formattedData, backendAccessToken);
+      toast.success("✅ Quotation submitted successfully!");
       setSuccess(true);
-      setForm({
-        projectTitle: "",
-        description: "",
-        budgetMin: "",
-        budgetMax: "",
-        deadline: "",
-        file: null,
-      });
-    }, 1500);
+      reset();
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="max-w-lg mx-auto mt-10 bg-white p-8 rounded shadow">
       <h1 className="text-2xl font-bold mb-6">Request a Quotation</h1>
+
       {success && (
         <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
           Quotation request submitted successfully!
         </div>
       )}
-      <form onSubmit={handleSubmitForm} className="space-y-5">
+
+      <form onSubmit={handleSubmit(handleSubmitForm)} className="space-y-5">
         <FormField
           label="Project Title"
           name="projectTitle"
           type="text"
-          value={form.projectTitle}
-          onChange={handleChange}
+          register={register("projectTitle")}
+          error={errors.projectTitle?.message}
           required
         />
+
         <TextareaField
           label="Project Description"
           name="description"
-          value={form.description}
-          onChange={handleChange}
+          register={register("description")}
+          error={errors.description?.message}
           required
         />
+
         <FormField
           label="Estimated Budget Min"
           name="budgetMin"
           type="number"
-          value={form.budgetMin}
-          onChange={handleChange}
+          register={register("budgetMin")}
+          error={errors.budgetMin?.message}
         />
+
         <FormField
           label="Estimated Budget Max"
           name="budgetMax"
           type="number"
-          value={form.budgetMax}
-          onChange={handleChange}
+          register={register("budgetMax")}
+          error={errors.budgetMax?.message}
         />
+
         <FormField
           label="Deadline"
           name="deadline"
           type="date"
-          value={form.deadline}
-          onChange={handleChange}
+          register={register("deadline")}
+          error={errors.deadline?.message}
+          required
         />
+
         <FileField
           label="Attachment (optional)"
           name="file"
-          onFileChange={handleFileChange}
+          onFileChange={(file: File | null) => setValue("file", file ?? undefined)}
         />
-        <Button type="submit" disabled={submitting}>
+
+        <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? "Submitting..." : "Submit"}
         </Button>
       </form>
     </div>
   );
-};
-
-export default QuotationFormPage;
+}
