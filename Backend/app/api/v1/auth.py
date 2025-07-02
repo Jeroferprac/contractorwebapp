@@ -11,8 +11,12 @@ from app.services.oauth_service import OAuthService
 from app.api.deps import get_current_active_user
 from typing import Dict, Any
 from typing import List
+from pydantic import BaseModel
 
 router = APIRouter()
+class OAuthDirectCallback(BaseModel):
+    provider: str
+    user_info: Dict[str, str]  # expects email, name, provider_id, provider
 
 @router.post("/register", response_model=RegisterResponse)
 async def register(
@@ -125,63 +129,61 @@ async def oauth_login(request: Request,provider: str, redirect_uri: str):
             detail=f"OAuth initialization failed: {str(e)}"
         )
 
-@router.get("/oauth/{provider}/callback")
-async def oauth_callback(
+# ✅ Updated endpoint to accept POST call from frontend after GitHub OAuth
+@router.post("/oauth/github/callback", response_model=LoginResponse)
+async def direct_oauth_callback(
+    payload: OAuthDirectCallback,
     request: Request,
-    provider: str,
-    code: str,
-    redirect_uri: str,
     db: Session = Depends(get_db)
 ):
-    """Handle OAuth callback"""
-    if provider not in ['google', 'github']:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unsupported OAuth provider"
-        )
-    
-    oauth_service = OAuthService()
+    provider = payload.provider
+    user_info = payload.user_info
+
+    if provider != 'github':
+        raise HTTPException(status_code=400, detail="Only GitHub provider supported here")
+
     user_service = UserService(db)
     auth_service = AuthService(db)
-    
-    # Get user info from OAuth provider
-    user_info = await oauth_service.get_user_info(request,provider, code, redirect_uri)
-    if not user_info:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to get user information from OAuth provider"
-        )
-    
-    # Check if user exists
-    user = user_service.get_user_by_oauth(provider, user_info['provider_id'])
-    
+
+    # Extract user info
+    provider_id = user_info.get("provider_id")
+    email = user_info.get("email")
+    name = user_info.get("name")
+
+    if not provider_id or not email:
+        raise HTTPException(status_code=400, detail="Missing required user info from GitHub")
+
+    # Check if user already exists by OAuth ID
+    user = user_service.get_user_by_oauth(provider, provider_id)
+
     if not user:
         # Check if user exists with same email
-        user = user_service.get_user_by_email(user_info['email'])
+        user = user_service.get_user_by_email(email)
         if user:
-            # Link OAuth account to existing user
+            # Link OAuth account
             user.oauth_provider = provider
-            user.oauth_id = user_info['provider_id']
+            user.oauth_id = provider_id
             db.commit()
         else:
-            # Create new user
+            # Create new OAuth user
             user = user_service.create_oauth_user(
-                email=user_info['email'],
-                full_name=user_info['name'],
+                email=email,
+                full_name=name,
                 provider=provider,
-                oauth_id=user_info['provider_id']
+                oauth_id=provider_id
             )
-    
-    # Create access token and session
+
+    # Create token and session
     access_token = auth_service.create_access_token_for_user(user)
     client_ip = request.client.host
     user_agent = request.headers.get("user-agent")
     session_token, session = auth_service.create_user_session(user, client_ip, user_agent)
-    
+
     return LoginResponse(
         access_token=access_token,
         user=UserResponse.from_orm(user)
     )
+
 
 @router.post("/refresh")
 async def refresh_token(

@@ -1,7 +1,35 @@
-import NextAuth from "next-auth"
+import NextAuth, { NextAuthOptions, User, Account, Profile, Session, TokenSet } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
-import { API } from "@/lib/api"
-import { NextAuthOptions } from "next-auth"
+import { API } from "@/lib/api" // your backend API wrapper
+import type { JWT } from "next-auth/jwt"
+
+interface BackendLoginResponse {
+  access_token: string
+  user: {
+    id: string
+    email: string
+    name: string
+  }
+}
+
+declare module "next-auth" {
+  interface Session {
+    backendAccessToken?: string
+    userId?: string
+  }
+
+  interface User {
+    backendAccessToken?: string
+    userId?: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    backendAccessToken?: string
+    userId?: string
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,49 +41,73 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async jwt({ token, account }) {
-      // Only on initial login
+    async jwt({ token, account, profile }: {
+      token: JWT,
+      account?: Account | null,
+      profile?: Profile | undefined
+    }): Promise<JWT> {
+      // On initial sign in
       if (account?.provider === "github" && account.access_token) {
-        const githubAccessToken = account.access_token
-
-        const redirectUri =
-          process.env.NEXT_PUBLIC_REDIRECT_URI ??
-          `${process.env.NEXTAUTH_URL}/api/auth/callback/github`
-
-        const backendURL = API.OAUTH_CALLBACK("github", githubAccessToken, redirectUri)
-
-        console.log("✅ GitHub Access Token:", githubAccessToken)
-        console.log("🌐 Redirect URI:", redirectUri)
-        console.log("🔄 Calling backend at:", backendURL)
-
         try {
-          const response = await fetch(backendURL, { method: "GET" })
-          const data = await response.json()
+          const githubAccessToken = account.access_token
 
-          console.log("📦 Backend Response:", data)
+          // 1. Get user profile
+          const userProfileResp = await fetch("https://api.github.com/user", {
+            headers: { Authorization: `Bearer ${githubAccessToken}` },
+          })
+          const userProfile = await userProfileResp.json()
 
-          if (!response.ok) {
-            console.error("❌ Backend Error:", data)
-            throw new Error(data?.message || "Backend GitHub auth failed")
+          // 2. Get email
+          const emailResp = await fetch("https://api.github.com/user/emails", {
+            headers: { Authorization: `Bearer ${githubAccessToken}` },
+          })
+          const emails = await emailResp.json()
+          const primaryEmail = emails.find((e: any) => e.primary)?.email ?? userProfile.email
+
+          // 3. POST to FastAPI backend
+          const payload = {
+            provider: "github",
+            user_info: {
+              email: primaryEmail,
+              name: userProfile.name || userProfile.login,
+              provider_id: String(userProfile.id),
+              provider: "github"
+            }
           }
 
-          token.backendAccessToken = data.access_token ?? undefined
-          token.userId = data.user?.id ?? undefined
+          const backendResp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/oauth/github/callback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          })
+
+          const data: BackendLoginResponse = await backendResp.json()
+
+          if (!backendResp.ok) {
+            console.error("❌ Backend Error:", data)
+            throw new Error("Backend registration/login failed")
+          }
+
+          // 4. Add backend token and ID to token
+          token.backendAccessToken = data.access_token
+          token.userId = data.user.id
         } catch (error) {
           console.error("🚨 GitHub backend sync failed:", error)
         }
       }
 
-      return token // ✅ always return token
+      return token
     },
 
-    async session({ session, token }) {
-      console.log("⚙️ Populating session from token")
-      session.backendAccessToken = token.backendAccessToken ?? undefined
-      session.userId = token.userId ?? undefined
+    async session({ session, token }: {
+      session: Session,
+      token: JWT
+    }): Promise<Session> {
+      session.backendAccessToken = token.backendAccessToken
+      session.userId = token.userId
       return session
-    },
-  },
+    }
+  }
 }
 
 const handler = NextAuth(authOptions)
