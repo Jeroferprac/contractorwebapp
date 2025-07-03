@@ -1,9 +1,7 @@
-"use client"
-
-import { MoreHorizontal } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { MoreHorizontal } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const tasks = [
   { text: "Landing Page Design", completed: false },
@@ -13,23 +11,21 @@ const tasks = [
   { text: "Promotional LP", completed: true },
 ]
 
-export default function TasksCard() {
+export function TasksWidget() {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Tasks</CardTitle>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
-        </div>
+    <Card className="border-0 shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardTitle className="text-lg font-semibold">Tasks</CardTitle>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="w-4 h-4" />
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {tasks.map((task, index) => (
-            <div key={index} className="flex items-center gap-3">
+            <div key={index} className="flex items-center space-x-3">
               <Checkbox checked={task.completed} />
-              <span className={`text-sm ${task.completed ? "line-through text-muted-foreground" : ""}`}>
+              <span className={`text-sm ${task.completed ? "line-through text-gray-500" : "text-gray-900"}`}>
                 {task.text}
               </span>
             </div>

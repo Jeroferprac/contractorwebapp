@@ -1,4 +1,4 @@
-// import HumanVerification from "../human-verification"
+"use client"
 
 // export default function Page() {
 //   return <HumanVerification />
