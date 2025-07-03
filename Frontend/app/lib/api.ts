@@ -24,6 +24,7 @@ const USERS = {
 
 const QUOTATION = {
   QUOTE: `${BASE_URL}/api/v1/quotation/quote`,
+QUOTES: `${BASE_URL}/api/v1/quotation/quotes`,  // ✅ For fetching all quotations
 };
 
 const UTILS = {

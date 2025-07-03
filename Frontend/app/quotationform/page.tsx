@@ -1,143 +1,158 @@
 "use client";
 
-import React, { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import FormField from "@/components/forms/FormField";
-import TextareaField from "@/components/forms/TextareaField";
-import FileField from "@/components/forms/FileField";
-import { submitQuotation, QuotationData } from "@/lib/quotation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/store/authStore";
+import { submitQuotation, QuotationData } from "@/lib/quotation";
 import { toast } from "sonner";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 
-const schema = z.object({
-  projectTitle: z.string().min(1, "Project Title is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  budgetMin: z.string().optional(),
-  budgetMax: z.string().optional(),
-  deadline: z.string().min(1, "Deadline is required"),
-  file: z.instanceof(File).optional(),
-});
-
-type FormData = z.infer<typeof schema>;
-
-export default function QuotationFormPage() {
+export default function QuotationForm() {
   const { backendAccessToken } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      projectTitle: "",
-      description: "",
-      budgetMin: "",
-      budgetMax: "",
-      deadline: "",
-      file: undefined,
-    },
+  const [formData, setFormData] = useState<QuotationData>({
+    projectTitle: "",
+    description: "",
+    budgetMin: "",
+    budgetMax: "",
+    deadline: "",
+    file: null,
   });
 
-  const handleSubmitForm = async (data: FormData) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setFormData({ ...formData, file: e.target.files[0] });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!backendAccessToken) {
-      toast.error("⚠️ You must be logged in to submit a quotation.");
+      toast.error("Please login to submit a quotation");
       return;
     }
 
-    setSubmitting(true);
+    setLoading(true);
     try {
-      const formattedData: QuotationData = {
-        projectTitle: data.projectTitle,
-        description: data.description,
-        budgetMin: data.budgetMin,
-        budgetMax: data.budgetMax,
-        deadline: data.deadline,
-        file: data.file ?? null,
-      };
-
-      await submitQuotation(formattedData, backendAccessToken);
+      await submitQuotation(formData, backendAccessToken);
       toast.success("✅ Quotation submitted successfully!");
-      setSuccess(true);
-      reset();
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong. Please try again.");
+      setFormData({
+        projectTitle: "",
+        description: "",
+        budgetMin: "",
+        budgetMax: "",
+        deadline: "",
+        file: null,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to submit quotation");
+      } else {
+        toast.error("Failed to submit quotation");
+      }
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-8 rounded shadow">
-      <h1 className="text-2xl font-bold mb-6">Request a Quotation</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 px-4 py-12">
+      <Card className="w-full max-w-2xl p-8 shadow-2xl rounded-3xl bg-white">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-gray-900 mb-4 text-center">
+            Submit Your Quotation
+          </CardTitle>
+        </CardHeader>
 
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          Quotation request submitted successfully!
-        </div>
-      )}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
 
-      <form onSubmit={handleSubmit(handleSubmitForm)} className="space-y-5">
-        <FormField
-          label="Project Title"
-          name="projectTitle"
-          type="text"
-          register={register("projectTitle")}
-          error={errors.projectTitle?.message}
-          required
-        />
+            <div>
+              <Label>Project Title*</Label>
+              <Input
+                name="projectTitle"
+                placeholder="Enter project title"
+                value={formData.projectTitle}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <TextareaField
-          label="Project Description"
-          name="description"
-          register={register("description")}
-          error={errors.description?.message}
-          required
-        />
+            <div>
+              <Label>Description*</Label>
+              <Textarea
+                name="description"
+                placeholder="Enter project description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <FormField
-          label="Estimated Budget Min"
-          name="budgetMin"
-          type="number"
-          register={register("budgetMin")}
-          error={errors.budgetMin?.message}
-        />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Budget Min*</Label>
+                <Input
+                  type="number"
+                  name="budgetMin"
+                  placeholder="Minimum budget"
+                  value={formData.budgetMin}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-        <FormField
-          label="Estimated Budget Max"
-          name="budgetMax"
-          type="number"
-          register={register("budgetMax")}
-          error={errors.budgetMax?.message}
-        />
+              <div>
+                <Label>Budget Max*</Label>
+                <Input
+                  type="number"
+                  name="budgetMax"
+                  placeholder="Maximum budget"
+                  value={formData.budgetMax}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
 
-        <FormField
-          label="Deadline"
-          name="deadline"
-          type="date"
-          register={register("deadline")}
-          error={errors.deadline?.message}
-          required
-        />
+            <div>
+              <Label>Deadline*</Label>
+              <Input
+                type="date"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <FileField
-          label="Attachment (optional)"
-          name="file"
-          onFileChange={(file: File | null) => setValue("file", file ?? undefined)}
-        />
+            <div>
+              <Label>Attach File (Optional)</Label>
+              <Input type="file" accept=".pdf,.doc,.docx,.png,.jpg" onChange={handleFileChange} />
+            </div>
+          
+          <div className="flex justify-center">
+            <Button
+              type="submit"
+              className="h-12 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium px-20"
+              disabled={loading}
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </Button>
+            </div>
 
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? "Submitting..." : "Submit"}
-        </Button>
-      </form>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -9,6 +9,13 @@ export interface QuotationData {
   file?: File | null;
 }
 
+export interface Quote {
+  id: string;
+  contractor: string;
+  amount: string;
+  status: "Pending" | "Approved" | "Rejected";
+}
+
 export const submitQuotation = async (data: QuotationData, token: string) => {
   const formData = new FormData();
   formData.append("project_title", data.projectTitle);
@@ -34,4 +41,22 @@ export const submitQuotation = async (data: QuotationData, token: string) => {
   }
 
   return await response.json();
+};
+
+export const fetchQuotations = async (token: string): Promise<Quote[]> => {
+  const response = await fetch(API.QUOTES, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+  console.log("API response for quotations:", result);
+
+  if (!response.ok) {
+    throw new Error(result?.detail || result?.message || "Failed to fetch quotations");
+  }
+
+  // 🔥 FIX: Return correct structure
+  return result.quotes || result; // handles both { quotes: [] } and [] responses
 };
