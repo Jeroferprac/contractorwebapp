@@ -20,13 +20,13 @@ export function NotificationsSection() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Notifications</CardTitle>
-        <MoreHorizontal className="h-5 w-5 text-gray-400" />
+        <MoreHorizontal className="h-5 w-5 text-gray-500" />
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {notifications.map((notification, index) => (
             <div key={index} className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">{notification.label}</span>
+              <span className="text-sm text-gray-500 ">{notification.label}</span>
               <Switch checked={notification.enabled} />
             </div>
           ))}
