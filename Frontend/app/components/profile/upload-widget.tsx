@@ -1,22 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Upload } from "lucide-react"
 
 export function UploadWidget() {
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <div className="flex justify-center mb-2">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <Upload className="h-6 w-6 text-purple-600" />
-          </div>
-        </div>
-        <CardTitle>Upload Files</CardTitle>
-        <p className="text-sm text-gray-500">PNG, JPG and GIF files are allowed</p>
-      </CardHeader>
-      <CardContent>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700">Publish now</Button>
-      </CardContent>
-    </Card>
+    <div className="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col justify-center text-center">
+      <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <Upload className="w-8 h-8 text-purple-500" />
+      </div>
+
+      <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Files</h3>
+      <p className="text-gray-400 text-sm">PNG, JPG and GIF files are allowed</p>
+    </div>
   )
 }

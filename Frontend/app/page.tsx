@@ -1,7 +1,3 @@
-"use client"
-
-import ProfileDashboard from "../profile-dashboard"
-
-export default function Page() {
-  return <ProfileDashboard />
+export default function Home() {
+  return <h1 className="text-3xl font-bold text-blue-600">CONTRACTOR QUOTTATION</h1>
 }

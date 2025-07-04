@@ -14,6 +14,7 @@ import { API } from "@/lib/api"
 import { useAuth } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cookies } from "next/headers";
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
@@ -69,6 +70,7 @@ export default function SignInPage() {
       }
 
       setToken(result.access_token)
+      // cookies().set("access_token", result.access_token, { httpOnly: true });
       toast.success("✅ Logged in successfully")
       router.push("/dashboard")
       form.reset()
