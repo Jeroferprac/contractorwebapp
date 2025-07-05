@@ -1,14 +1,25 @@
-"use client"
-import { signIn, signOut, useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Icons } from "@/components/icons"
+"use client";
+import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import PhoneInput from "react-phone-input-2";
+import { useAuth } from "@/store/authStore";
+import "react-phone-input-2/lib/style.css";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { API } from "@/lib/api";
 import {
   Form,
   FormField,
@@ -16,19 +27,7 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components/ui/form"
-import { toast } from "sonner"
-import PhoneInput from "react-phone-input-2"
-import { useAuth } from "@/store/authStore"
-import "react-phone-input-2/lib/style.css"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { API } from "@/lib/api"
+} from "@/components/ui/form";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -37,16 +36,16 @@ const schema = z.object({
   phone: z.string().min(8, "Phone number is required"),
   country: z.string().min(1, "Country is required"),
   role: z.string().min(1, "Role is required"),
-})
+});
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { setToken } = useAuth()
+  const router = useRouter();
+  const { setToken } = useAuth();
 
-  const [roles, setRoles] = useState<string[]>([])
-  const [loadingRoles, setLoadingRoles] = useState(true)
+  const [roles, setRoles] = useState<string[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -58,24 +57,24 @@ export default function RegisterPage() {
       country: "India",
       role: "",
     },
-  })
+  });
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(API.ROLES)
-        const data = await res.json()
-        setRoles(Array.isArray(data) ? data : data.roles || [])
+        const res = await fetch(API.ROLES);
+        const data = await res.json();
+        setRoles(Array.isArray(data) ? data : data.roles || []);
       } catch (error) {
-        console.error("Failed to load roles:", error)
-        toast.error("⚠️ Could not load roles from server")
-        setRoles(["client", "company", "contractor"])
+        console.error("Failed to load roles:", error);
+        toast.error("⚠️ Could not load roles from server");
+        setRoles(["client", "company", "contractor"]);
       } finally {
-        setLoadingRoles(false)
+        setLoadingRoles(false);
       }
-    }
-    fetchRoles()
-  }, [])
+    };
+    fetchRoles();
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -89,32 +88,35 @@ export default function RegisterPage() {
           phone: `+${data.phone}`,
           role: data.role,
         }),
-      })
+      });
 
-      const result = await res.json()
+      const result = await res.json();
 
       if (!res.ok) {
         const errorMessage =
           Array.isArray(result)
             ? result.map((e) => e.msg).join("\n")
-            : result?.detail || result?.message || "❌ Registration failed"
+            : result?.detail || result?.message || "❌ Registration failed";
 
-        toast.error(errorMessage)
-        throw new Error(errorMessage)
+        throw new Error(errorMessage);
       }
 
-      toast.success("✅ Registered successfully")
-      setToken(result.access_token)
-      router.push("/dashboard")
-      form.reset()
+      toast.success("✅ Registered successfully");
+      setToken(result.access_token);
+      router.push("/dashboard");
+      form.reset();
     } catch (error) {
-      console.error("Registration error:", error)
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+
+      console.error("Registration error:", message);
+      toast.error(message);
     }
-  }
-
-
-
-
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
@@ -139,9 +141,9 @@ export default function RegisterPage() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="name">Name</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input id="name" autoComplete="name" placeholder="Your name" {...field} />
+                    <Input placeholder="Your name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,9 +155,9 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="email">Email</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input id="email" autoComplete="email" placeholder="you@example.com" {...field} />
+                    <Input placeholder="you@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,9 +169,9 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="password">Password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input id="password" type="password" autoComplete="new-password" placeholder="********" {...field} />
+                    <Input type="password" placeholder="********" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -181,10 +183,9 @@ export default function RegisterPage() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="phone">Phone</FormLabel>
+                  <FormLabel>Phone</FormLabel>
                   <FormControl>
                     <PhoneInput
-                      inputProps={{ id: "phone", name: "phone", autoComplete: "tel" }}
                       country="in"
                       enableSearch
                       value={field.value}
@@ -206,9 +207,9 @@ export default function RegisterPage() {
               name="country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="country">Country</FormLabel>
+                  <FormLabel>Country</FormLabel>
                   <FormControl>
-                    <Input id="country" autoComplete="country-name" placeholder="Country" {...field} />
+                    <Input placeholder="Country" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -220,10 +221,10 @@ export default function RegisterPage() {
               name="role"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="role">Role</FormLabel>
+                  <FormLabel>Role</FormLabel>
                   <Select disabled={loadingRoles} onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger id="role">
+                      <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                     </FormControl>
@@ -276,16 +277,18 @@ export default function RegisterPage() {
             Sign in with GitHub
           </Button>
         </div>
+
         <p className="px-8 text-center text-sm text-muted-foreground">
-          By clicking continue, you agree to our{' '}
+          By clicking continue, you agree to our{" "}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Terms of Service
-          </Link>{' '}and{' '}
+          </Link>{" "}
+          and{" "}
           <Link href="#" className="underline underline-offset-4 hover:text-primary">
             Privacy Policy
           </Link>.
         </p>
       </div>
     </div>
-  )
+  );
 }
