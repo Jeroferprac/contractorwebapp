@@ -1,8 +1,4 @@
-'use client'
-
 import React from "react";
-import {Label} from "../ui/label";
-import {Input} from "../ui/input";
 
 interface FileFieldProps {
   label: string;
@@ -10,28 +6,17 @@ interface FileFieldProps {
   onFileChange: (file: File | null) => void;
 }
 
-const FileField: React.FC<FileFieldProps> = ({
-  label,
-  name,
-  onFileChange,
-}) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      onFileChange(e.target.files[0]);
-    } else {
-      onFileChange(null);
-    }
-  };
-
+const FileField: React.FC<FileFieldProps> = ({ label, name, onFileChange }) => {
   return (
-    <div>
-      <Label htmlFor={name}>{label}</Label>
-      <Input
+    <div className="flex flex-col space-y-1">
+      <label htmlFor={name} className="font-medium">
+        {label}
+      </label>
+      <input
         id={name}
-        name={name}
         type="file"
-        onChange={handleChange}
-        className="mt-1"
+        onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+        className="border p-2 rounded"
       />
     </div>
   );

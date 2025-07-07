@@ -1,121 +1,129 @@
-"use client";
+"use client"
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import FormField from "@/components/forms/FormField";
-import TextareaField from "@/components/forms/TextareaField";
-import FileField from "@/components/forms/FileField";
+import { useState } from "react"
+import { submitQuotation, QuotationData } from "@/lib/quotation"
+import { useSession } from "next-auth/react"
 
-const schema = z.object({
-  projectTitle: z.string().min(1, "Project Title is required"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  budgetMin: z.string(),
-  budgetMax: z.string(),
-  deadline: z.string(),
-});
-
-const QuotationFormPage = () => {
-  const [form, setForm] = useState({
+export default function QuotationForm() {
+  const { data: session } = useSession()
+  const [formData, setFormData] = useState<QuotationData>({
     projectTitle: "",
     description: "",
     budgetMin: "",
     budgetMax: "",
     deadline: "",
-    file: null as File | null,
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const { } = useForm({
-    resolver: zodResolver(schema),
-  });
+    file: null,
+  })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
 
-  const handleFileChange = (file: File | null) => {
-    setForm((prev) => ({ ...prev, file }));
-  };
+    if (name === "file" && e.target instanceof HTMLInputElement && e.target.files) {
+      setFormData({ ...formData, file: e.target.files[0] })
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
+  }
 
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSubmitting(false);
-      setSuccess(true);
-      setForm({
-        projectTitle: "",
-        description: "",
-        budgetMin: "",
-        budgetMax: "",
-        deadline: "",
-        file: null,
-      });
-    }, 1500);
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!session?.backendAccessToken) {
+      alert("You must be logged in to submit a quotation.")
+      return
+    }
+    await submitQuotation(formData, session.backendAccessToken)
+    alert("Quotation submitted successfully!")
+  }
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-8 rounded shadow">
-      <h1 className="text-2xl font-bold mb-6">Request a Quotation</h1>
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          Quotation request submitted successfully!
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-lg p-8 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-xl space-y-6"
+      >
+        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Submit Your Quotation</h2>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">Project Title*</label>
+          <input
+            type="text"
+            name="projectTitle"
+            placeholder="Enter project title"
+            value={formData.projectTitle}
+            onChange={handleChange}
+            required
+            className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          />
         </div>
-      )}
-      <form onSubmit={handleSubmitForm} className="space-y-5">
-        <FormField
-          label="Project Title"
-          name="projectTitle"
-          type="text"
-          value={form.projectTitle}
-          onChange={handleChange}
-          required
-        />
-        <TextareaField
-          label="Project Description"
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          required
-        />
-        <FormField
-          label="Estimated Budget Min"
-          name="budgetMin"
-          type="number"
-          value={form.budgetMin}
-          onChange={handleChange}
-        />
-        <FormField
-          label="Estimated Budget Max"
-          name="budgetMax"
-          type="number"
-          value={form.budgetMax}
-          onChange={handleChange}
-        />
-        <FormField
-          label="Deadline"
-          name="deadline"
-          type="date"
-          value={form.deadline}
-          onChange={handleChange}
-        />
-        <FileField
-          label="Attachment (optional)"
-          name="file"
-          onFileChange={handleFileChange}
-        />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit"}
-        </Button>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">Description*</label>
+          <textarea
+            name="description"
+            placeholder="Enter project description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+            className="w-full p-2 rounded-md border h-24 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          />
+        </div>
+
+        <div className="flex space-x-4">
+          <div className="w-1/2">
+            <label className="block mb-1 text-gray-700 dark:text-gray-300">Budget Min*</label>
+            <input
+              type="text"
+              name="budgetMin"
+              placeholder="Minimum budget"
+              value={formData.budgetMin}
+              onChange={handleChange}
+              required
+              className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            />
+          </div>
+          <div className="w-1/2">
+            <label className="block mb-1 text-gray-700 dark:text-gray-300">Budget Max*</label>
+            <input
+              type="text"
+              name="budgetMax"
+              placeholder="Maximum budget"
+              value={formData.budgetMax}
+              onChange={handleChange}
+              required
+              className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">Deadline*</label>
+          <input
+            type="date"
+            name="deadline"
+            value={formData.deadline}
+            onChange={handleChange}
+            required
+            className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">Attach File (Optional)</label>
+          <input
+            type="file"
+            name="file"
+            onChange={handleChange}
+            className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold py-2 rounded-md hover:opacity-90"
+        >
+          Submit
+        </button>
       </form>
     </div>
-  );
-};
-
-export default QuotationFormPage;
+  )
+}
