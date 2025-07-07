@@ -1,13 +1,19 @@
-from sqlalchemy import Column, String, Boolean, DECIMAL, Integer, ForeignKey, Date, JSON, Text,DateTime, func
+from sqlalchemy import Column, String, Boolean, DECIMAL, Integer, ForeignKey, Date, JSON, Text,DateTime, func, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import relationship
 import uuid
 from .base import Base
 from app.core.types import HttpUrlType
+import enum
 
+class ProfileType(str, enum.Enum):
+    contractor = "contractor"
+    company = "company"
+    
 class ContractorProfile(Base):
     __tablename__ = "contractor_profiles"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_type = Column(SQLEnum(ProfileType, native_enum=False), nullable=False, default=ProfileType.contractor)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     company_name = Column(String(255), nullable=False)
     business_license = Column(String(255))

@@ -2,6 +2,7 @@ from pydantic import BaseModel, HttpUrl, ConfigDict
 from typing import List, Optional
 from uuid import UUID
 from datetime import date, datetime
+from enum import Enum
 
 class ProjectMediaBase(BaseModel):
     media_type: str
@@ -39,13 +40,18 @@ class Project(ProjectBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class ProfileType(str, Enum):
+    contractor = "contractor"
+    company = "company"
+
 class ContractorProfileBase(BaseModel):
     company_name: str
+    profile_type: ProfileType
     business_license: Optional[str] = None
     description: Optional[str] = None
     website_url: Optional[HttpUrl] = None
-    services: Optional[List[str]] = []
-    location: Optional[dict] = {}
+    services: Optional[List[str]] = None
+    location: Optional[dict] = None
     verified: bool = False
     rating: float = 0.0
     total_reviews: int = 0

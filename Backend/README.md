@@ -42,27 +42,31 @@ contractor_portal/
 ├── app/
 │   ├── api/
 │   │   ├── deps.py          # Dependencies & auth
-│   │   └── v1/
-│   │       ├── __init__.py  
-│   │       ├── auth.py      # Authentication routes
-│   │       └── users.py     # User management routes
-|   |       ├── quotation/   # Quotation routes
-│   │          ├── __init__.py  
-│   │          └──  quote.py  
+│   │   │── v1/
+│   │   │    ├── __init__.py  
+│   │   │    ├── auth.py       # Authentication routes
+│   │   │    ├── users.py      # User management routes
+│   │   │    ├── contractor.py # Contractor routes
+|   |   │    └── quotation/    # Quotation routes
+│   │   │       ├── __init__.py  
+│   │   │       └──  quote.py  
 │   ├── core/
 │   │   ├── __init__.py      # Init file settings
 │   │   ├── config.py        # Configuration settings
 │   │   ├── database.py      # Database connection
 │   │   └── security.py      # Security utilities
+│   │   └── types.py         # Input HTTP URL Supports
 │   ├── models/
 │   │   ├── __init__.py      # Init file
 │   │   ├── base.py          # Base model class
+│   │   └── contractor.py    # Contractor model
 │   │   ├── quotation.py     # quotation model
 │   │   ├── user.py          # User model
 │   │   └── session.py       # Session model 
 │   ├── schemas/
 │   │   ├── __init__.py      # Init file
 │   │   ├── auth.py          # Auth request/response schemas
+│   │   └── contractor.py    # Contractor schemas
 │   │   ├── quotation.py     # quotation schemas
 │   │   └── user.py          # User schemas
 │   ├── services/
