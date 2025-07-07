@@ -5,7 +5,7 @@ import { HeaderBar } from "@/components/dashboard/header/Header"
 interface DashboardLayoutProps {
   children: React.ReactNode
   session?: Session | null
-  userProfile?: any
+  userProfile?: unknown
 }
 
 export function DashboardLayout({ children, session, userProfile }: DashboardLayoutProps) {

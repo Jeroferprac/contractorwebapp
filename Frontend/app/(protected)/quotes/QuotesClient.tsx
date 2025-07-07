@@ -13,7 +13,7 @@ interface Quotation {
   attachments: { filename: string; content_type: string; base64: string }[];
 }
 
-export default function QuotesPage() {
+export default function QuotesClient() {
   const { data: session } = useSession();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,23 +45,23 @@ export default function QuotesPage() {
   }, [session]);
 
   return (
-    <div className="min-h-screen p-8 bg-gray-100 dark:bg-[#0b1437] text-gray-900 dark:text-white">
-      <h1 className="text-2xl font-bold mb-6">Your Quotations</h1>
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <h2 className="text-xl font-bold mb-4">Your Quotations</h2>
 
       {loading ? (
         <p className="text-gray-600 dark:text-gray-400">Loading quotations...</p>
       ) : quotations.length === 0 ? (
         <p className="text-gray-600 dark:text-gray-400">No quotations found.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl shadow">
-          <table className="min-w-full table-auto border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
             <thead className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
               <tr>
-                <th className="px-4 py-2 text-left">Project Title</th>
-                <th className="px-4 py-2 text-left">Description</th>
-                <th className="px-4 py-2 text-left">Budget (₹)</th>
-                <th className="px-4 py-2 text-left">Deadline</th>
-                <th className="px-4 py-2 text-left">Attachments</th>
+                <th className="px-4 py-2">Project Title</th>
+                <th className="px-4 py-2">Description</th>
+                <th className="px-4 py-2">Budget (₹)</th>
+                <th className="px-4 py-2">Deadline</th>
+                <th className="px-4 py-2">Attachments</th>
               </tr>
             </thead>
             <tbody>
@@ -69,8 +69,8 @@ export default function QuotesPage() {
                 <tr
                   key={quote.id}
                   className={`${
-                    index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-900"
-                  } hover:bg-purple-100 dark:hover:bg-purple-900 transition-colors`}
+                    index % 2 === 0 ? "bg-gray-50 dark:bg-gray-700" : "bg-white dark:bg-gray-800"
+                  } hover:bg-purple-100 dark:hover:bg-purple-900 transition`}
                 >
                   <td className="px-4 py-2 font-medium">{quote.project_title}</td>
                   <td className="px-4 py-2 max-w-xs truncate">{quote.description}</td>
