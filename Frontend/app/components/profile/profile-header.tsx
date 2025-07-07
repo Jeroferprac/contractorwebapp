@@ -1,106 +1,198 @@
-"use client"
+"use client";
 
-import { Card } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreHorizontal } from "lucide-react"
-import { useSession } from "next-auth/react"
-import type { Session } from "next-auth"
+import { useSession } from "next-auth/react";
+import { Card } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Camera, Edit, Trash } from "lucide-react";
+import { EditProfileModal } from "./edit-profile-modal";
+import { useState, useRef } from "react";
+import { API } from "@/lib/api";
+import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-interface ProfileHeaderProps {
-  userProfile?: any
-  session: Session | null
+export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfileUpdated: () => void }) {
+  const { data: session } = useSession();
+  const backendAccessToken = session?.backendAccessToken;
+  const [avatarVersion, setAvatarVersion] = useState(Date.now());
+  const avatarUrl =
+    user?.avatar_url
+      ? `${user.avatar_url}?v=${avatarVersion}`
+      : session?.user?.image || "/placeholder.svg";
 
-}
+  // Debugging: log token and session
+  console.log('ProfileHeader backendAccessToken:', backendAccessToken, 'session:', session);
 
-export function ProfileHeader({ userProfile }: ProfileHeaderProps) {
-  const { data: session, status } = useSession()
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
-  // Show loading state while session is loading
-  if (status === "loading") {
-    return (
-      <Card className="relative overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800"></div>
-        <div className="relative px-6 pb-6">
-          <div className="flex justify-center -mt-12 mb-4">
-            <div className="h-24 w-24 border-4 border-white shadow-lg rounded-full bg-gray-200 animate-pulse"></div>
-          </div>
-          <div className="text-center">
-            <div className="h-6 bg-gray-200 rounded w-32 mx-auto mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-24 mx-auto mb-4 animate-pulse"></div>
-            <div className="flex justify-center space-x-8">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="text-center">
-                  <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-1 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16 mx-auto animate-pulse"></div>
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!backendAccessToken) {
+      toast({ title: "Not authenticated", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar_file", file);
+      const res = await fetch(API.UPLOAD_AVATAR, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${backendAccessToken}`,
+        },
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Failed to upload avatar");
+      toast({ title: "Success", description: "Avatar uploaded successfully." });
+      setAvatarVersion(Date.now());
+      onProfileUpdated();
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to upload avatar.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!backendAccessToken) {
+      toast({ title: "Not authenticated", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(API.DELETE_AVATAR, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${backendAccessToken}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to delete avatar");
+      toast({ title: "Success", description: "Avatar deleted successfully." });
+      setAvatarVersion(Date.now());
+      onProfileUpdated();
+      setIsDeleteDialogOpen(false);
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to delete avatar.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <Card className="relative overflow-hidden bg-white">
+        <div className="h-32 md:h-40 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-800 relative">
+          <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="absolute top-4 right-4 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Profile
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
+            <div className="relative group">
+              {avatarUrl && avatarUrl !== "/placeholder.svg" ? (
+                <img
+                  src={avatarUrl}
+                  alt={`${user?.full_name || user?.email || "User"}'s profile picture`}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white bg-white object-cover shadow-lg"
+                />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center text-3xl font-bold text-purple-600 shadow-lg">
+                  {(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
                 </div>
-              ))}
+              )}
+              {/* Camera icon overlay for upload */}
+              <button
+                type="button"
+                className="absolute bottom-2 right-2 bg-white p-1 rounded-full shadow group-hover:opacity-100 opacity-80 transition"
+                onClick={handleAvatarClick}
+                disabled={uploading}
+                title="Upload new avatar"
+              >
+                <Camera className="w-5 h-5 text-purple-600" />
+              </button>
+              {/* Trash icon for delete if avatar exists and not using GitHub avatar */}
+              {user?.avatar_url && (
+                <button
+                  type="button"
+                  className="absolute top-2 left-2 bg-white p-1 rounded-full shadow group-hover:opacity-100 opacity-80 transition"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={deleting}
+                  title="Delete avatar"
+                >
+                  <Trash className="w-5 h-5 text-red-500" />
+                </button>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                ref={fileInputRef}
+                  className="hidden"
+                onChange={handleFileChange}
+                disabled={uploading}
+                />
             </div>
+          </div>
+        </div>
+        <div className="abso px-6 pb-6 bg-white">
+          <div className="flex flex-col items-center text-center pt-14">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
+              {user.full_name || user.email || "User"}
+            </h2>
+            <p className="text-gray-500 text-sm md:text-base mb-6">
+              {user.role || "No role"}
+            </p>
           </div>
         </div>
       </Card>
-    )
-  }
-
-  // Use userProfile data if available, otherwise fall back to session data
-  const displayName = userProfile?.name || session?.user?.name || "Guest User"
-  const displayTitle = userProfile?.title || "Product Designer"
-  const profileImage = userProfile?.avatar || session?.user?.image
-
-  // Get first letter for fallback avatar
-  const avatarFallback = displayName?.[0]?.toUpperCase() || "U"
-
-  return (
-    <Card className="relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="h-32 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800"></div>
-
-      {/* Profile content */}
-      <div className="relative px-6 pb-6">
-        {/* More options */}
-        <div className="absolute top-4 right-4">
-          <MoreHorizontal className="h-5 w-5 text-white cursor-pointer hover:text-gray-200" />
-        </div>
-
-        {/* Avatar */}
-        <div className="flex justify-center -mt-12 mb-4">
-          <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
-            <AvatarImage src={profileImage || "/placeholder.svg?height=96&width=96"} alt={displayName} />
-            <AvatarFallback className="text-2xl font-semibold bg-gray-100 text-gray-600">
-              {avatarFallback}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-
-        {/* User info */}
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
-          <p className="text-gray-600 mb-4 dark:text-white">{displayTitle}</p>
-
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === "development" && (
-            <div className="text-xs text-green-600 mb-2 p-2  rounded ">
-              {/* {session ? `✅ Logged in as ${session.user?.name || session.user?.email}` : "❌ No session"} */}
-              {session ? `✅ verfied ${session.user?.name || session.user?.email}` : "❌ No session"}
-            </div>
-          )}
-
-          {/* Stats */}
-          <div className="flex justify-center space-x-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{userProfile?.stats?.posts || 17}</div>
-              <div className="text-sm text-gray-600">Posts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{userProfile?.stats?.followers || "9.7k"}</div>
-              <div className="text-sm text-gray-600">Followers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{userProfile?.stats?.following || 274}</div>
-              <div className="text-sm text-gray-600">Following</div>
-            </div>
+      <EditProfileModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onProfileUpdated={onProfileUpdated}
+      />
+      {/* Confirmation dialog for delete avatar */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Avatar</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">Are you sure you want to delete your avatar?</div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDeleteAvatar}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
           </div>
-        </div>
-      </div>
-    </Card>
-  )
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

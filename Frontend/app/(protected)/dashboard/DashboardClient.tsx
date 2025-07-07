@@ -2,25 +2,29 @@
 
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
-import { MetricsCards } from "@/components/cards/metrics-cards";
-import { RevenueChart } from "@/components/dashboard/charts/revenue-chart";
-import { WeeklyRevenueChart } from "@/components/dashboard/charts/weekly-revenue-chart";
-import { CheckTable } from "@/components/dashboard/tables/check-table";
-import { ComplexTable } from "@/components/dashboard/tables/complex-table";
-import { DailyTrafficChart } from "@/components/dashboard/charts/daily-traffic-chart";
-import { PieChart } from "@/components/dashboard/charts/pie-chart";
-import { TasksWidget } from "@/components/dashboard/widgets/tasks-widget";
-import { CalendarWidget } from "@/components/dashboard/widgets/calendar-widget";
-import { TeamMembers } from "@/components/dashboard/widgets/team-members";
-import { SecurityCard } from "@/components/dashboard/widgets/security-card";
-import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card";
-import { LessonCard } from "@/components/dashboard/bottom/lesson-card";
 
-interface DashboardClientProps {
-  session: Session;
-}
+// Dashboard components
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { MetricsCards } from "@/components/cards/metrics-cards"
+import { RevenueChart } from "@/components/dashboard/charts/revenue-chart"
+import { WeeklyRevenueChart } from "@/components/dashboard/charts/weekly-revenue-chart"
+import { CheckTable } from "@/components/dashboard/tables/check-table"
+import { ComplexTable } from "@/components/dashboard/tables/complex-table"
+import { DailyTrafficChart } from "@/components/dashboard/charts/daily-traffic-chart"
+import { PieChart } from "@/components/dashboard/charts/pie-chart"
+import { TasksWidget } from "@/components/dashboard/widgets/tasks-widget"
+import { CalendarWidget } from "@/components/dashboard/widgets/calendar-widget"
+import { TeamMembers } from "@/components/dashboard/widgets/team-members"
+import { SecurityCard } from "@/components/dashboard/widgets/security-card"
+import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card"
+import { LessonCard } from "@/components/dashboard/bottom/lesson-card"
 
-export default function DashboardClient({ session }: DashboardClientProps) {
+// Optionally, define a type for user profile
+// import type { UserProfile } from "@/types/user"
+
+export default function DashboardClient({ session }: { session: Session | null }) {
+  // Dashboard stats state
+  
   const [stats, setStats] = useState({
     earnings: 0,
     spend: 0,
@@ -28,16 +32,15 @@ export default function DashboardClient({ session }: DashboardClientProps) {
     balance: 0,
     tasks: 0,
     projects: 0,
-  });
+  })
 
-  const [revenueChartData, setRevenueChartData] = useState<
-    { month: string; thisMonth: number; lastMonth: number }[]
-  >([]);
-  
-  const [loading, setLoading] = useState(true);
+  const [revenueChartData, setRevenueChartData] = useState<{ month: string; thisMonth: number; lastMonth: number }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
 
   useEffect(() => {
-    console.log("✅ Session received in DashboardClient:", session);
+    // Demo stats (replace with real API calls in production)
 
     const timer = setTimeout(() => {
       setStats({
@@ -56,51 +59,88 @@ export default function DashboardClient({ session }: DashboardClientProps) {
         { month: "DEC", thisMonth: 110, lastMonth: 60 },
         { month: "JAN", thisMonth: 130, lastMonth: 80 },
         { month: "FEB", thisMonth: 95, lastMonth: 65 },
-      ]);
+      ])
+      setLoading(false)
+    }, 2000)
 
-      setLoading(false);
-    }, 1000);
+    // Fetch user profile from backend
+    const fetchProfile = async () => {
+      if (!session?.backendAccessToken) {
+        setUserProfile(null)
+        setProfileLoading(false)
+        return
+      }
+      setProfileLoading(true)
+      try {
+        const res = await fetch(API.PROFILE, {
+          headers: {
+            Authorization: `Bearer ${session.backendAccessToken}`,
+          },
+        })
+        if (!res.ok) throw new Error("User not found")
+        const data = await res.json()
+        setUserProfile(data)
+        // Optionally: setProfileLoading(false) here
+      } catch (error) {
+        setUserProfile(null)
+        // Optionally: show a toast or error message
+        console.error("❌ Error fetching user profile:", error)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
 
-    return () => clearTimeout(timer);
-  }, [session]);
+    fetchProfile()
+    return () => clearTimeout(timer)
+  }, [session])
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  // if (profileLoading) return <div>Loading profile...</div>
 
   return (
-    <div className="space-y-6">
-      <MetricsCards stats={stats} loading={loading} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RevenueChart data={revenueChartData} loading={loading} />
+    <DashboardLayout session={session} userProfile={userProfile}>
+      <div className="space-y-6">
+        <MetricsCards stats={stats} loading={loading} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RevenueChart data={revenueChartData} loading={loading} />
+          </div>
+          <div>
+            <WeeklyRevenueChart />
+          </div>
         </div>
-        <div>
-          <WeeklyRevenueChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CheckTable />
+          <div className="space-y-6">
+            <DailyTrafficChart />
+            <PieChart />
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CheckTable />
-        <div className="space-y-6">
-          <DailyTrafficChart />
-          <PieChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ComplexTable />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TasksWidget />
+            <CalendarWidget />
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ComplexTable />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TasksWidget />
-          <CalendarWidget />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <LessonCard />
-        <TeamMembers />
-        <div className="space-y-6">
-          <SecurityCard />
-          <StarbucksCard />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LessonCard />
+          <TeamMembers />
+          <div className="space-y-6">
+            <SecurityCard />
+            <StarbucksCard />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    </DashboardLayout>
+  )
 }
+

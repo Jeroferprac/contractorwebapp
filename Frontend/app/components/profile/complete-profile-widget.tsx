@@ -1,24 +1,22 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { CheckSquare } from "lucide-react"
+import { Upload } from "lucide-react"
 
 export function CompleteProfileWidget() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Complete your profile</CardTitle>
-        <p className="text-sm text-gray-500">
-          Stay on the pulse of distributed projects with an online whiteboard to plan, coordinate and discuss
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <CheckSquare className="h-6 w-6 text-purple-600" />
-          </div>
+    <div className="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col">
+      <h3 className="text-xl font-bold text-gray-900 mb-2">Complete your profile</h3>
+      <p className="text-gray-400 text-sm mb-6 leading-relaxed flex-grow">
+        Stay on the pulse of distributed projects with an online whiteboard to plan, coordinate and discuss
+      </p>
+
+      <div className="text-center">
+        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Upload className="w-8 h-8 text-purple-500" />
         </div>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700">Publish now</Button>
-      </CardContent>
-    </Card>
+
+        <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors w-full">
+          Publish now
+        </button>
+      </div>
+    </div>
   )
 }

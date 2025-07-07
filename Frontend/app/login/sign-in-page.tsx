@@ -10,9 +10,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
-import { useAuth } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cookies } from "next/headers";
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Eye, EyeOff, Moon } from "lucide-react"
@@ -35,11 +35,11 @@ type FormData = z.infer<typeof schema>
 export default function SignInPage() {
   const router = useRouter()
   const { status } = useSession()
-  const { setToken } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
-
+  const { data: session } = useSession()
+  
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
@@ -52,30 +52,17 @@ export default function SignInPage() {
   }, [status, router])
 
   const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true)
-    try {
-      const res = await fetch(API.LOGIN, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      })
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
 
-      const result = await res.json()
+    if (res?.ok) {
+      router.push("/dashboard");
+    } else {
+      toast.error("❌ Something went wrong");
 
-      if (!res.ok) {
-        const message = result?.detail || result?.message || "Login failed"
-        toast.error(message)
-        return
-      }
-
-      setToken(result.access_token)
-      toast.success("✅ Logged in successfully")
-      router.push("/dashboard")
-      form.reset()
-    } catch {
-      toast.error("❌ Something went wrong")
-    } finally {
-      setIsSubmitting(false)
     }
   }
 

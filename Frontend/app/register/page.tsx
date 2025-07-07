@@ -101,10 +101,16 @@ export default function RegisterPage() {
         throw new Error(errorMessage);
       }
 
-      toast.success("✅ Registered successfully");
-      setToken(result.access_token);
-      router.push("/dashboard");
-      form.reset();
+      toast.success("✅ Registered successfully")
+      // Automatically log in after registration
+      await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      })
+      
+      router.push("/dashboard")
+      form.reset()
     } catch (error) {
       const message =
         error instanceof Error
