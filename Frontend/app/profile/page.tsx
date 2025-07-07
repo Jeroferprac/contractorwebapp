@@ -1,68 +1,111 @@
-import { Sidebar } from "@/components/layout/sidebar"
-import { HeaderBar } from "@/components/dashboard/header/Header"
-import { ProfileHeader } from "@/components/profile/profile-header"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Sidebar } from "@/components/profile/sidebar"
+import { TopHeader } from "@/components/profile/top-header"
 import { StorageWidget } from "@/components/profile/storage-widget"
 import { UploadWidget } from "@/components/profile/upload-widget"
 import { CompleteProfileWidget } from "@/components/profile/complete-profile-widget"
-import { ProjectsSection } from "@/components/profile/projects-section"
+import { AllProjects } from "@/components/profile/all-projects"
 import { GeneralInformation } from "@/components/profile/general-information"
-import { NotificationsSection } from "@/components/profile/notifications-section"
-import { Session } from "next-auth"
+import { NotificationSettings } from "@/components/profile/notification-settings"
+import { ProfileHeader } from "@/components/profile/profile-header"
+import { Toaster } from "@/components/ui/toaster"
+import { useToastNotification } from "@/lib/hooks/use-toast-notifications"
+import { useAuth } from "@/store/authStore"
+import { useSession } from "next-auth/react"
+import { API } from "@/lib/api"
 
+export default function ProfilePage() {
+  const { data: session } = useSession();
+  const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { notifySuccess, notifyError } = useToastNotification()
+  const { backendAccessToken, setToken } = useAuth();
 
-export default function ProfilePage({ session }: { session: Session | null }) {
+  console.log("Session in ProfilePage:", session);
+
+  const fetchUser = () => {
+    if (!session?.backendAccessToken) return;
+    fetch(API.PROFILE, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Fetched user profile:", data);
+        setUser(data);
+      });
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, [session]);
+
+  const handleSave = () => {
+    notifySuccess("Profile saved", "Your changes have been successfully saved.")
+  }
+
+  const handleError = () => {
+    notifyError("Error saving profile", "Something went wrong.")
+  }
+
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-[#0b1437]" >
-      <Sidebar />
+    <div className="min-h-screen bg-gray-50">
+      {/* ShadCN Toaster */}
+      <Toaster />
 
-      <div className="flex-1 flex flex-col overflow-hidden dark:bg-[#0b1437]">
-        <header className="p-6 pb-4">
-          <div className="mb-4">
-            <div className="text-sm text-gray-500">Pages / Profile</div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Profile</h1>
-          </div>
-          <HeaderBar session={session} />
-        </header>
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-        <main className="flex-1 overflow-auto p-6 dark:bg-[#0b1437]" >
-          {/* Profile Header */}
-          <div className="mb-6 dark:bg-[#0b1437]">
-            <ProfileHeader session={session} />
-          </div>
+      {/* Sidebar */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-          {/* Top Widgets Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      {/* Main Content */}
+      <div className="lg:ml-64">
+        {/* Top Header */}
+        <TopHeader onMenuClick={() => setSidebarOpen(true)} user={user} />
+
+        {/* Main Layout */}
+        <div className="p-4 lg:p-8">
+          {/* Mobile Layout */}
+          <div className="lg:hidden space-y-6">
+            {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
             <StorageWidget />
             <UploadWidget />
             <CompleteProfileWidget />
-          </div>
-
-          {/* Main Content Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <ProjectsSection />
+            <AllProjects />
             <GeneralInformation />
-            <NotificationsSection />
+            <NotificationSettings />
           </div>
 
-          {/* Footer */}
-          <div className="text-center text-sm text-gray-500 mt-8">
-            <p>© 2022 Horizon UI. All Rights Reserved. Made with love by Simmple!</p>
-            <div className="flex justify-center space-x-4 mt-2">
-              <a href="#" className="hover:text-gray-700">
-                Marketplace
-              </a>
-              <a href="#" className="hover:text-gray-700">
-                License
-              </a>
-              <a href="#" className="hover:text-gray-700">
-                Terms of Use
-              </a>
-              <a href="#" className="hover:text-gray-700">
-                Blog
-              </a>
+          {/* Desktop Layout */}
+          <div className="hidden lg:block space-y-8">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-5">
+                {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
+              </div>
+              <div className="col-span-4">
+                <StorageWidget />
+              </div>
+              <div className="col-span-3">
+                <CompleteProfileWidget />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-6">
+              <AllProjects />
+              <GeneralInformation />
+              <NotificationSettings />
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   )

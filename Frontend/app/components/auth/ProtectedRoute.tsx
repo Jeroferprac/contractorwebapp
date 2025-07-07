@@ -1,19 +1,21 @@
 "use client";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const { status } = useSession();
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { backendAccessToken, hydrated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (hydrated && !backendAccessToken) {
       router.replace("/login");
     }
-  }, [status, router]);
+  }, [hydrated, backendAccessToken, router]);
 
-  if (status === "loading") {
+  console.log("ProtectedRoute hydrated:", hydrated, "token:", backendAccessToken);
+
+  if (!hydrated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -22,6 +24,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         </div>
       </div>
     );
+  }
+  if (!backendAccessToken) {
+    // Optionally, show a spinner or nothing while redirecting
+    return null;
   }
 
   return <>{children}</>;

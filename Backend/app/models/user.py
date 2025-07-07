@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, Text, Boolean, Enum as SQLEnum
 #from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects.postgresql import UUID
 from .base import BaseModel
+from sqlalchemy.orm import relationship
 
 #Base = declarative_base()
 
@@ -17,7 +18,6 @@ class User(BaseModel):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)
     full_name = Column(String(255), nullable=True)
-    
     role = Column(
         SQLEnum(
             RoleEnum,
@@ -25,10 +25,14 @@ class User(BaseModel):
             native_enum=False,
             create_constraint=True,
             validate_strings=True
-        ),
+    ),
         default=RoleEnum.company,
         nullable=False
     )
+    contractorprofile = relationship(
+        "ContractorProfile",
+        back_populates="contractor",  # matches the other side in ContractorProfile
+        uselist=False  )                 # ensures one-to-one cardinality
     
     avatar_data = Column(Text, nullable=True)
     avatar_mimetype = Column(String(100), nullable=True)

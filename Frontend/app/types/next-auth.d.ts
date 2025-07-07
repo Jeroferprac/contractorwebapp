@@ -2,7 +2,20 @@ import "next-auth";
 
 declare module "next-auth" {
   interface Session {
-    backendAccessToken?: string;
+
+    user: {
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      backendToken?: string      // ✅ required for session.user.backendToken
+      userId?: string
+    }
+  }
+
+  interface User {
+    backendToken?: string
+    userId?: string
+
   }
 
   interface User {
@@ -12,6 +25,9 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken?: string;
+
+    backendToken?: string
+    userId?: string
+
   }
 }
