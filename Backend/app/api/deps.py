@@ -8,6 +8,7 @@ from app.models.user import User
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 import uuid
+from app.models.user import RoleEnum
 
 security = HTTPBearer()
 
@@ -52,6 +53,15 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
+def get_current_contractor(current_user: User = Depends(get_current_user)) -> User:
+    print(current_user.role.name)
+    print(RoleEnum.contractor.value)
+    if current_user.role.name != RoleEnum.contractor.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access restricted to contractors only"
+        )
+    return current_user
 def get_session_user(
     session_token: Optional[str] = Header(None, alias="X-Session-Token"),
     db: Session = Depends(get_db)
