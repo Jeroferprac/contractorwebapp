@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import type { Session } from "next-auth"
 import { API } from "@/lib/api"
 
-// Import the new main dashboard components
+// Dashboard components
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { MetricsCards } from "@/components/cards/metrics-cards"
 import { RevenueChart } from "@/components/dashboard/charts/revenue-chart"
@@ -19,36 +19,38 @@ import { TeamMembers } from "@/components/dashboard/widgets/team-members"
 import { SecurityCard } from "@/components/dashboard/widgets/security-card"
 import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card"
 import { LessonCard } from "@/components/dashboard/bottom/lesson-card"
+
+// Optionally, define a type for user profile
+// import type { UserProfile } from "@/types/user"
+
 export default function DashboardClient({ session }: { session: Session | null }) {
-  // Your existing state management
+  // Dashboard stats state
+  
   const [stats, setStats] = useState({
     earnings: 0,
     spend: 0,
     sales: 0,
     balance: 0,
     tasks: 0,
-    projects: 0, // Added for the new design
+    projects: 0,
   })
 
-  const [revenueChartData, setRevenueChartData] = useState<{ month: string; thisMonth: number; lastMonth: number }[]>(
-    [],
-  )
-
+  const [revenueChartData, setRevenueChartData] = useState<{ month: string; thisMonth: number; lastMonth: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
 
-  // Your existing useEffect logic
   useEffect(() => {
+    // Demo stats (replace with real API calls in production)
     const timer = setTimeout(() => {
       setStats({
-        earnings: 350.4, // Updated to match main dashboard format
+        earnings: 350.4,
         spend: 642.39,
         sales: 574.34,
         balance: 1000,
         tasks: 154,
-        projects: 2935, // Added for new design
+        projects: 2935,
       })
-
       setRevenueChartData([
         { month: "SEP", thisMonth: 100, lastMonth: 60 },
         { month: "OCT", thisMonth: 120, lastMonth: 70 },
@@ -57,13 +59,17 @@ export default function DashboardClient({ session }: { session: Session | null }
         { month: "JAN", thisMonth: 130, lastMonth: 80 },
         { month: "FEB", thisMonth: 95, lastMonth: 65 },
       ])
-
       setLoading(false)
-    }, 1000)
+    }, 2000)
 
+    // Fetch user profile from backend
     const fetchProfile = async () => {
-      if (!session?.backendAccessToken) return
-
+      if (!session?.backendAccessToken) {
+        setUserProfile(null)
+        setProfileLoading(false)
+        return
+      }
+      setProfileLoading(true)
       try {
         const res = await fetch(API.PROFILE, {
           headers: {
@@ -71,27 +77,37 @@ export default function DashboardClient({ session }: { session: Session | null }
           },
         })
         if (!res.ok) throw new Error("User not found")
-
         const data = await res.json()
         setUserProfile(data)
-        console.log("✅ Fetched profile:", data)
+        // Optionally: setProfileLoading(false) here
       } catch (error) {
+        setUserProfile(null)
+        // Optionally: show a toast or error message
         console.error("❌ Error fetching user profile:", error)
+      } finally {
+        setProfileLoading(false)
       }
     }
 
     fetchProfile()
-
     return () => clearTimeout(timer)
   }, [session])
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  // if (profileLoading) return <div>Loading profile...</div>
 
   return (
     <DashboardLayout session={session} userProfile={userProfile}>
       <div className="space-y-6">
-        {/* Metrics Cards - Your stats with new design */}
         <MetricsCards stats={stats} loading={loading} />
-
-        {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <RevenueChart data={revenueChartData} loading={loading} />
@@ -100,8 +116,6 @@ export default function DashboardClient({ session }: { session: Session | null }
             <WeeklyRevenueChart />
           </div>
         </div>
-
-        {/* Tables and Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <CheckTable />
           <div className="space-y-6">
@@ -109,8 +123,6 @@ export default function DashboardClient({ session }: { session: Session | null }
             <PieChart />
           </div>
         </div>
-
-        {/* Complex Table and Widgets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ComplexTable />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -118,9 +130,7 @@ export default function DashboardClient({ session }: { session: Session | null }
             <CalendarWidget />
           </div>
         </div>
-
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <LessonCard />
           <TeamMembers />
           <div className="space-y-6">

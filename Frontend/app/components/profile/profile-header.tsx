@@ -1,149 +1,98 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Camera, Trash2, Edit } from "lucide-react";
+import { MoreHorizontal, Camera, Edit, Trash } from "lucide-react";
 import { EditProfileModal } from "./edit-profile-modal";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useRef } from "react";
 import { API } from "@/lib/api";
-import { useAuth } from "@/store/authStore";
+import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// optional: make sure this matches your API response
-interface User {
-  full_name: string;
-  role: string;
-  avatar: string | null;
-}
+export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfileUpdated: () => void }) {
+  const { data: session } = useSession();
+  const backendAccessToken = session?.backendAccessToken;
+  const [avatarVersion, setAvatarVersion] = useState(Date.now());
+  const avatarUrl =
+    user?.avatar_url
+      ? `${user.avatar_url}?v=${avatarVersion}`
+      : session?.user?.image || "/placeholder.svg";
 
-export function ProfileHeader() {
+  // Debugging: log token and session
+  console.log('ProfileHeader backendAccessToken:', backendAccessToken, 'session:', session);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
-
-  const { backendAccessToken } = useAuth();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const fetchProfile = async () => {
-    setLoading(true);
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!backendAccessToken) {
+      toast({ title: "Not authenticated", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
     try {
-      const res = await fetch(API.PROFILE, {
+      const formData = new FormData();
+      formData.append("avatar_file", file);
+      const res = await fetch(API.UPLOAD_AVATAR, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${backendAccessToken}`,
         },
+        body: formData,
       });
-      if (!res.ok) throw new Error("Failed to fetch profile");
-      const data = await res.json();
-      setUser({
-        full_name: data.full_name ?? "Unknown User",
-        role: data.role ?? "N/A",
-        avatar: data.avatar ?? null,
-      });
-      setAvatarError(false);
+      if (!res.ok) throw new Error("Failed to upload avatar");
+      toast({ title: "Success", description: "Avatar uploaded successfully." });
+      setAvatarVersion(Date.now());
+      onProfileUpdated();
     } catch (err) {
-      console.error(err);
-      toast({
-        title: "Error",
-        description: "Failed to load profile.",
-        variant: "destructive",
-      });
-      setUser(null);
+      toast({ title: "Error", description: "Failed to upload avatar.", variant: "destructive" });
     } finally {
-      setLoading(false);
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const handleRemovePhoto = async () => {
+  const handleDeleteAvatar = async () => {
+    if (!backendAccessToken) {
+      toast({ title: "Not authenticated", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
     try {
       const res = await fetch(API.DELETE_AVATAR, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${backendAccessToken}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete avatar");
-      toast({
-        title: "Success",
-        description: "Avatar removed successfully.",
-      });
-      fetchProfile();
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "Error",
-        description: "Failed to remove avatar.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("avatar_file", file);
-
-    setIsUploading(true);
-    try {
-      const res = await fetch(API.UPLOAD_AVATAR, {
-        method: "POST",
-        body: formData,
         headers: {
           Authorization: `Bearer ${backendAccessToken}`,
         },
       });
-      if (!res.ok) throw new Error("Failed to upload avatar");
-      toast({
-        title: "Success",
-        description: "Avatar updated successfully.",
-      });
-      setAvatarError(false);
-      fetchProfile();
+      if (!res.ok) throw new Error("Failed to delete avatar");
+      toast({ title: "Success", description: "Avatar deleted successfully." });
+      setAvatarVersion(Date.now());
+      onProfileUpdated();
+      setIsDeleteDialogOpen(false);
     } catch (err) {
-      console.error(err);
-      toast({
-        title: "Error",
-        description: "Failed to upload avatar.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete avatar.", variant: "destructive" });
     } finally {
-      setIsUploading(false);
+      setDeleting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <Card className="relative overflow-hidden p-6">
-        <Skeleton className="h-32 md:h-40 w-full rounded-lg mb-4" />
-        <div className="flex flex-col items-center text-center -mt-16">
-          <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white" />
-          <Skeleton className="h-6 w-32 mt-4" />
-          <Skeleton className="h-4 w-24 mt-2" />
-        </div>
-      </Card>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Card className="p-6 text-center text-red-500">
-        Failed to load profile.
-      </Card>
-    );
-  }
-
   return (
     <>
-      <Card className="relative overflow-hidden">
+      <Card className="relative overflow-hidden bg-white">
         <div className="h-32 md:h-40 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-800 relative">
           <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="absolute top-4 right-4 p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors">
@@ -155,91 +104,95 @@ export function ProfileHeader() {
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleRemovePhoto}
-                className="text-red-600"
-                disabled={isUploading}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Remove Photo
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-            <div className="relative">
-              <img
-                src={
-                  avatarError || !user?.avatar
-                    ? "/placeholder.svg"
-                    : user.avatar
-                }
-                onError={() => setAvatarError(true)}
-                alt={`${user?.full_name}'s profile picture`}
-                className={`w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white bg-white object-cover shadow-lg ${
-                  isUploading ? "opacity-50" : ""
-                }`}
-              />
-              <label
-                className={`absolute bottom-0 right-0 w-7 h-7 bg-purple-600 text-white rounded-full flex items-center justify-center ${
-                  isUploading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-purple-700 cursor-pointer"
-                } transition-colors shadow-lg`}
+            <div className="relative group">
+              {avatarUrl && avatarUrl !== "/placeholder.svg" ? (
+                <img
+                  src={avatarUrl}
+                  alt={`${user?.full_name || user?.email || "User"}'s profile picture`}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white bg-white object-cover shadow-lg"
+                />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center text-3xl font-bold text-purple-600 shadow-lg">
+                  {(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
+                </div>
+              )}
+              {/* Camera icon overlay for upload */}
+              <button
+                type="button"
+                className="absolute bottom-2 right-2 bg-white p-1 rounded-full shadow group-hover:opacity-100 opacity-80 transition"
+                onClick={handleAvatarClick}
+                disabled={uploading}
+                title="Upload new avatar"
               >
-                {isUploading ? (
-                  <svg
-                    className="animate-spin h-3 w-3 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3 3 3H4z"
-                    ></path>
-                  </svg>
-                ) : (
-                  <Camera className="w-3 h-3" />
+                <Camera className="w-5 h-5 text-purple-600" />
+              </button>
+              {/* Trash icon for delete if avatar exists and not using GitHub avatar */}
+              {user?.avatar_url && (
+                <button
+                  type="button"
+                  className="absolute top-2 left-2 bg-white p-1 rounded-full shadow group-hover:opacity-100 opacity-80 transition"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={deleting}
+                  title="Delete avatar"
+                >
+                  <Trash className="w-5 h-5 text-red-500" />
+                </button>
                 )}
                 <input
                   type="file"
                   accept="image/*"
+                ref={fileInputRef}
                   className="hidden"
-                  onChange={handleUploadPhoto}
-                  disabled={isUploading}
+                onChange={handleFileChange}
+                disabled={uploading}
                 />
-              </label>
             </div>
           </div>
         </div>
-
-        <div className="relative px-6 pb-6">
+        <div className="abso px-6 pb-6 bg-white">
           <div className="flex flex-col items-center text-center pt-14">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
-              {user.full_name}
+              {user.full_name || user.email || "User"}
             </h2>
             <p className="text-gray-500 text-sm md:text-base mb-6">
-              {user.role}
+              {user.role || "No role"}
             </p>
           </div>
         </div>
       </Card>
-
       <EditProfileModal
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
-        onProfileUpdated={fetchProfile}
+        onProfileUpdated={onProfileUpdated}
       />
+      {/* Confirmation dialog for delete avatar */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Avatar</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">Are you sure you want to delete your avatar?</div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              onClick={handleDeleteAvatar}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

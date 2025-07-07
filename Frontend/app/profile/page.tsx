@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/profile/sidebar"
 import { TopHeader } from "@/components/profile/top-header"
 import { StorageWidget } from "@/components/profile/storage-widget"
@@ -12,13 +12,38 @@ import { NotificationSettings } from "@/components/profile/notification-settings
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { Toaster } from "@/components/ui/toaster"
 import { useToastNotification } from "@/lib/hooks/use-toast-notifications"
+import { useAuth } from "@/store/authStore"
+import { useSession } from "next-auth/react"
+import { API } from "@/lib/api"
 
 export default function ProfilePage() {
+  const { data: session } = useSession();
+  const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { notifySuccess, notifyError } = useToastNotification()
+  const { backendAccessToken, setToken } = useAuth();
+
+  console.log("Session in ProfilePage:", session);
+
+  const fetchUser = () => {
+    if (!session?.backendAccessToken) return;
+    fetch(API.PROFILE, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Fetched user profile:", data);
+        setUser(data);
+      });
+  };
+
+  useEffect(() => {
+    fetchUser();
+  }, [session]);
 
   const handleSave = () => {
-    // Example usage of toast
     notifySuccess("Profile saved", "Your changes have been successfully saved.")
   }
 
@@ -45,13 +70,13 @@ export default function ProfilePage() {
       {/* Main Content */}
       <div className="lg:ml-64">
         {/* Top Header */}
-        <TopHeader onMenuClick={() => setSidebarOpen(true)} />
+        <TopHeader onMenuClick={() => setSidebarOpen(true)} user={user} />
 
         {/* Main Layout */}
         <div className="p-4 lg:p-8">
           {/* Mobile Layout */}
           <div className="lg:hidden space-y-6">
-            <ProfileHeader />
+            {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
             <StorageWidget />
             <UploadWidget />
             <CompleteProfileWidget />
@@ -64,7 +89,7 @@ export default function ProfilePage() {
           <div className="hidden lg:block space-y-8">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-5">
-                <ProfileHeader />
+                {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
               </div>
               <div className="col-span-4">
                 <StorageWidget />

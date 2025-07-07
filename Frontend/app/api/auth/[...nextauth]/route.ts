@@ -1,5 +1,6 @@
 import NextAuth, { NextAuthOptions, User, Account, Profile, Session, TokenSet } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
+import CredentialsProvider from "next-auth/providers/credentials"
 import { API } from "@/lib/api" // your backend API wrapper
 import type { JWT } from "next-auth/jwt"
 
@@ -37,16 +38,52 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        // Call your backend login API
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: credentials?.email,
+            password: credentials?.password,
+          }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.access_token && data.user) {
+          // Attach backend token and userId to user object
+          return {
+            ...data.user,
+            backendAccessToken: data.access_token,
+            userId: data.user.id,
+          };
+        }
+        return null;
+      },
+    }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async jwt({ token, account, profile }: {
+    async jwt({ token, user, account, profile }: {
       token: JWT,
+      user?: User | null,
       account?: Account | null,
       profile?: Profile | undefined
     }): Promise<JWT> {
-      // On initial sign in
+      // On initial sign in (manual or OAuth)
+      if (user && user.backendAccessToken) {
+        token.backendAccessToken = user.backendAccessToken;
+        token.userId = user.userId;
+      }
+
+      // GitHub OAuth logic (already present)
       if (account?.provider === "github" && account.access_token) {
         try {
           const githubAccessToken = account.access_token

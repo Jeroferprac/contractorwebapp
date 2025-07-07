@@ -104,7 +104,13 @@ export default function RegisterPage() {
       }
 
       toast.success("✅ Registered successfully")
-      setToken(result.access_token)
+      // Automatically log in after registration
+      await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      })
+      
       router.push("/dashboard")
       form.reset()
     } catch (error) {

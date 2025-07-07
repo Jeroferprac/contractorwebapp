@@ -1,12 +1,20 @@
 "use client"
 
 import { Search, Bell, Sun, HelpCircle, Menu } from "lucide-react"
+import { useSession } from "next-auth/react"
 
 interface TopHeaderProps {
   onMenuClick: () => void
+  user?: any
 }
 
-export function TopHeader({ onMenuClick }: TopHeaderProps) {
+export function TopHeader({ onMenuClick, user }: TopHeaderProps) {
+  const { data: session } = useSession()
+  const avatarUrl =
+    user?.avatar_url ||
+    session?.user?.image ||
+    "/placeholder.svg"
+
   return (
     <div className="bg-white px-4 lg:px-8 py-4 lg:py-6 border-b border-gray-100">
       <div className="flex items-center justify-between">
@@ -54,8 +62,14 @@ export function TopHeader({ onMenuClick }: TopHeaderProps) {
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg hidden sm:block">
               <HelpCircle className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden">
-              <img src="/placeholder.svg?height=40&width=40" alt="User" className="w-full h-full object-cover" />
+            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-200">
+              {avatarUrl && avatarUrl !== "/placeholder.svg" ? (
+                <img src={avatarUrl} alt="User" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg font-bold text-purple-600">
+                  {(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
