@@ -1,21 +1,63 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
-  "tsx": true,
-  "tailwind": {
-    "config": "tailwind.config.js",
-    "css": "app/globals.css",
-    "baseColor": "slate",
-    "cssVariables": true,
-    "prefix": ""
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "shadcn/ui Schema",
+  "type": "object",
+  "properties": {
+    "style": {
+      "type": "string",
+      "description": "The style preset to use (e.g., 'new-york', 'tokyo', 'miami')"
+    },
+    "rsc": {
+      "type": "boolean",
+      "description": "Whether to enable React Server Components support"
+    },
+    "tsx": {
+      "type": "boolean",
+      "description": "Whether to generate TypeScript components"
+    },
+    "tailwind": {
+      "type": "object",
+      "description": "Tailwind CSS configuration",
+      "properties": {
+        "config": {
+          "type": "string",
+          "description": "Path to your Tailwind config file"
+        },
+        "css": {
+          "type": "string",
+          "description": "Path to your global CSS file"
+        },
+        "baseColor": {
+          "type": "string",
+          "description": "Base color palette (e.g., 'slate', 'zinc')"
+        },
+        "cssVariables": {
+          "type": "boolean",
+          "description": "Whether to enable CSS variables for theme colors"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix for Tailwind classes"
+        }
+      },
+      "required": ["config", "css", "baseColor", "cssVariables", "prefix"]
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Path aliases for your project",
+      "properties": {
+        "components": { "type": "string" },
+        "utils": { "type": "string" },
+        "ui": { "type": "string" },
+        "lib": { "type": "string" },
+        "hooks": { "type": "string" }
+      },
+      "required": ["components", "utils", "ui", "lib", "hooks"]
+    },
+    "iconLibrary": {
+      "type": "string",
+      "description": "Icon library to use (e.g., 'lucide', 'heroicons')"
+    }
   },
-  "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
-  },
-  "iconLibrary": "lucide"
+  "required": ["style", "rsc", "tsx", "tailwind", "aliases", "iconLibrary"]
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { signIn } from "next-auth/react"
-import { Bell, HelpCircle, Moon, Search, Sun } from "lucide-react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
@@ -16,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { cookies } from "next/headers";
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, Moon } from "lucide-react"
 import {
   Form,
   FormControl,
@@ -45,12 +44,13 @@ export default function SignInPage() {
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   })
- // ✅ Redirect if already authenticated
+
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/dashboard")
     }
   }, [status, router])
+
   const onSubmit = async (data: FormData) => {
     const res = await signIn("credentials", {
       redirect: false,
@@ -62,12 +62,13 @@ export default function SignInPage() {
       router.push("/dashboard");
     } else {
       toast.error("❌ Something went wrong");
+
     }
   }
 
- const handleGitHubLogin = () => {
-  signIn("github")
-}
+  const handleGitHubLogin = () => {
+    signIn("github")
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -84,7 +85,6 @@ export default function SignInPage() {
             <p className="text-gray-600">Enter your email and password to sign in!</p>
           </div>
 
-          {/* GitHub Login */}
           <Button
             variant="outline"
             className="w-full mb-6 h-12 border-gray-200 hover:bg-gray-50"
@@ -96,7 +96,6 @@ export default function SignInPage() {
             Sign in with GitHub
           </Button>
 
-          {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
@@ -106,10 +105,8 @@ export default function SignInPage() {
             </div>
           </div>
 
-          {/* Email/Password Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Email */}
               <FormField
                 control={form.control}
                 name="email"
@@ -129,7 +126,6 @@ export default function SignInPage() {
                 )}
               />
 
-              {/* Password */}
               <FormField
                 control={form.control}
                 name="password"
@@ -158,14 +154,12 @@ export default function SignInPage() {
                 )}
               />
 
-              {/* Remember me */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="keep-logged-in"
                     checked={keepLoggedIn}
-                      onCheckedChange={(checked) => setKeepLoggedIn(checked === true)}
-
+                    onCheckedChange={(checked) => setKeepLoggedIn(checked === true)}
                     className="border-gray-300"
                   />
                   <Label htmlFor="keep-logged-in" className="text-sm text-gray-700">
@@ -177,7 +171,6 @@ export default function SignInPage() {
                 </Link>
               </div>
 
-              {/* Submit */}
               <Button
                 type="submit"
                 className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium"
@@ -188,7 +181,6 @@ export default function SignInPage() {
             </form>
           </Form>
 
-          {/* Register */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Not registered yet?{" "}
             <Link href="/register" className="text-purple-600 hover:text-purple-700 font-medium">
@@ -197,7 +189,6 @@ export default function SignInPage() {
           </p>
         </div>
 
-        {/* Footer */}
         <div className="mt-auto pt-8">
           <p className="text-xs text-gray-400 text-center">
             © 2025 Horizon UI. All Rights Reserved.
@@ -205,13 +196,10 @@ export default function SignInPage() {
         </div>
       </div>
 
-      {/* Right Side - Branding */}
       <div className="hidden lg:flex flex-1 relative">
         <div className="w-full bg-gradient-to-br from-purple-400 via-purple-600 to-blue-600 flex flex-col items-center justify-center p-12 relative overflow-hidden">
-          {/* Background decoration */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-400/20 via-purple-600/20 to-blue-600/20" />
 
-          {/* Logo */}
           <div className="relative z-10 mb-8">
             <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
@@ -220,30 +208,19 @@ export default function SignInPage() {
             </div>
           </div>
 
-          {/* Brand Name */}
           <h2 className="text-4xl font-bold text-white mb-12 relative z-10">Horizon UI</h2>
 
-          {/* CTA Box */}
           <div className="relative z-10 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 text-center max-w-sm">
             <p className="text-white/90 mb-4">Learn more about Horizon UI on</p>
             <p className="text-white font-semibold text-xl">horizon-ui.com</p>
           </div>
 
-          {/* Footer Links */}
           <div className="absolute bottom-8 left-8 right-8 flex justify-between items-center text-white/80 text-sm">
             <div className="flex space-x-6">
-              <Link href="/marketplace" className="hover:text-white">
-                Marketplace
-              </Link>
-              <Link href="/license" className="hover:text-white">
-                License
-              </Link>
-              <Link href="/terms" className="hover:text-white">
-                Terms of Use
-              </Link>
-              <Link href="/blog" className="hover:text-white">
-                Blog
-              </Link>
+              <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
+              <Link href="/license" className="hover:text-white">License</Link>
+              <Link href="/terms" className="hover:text-white">Terms of Use</Link>
+              <Link href="/blog" className="hover:text-white">Blog</Link>
             </div>
             <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 p-2">
               <Moon className="w-4 h-4" />

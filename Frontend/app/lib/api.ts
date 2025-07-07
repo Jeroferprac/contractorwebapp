@@ -1,5 +1,3 @@
-// lib/api.ts
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 const AUTH = {
@@ -15,7 +13,6 @@ const AUTH = {
 
   OAUTH_CALLBACK: (provider: string, code: string, redirectUri: string) =>
     `${BASE_URL}/api/v1/auth/oauth/${provider}/callback?provider=${provider}&code=${code}&redirect_uri=${redirectUri}`,
-
 };
 
 const USERS = {
@@ -23,6 +20,11 @@ const USERS = {
   UPDATE_PROFILE: `${BASE_URL}/api/v1/users/profile`,
   UPLOAD_AVATAR: `${BASE_URL}/api/v1/users/upload-avatar`,
   DELETE_AVATAR: `${BASE_URL}/api/v1/users/avatar`,
+};
+
+const QUOTATION = {
+  QUOTE: `${BASE_URL}/api/v1/quotation/quote`,
+QUOTES: `${BASE_URL}/api/v1/quotation/quotes`,  // ✅ For fetching all quotations
 };
 
 const UTILS = {
@@ -33,5 +35,6 @@ const UTILS = {
 export const API = {
   ...AUTH,
   ...USERS,
+  ...QUOTATION,
   ...UTILS,
 };

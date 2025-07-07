@@ -16,6 +16,7 @@ export const useAuth = create<AuthState>()(
     (set) => ({
       backendAccessToken: null,
       userId: null,
+
       hydrated: false,
       setToken: (token) => set({ backendAccessToken: token }),
       setUserId: (id) => set({ userId: id }),
@@ -34,3 +35,4 @@ export const useAuth = create<AuthState>()(
     }
   )
 )
+

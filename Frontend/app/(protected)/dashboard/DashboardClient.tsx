@@ -1,8 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import type { Session } from "next-auth"
-import { API } from "@/lib/api"
+import type { Session } from "next-auth";
+import { useEffect, useState } from "react";
 
 // Dashboard components
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
@@ -42,6 +41,7 @@ export default function DashboardClient({ session }: { session: Session | null }
 
   useEffect(() => {
     // Demo stats (replace with real API calls in production)
+
     const timer = setTimeout(() => {
       setStats({
         earnings: 350.4,
@@ -50,7 +50,8 @@ export default function DashboardClient({ session }: { session: Session | null }
         balance: 1000,
         tasks: 154,
         projects: 2935,
-      })
+      });
+
       setRevenueChartData([
         { month: "SEP", thisMonth: 100, lastMonth: 60 },
         { month: "OCT", thisMonth: 120, lastMonth: 70 },
@@ -142,3 +143,4 @@ export default function DashboardClient({ session }: { session: Session | null }
     </DashboardLayout>
   )
 }
+
