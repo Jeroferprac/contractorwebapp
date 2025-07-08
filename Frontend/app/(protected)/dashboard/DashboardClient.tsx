@@ -99,7 +99,7 @@ export default function DashboardClient({ session }: { session: Session | null }
   // if (profileLoading) return <div>Loading profile...</div>
 
   return (
-    <DashboardLayout session={session} userProfile={userProfile}>
+    <DashboardLayout session={session} title="Main Dashboard">
       <div className="space-y-6">
         <MetricsCards stats={stats} loading={loading} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
-import { TopHeader } from "@/components/profile/top-header"
 import { StorageWidget } from "@/components/profile/storage-widget"
 import { UploadWidget } from "@/components/profile/upload-widget"
 import { CompleteProfileWidget } from "@/components/profile/complete-profile-widget"
@@ -16,6 +15,7 @@ import { useAuth } from "@/store/authStore"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
 import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
+import { HeaderBar } from "@/components/dashboard/header/Header"
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -76,8 +76,11 @@ export default function ProfilePage() {
 
       {/* Main Content */}
       <div className="lg:ml-64">
+        <header className="top-0 z-30 flex flex-row items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0b1437] border-b border-gray-200 dark:border-zinc-700 gap-3 sm:gap-4">
+
         {/* Top Header */}
-        <TopHeader onMenuClick={() => setSidebarOpen(true)} user={user} />
+        <HeaderBar session={session} userProfile={user} title="Profile" />
+        </header>
 
         {/* Main Layout */}
         <div className="p-4 lg:p-8">
