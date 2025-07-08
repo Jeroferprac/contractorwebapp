@@ -1,6 +1,6 @@
 
 "use client";
-
+import { API } from "@/lib/api"
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
@@ -17,6 +17,7 @@ import { SecurityCard } from "@/components/dashboard/widgets/security-card";
 import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card";
 import { LessonCard } from "@/components/dashboard/bottom/lesson-card";
 
+
 interface DashboardClientProps {
   session: Session;
 }
@@ -24,10 +25,7 @@ interface DashboardClientProps {
 export default function DashboardClient({ session }: DashboardClientProps) {
   const [stats, setStats] = useState({
     earnings: 0,
-    spend: 0,
-    sales: 0,
-    balance: 0,
-    tasks: 0,
+    quotation: 0,
     projects: 0,
   });
 
@@ -38,18 +36,18 @@ export default function DashboardClient({ session }: DashboardClientProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+
+    // Demo stats (replace with real API calls in production)
+
     console.log("✅ Session received in DashboardClient:", session);
+
 
     const timer = setTimeout(() => {
       setStats({
         earnings: 350.4,
-        spend: 642.39,
-        sales: 574.34,
-        balance: 1000,
-        tasks: 154,
+        quotation: 12,
         projects: 2935,
-      });
-
+      })
       setRevenueChartData([
         { month: "SEP", thisMonth: 100, lastMonth: 60 },
         { month: "OCT", thisMonth: 120, lastMonth: 70 },
@@ -102,6 +100,8 @@ export default function DashboardClient({ session }: DashboardClientProps) {
           <StarbucksCard />
         </div>
       </div>
-    </div>
-  );
+
+    </DashboardLayout>
+  )
 }
+

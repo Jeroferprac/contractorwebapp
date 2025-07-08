@@ -1,8 +1,8 @@
-import "next-auth";
+// types/next-auth.d.ts
+import NextAuth from "next-auth"
 
 declare module "next-auth" {
   interface Session {
-
     user: {
       name?: string | null
       email?: string | null
@@ -28,6 +28,5 @@ declare module "next-auth/jwt" {
 
     backendToken?: string
     userId?: string
-
   }
 }

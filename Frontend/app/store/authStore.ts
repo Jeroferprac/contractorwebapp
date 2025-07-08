@@ -9,6 +9,8 @@ interface AuthState {
   setUserId: (id: string) => void
   clearAuth: () => void
   setHydrated: () => void
+  syncSession: (token: string, userId: string) => void; // 👈 add this
+
 }
 
 export const useAuth = create<AuthState>()(
@@ -16,12 +18,13 @@ export const useAuth = create<AuthState>()(
     (set) => ({
       backendAccessToken: null,
       userId: null,
-
       hydrated: false,
       setToken: (token) => set({ backendAccessToken: token }),
       setUserId: (id) => set({ userId: id }),
       clearAuth: () => set({ backendAccessToken: null, userId: null }),
       setHydrated: () => set({ hydrated: true }),
+      syncSession: (token, userId) =>
+        set({ backendAccessToken: token, userId, hydrated: true }), // 👈 sync both
     }),
     {
       name: "auth-storage",
@@ -35,4 +38,3 @@ export const useAuth = create<AuthState>()(
     }
   )
 )
-
