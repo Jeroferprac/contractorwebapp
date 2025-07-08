@@ -1,33 +1,33 @@
-import { API } from "./api";
+export interface Attachment {
+  filename: string;
+  content_type: string;
+  base64: string;
+}
 
-export interface QuotationData {
+export interface QuotationPayload {
   projectTitle: string;
   description: string;
-  budgetMin?: string;
-  budgetMax?: string;
+  estimated_budget_min: number;
+  estimated_budget_max: number;
   deadline: string;
-  file?: File | null;
+  attachments: Attachment[];
 }
 
-export interface Quote {
-  id: string;
-  contractor: string;
-  amount: string;
-  status: "Pending" | "Approved" | "Rejected";
-}
-
-export const submitQuotation = async (data: QuotationData, token: string) => {
+export const submitQuotation = async (payload: QuotationPayload, token: string) => {
   const formData = new FormData();
-  formData.append("project_title", data.projectTitle);
-  if (data.budgetMin) formData.append("estimated_budget_min", data.budgetMin);
-  if (data.budgetMax) formData.append("estimated_budget_max", data.budgetMax);
-  formData.append("description", data.description);
-  formData.append("deadline", data.deadline);
-  if (data.file) {
-    formData.append("file", data.file);
-  }
 
-  const response = await fetch(API.QUOTE, {
+  formData.append("project_title", payload.projectTitle);
+  formData.append("description", payload.description);
+  formData.append("estimated_budget_min", String(payload.estimated_budget_min));
+  formData.append("estimated_budget_max", String(payload.estimated_budget_max));
+  formData.append("deadline", payload.deadline);
+
+  payload.attachments.forEach((att) => {
+    const blob = base64ToBlob(att.base64, att.content_type);
+    formData.append("attachments", new File([blob], att.filename, { type: att.content_type }));
+  });
+
+  const res = await fetch("http://localhost:8000/api/v1/quotation/quote", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -35,28 +35,21 @@ export const submitQuotation = async (data: QuotationData, token: string) => {
     body: formData,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || "Failed to submit quotation");
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to submit quotation: ${errorText}`);
   }
 
-  return await response.json();
+  return res.json();
 };
 
-export const fetchQuotations = async (token: string): Promise<Quote[]> => {
-  const response = await fetch(API.QUOTES, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const base64ToBlob = (base64: string, contentType: string): Blob => {
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
 
-  const result = await response.json();
-  console.log("API response for quotations:", result);
-
-  if (!response.ok) {
-    throw new Error(result?.detail || result?.message || "Failed to fetch quotations");
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArrays.push(byteCharacters.charCodeAt(i));
   }
 
-  // 🔥 FIX: Return correct structure
-  return result.quotes || result; // handles both { quotes: [] } and [] responses
+  return new Blob([new Uint8Array(byteArrays)], { type: contentType });
 };
