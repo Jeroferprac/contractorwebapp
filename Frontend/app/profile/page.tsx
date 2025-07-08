@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Sidebar } from "@/components/profile/sidebar"
+import { Sidebar } from "@/components/layout/sidebar"
 import { TopHeader } from "@/components/profile/top-header"
 import { StorageWidget } from "@/components/profile/storage-widget"
 import { UploadWidget } from "@/components/profile/upload-widget"
@@ -15,17 +15,19 @@ import { useToastNotification } from "@/lib/hooks/use-toast-notifications"
 import { useAuth } from "@/store/authStore"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
+import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
 
 export default function ProfilePage() {
   const { data: session } = useSession();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { notifySuccess, notifyError } = useToastNotification()
-  const { backendAccessToken, setToken } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   console.log("Session in ProfilePage:", session);
 
   const fetchUser = () => {
+    setLoading(true);
     if (!session?.backendAccessToken) return;
     fetch(API.PROFILE, {
       headers: {
@@ -35,8 +37,13 @@ export default function ProfilePage() {
       .then((res) => res.json())
       .then((data) => {
         console.log("Fetched user profile:", data);
+        if (data.avatar_url) {
+          data.avatar_url = data.avatar_url + "?v=" + Date.now();
+        }
+        console.log("User set in state:", data);
         setUser(data);
-      });
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -76,7 +83,10 @@ export default function ProfilePage() {
         <div className="p-4 lg:p-8">
           {/* Mobile Layout */}
           <div className="lg:hidden space-y-6">
-            {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
+            {loading
+              ? <ProfileHeaderSkeleton />
+              : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+            }
             <StorageWidget />
             <UploadWidget />
             <CompleteProfileWidget />
@@ -89,7 +99,10 @@ export default function ProfilePage() {
           <div className="hidden lg:block space-y-8">
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-5">
-                {user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />}
+                {loading
+                  ? <ProfileHeaderSkeleton />
+                  : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+                }
               </div>
               <div className="col-span-4">
                 <StorageWidget />

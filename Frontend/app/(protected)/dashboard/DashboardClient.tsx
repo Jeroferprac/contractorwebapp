@@ -28,10 +28,7 @@ export default function DashboardClient({ session }: { session: Session | null }
   
   const [stats, setStats] = useState({
     earnings: 0,
-    spend: 0,
-    sales: 0,
-    balance: 0,
-    tasks: 0,
+    quotation: 0,
     projects: 0,
   })
 
@@ -45,10 +42,7 @@ export default function DashboardClient({ session }: { session: Session | null }
     const timer = setTimeout(() => {
       setStats({
         earnings: 350.4,
-        spend: 642.39,
-        sales: 574.34,
-        balance: 1000,
-        tasks: 154,
+        quotation: 12,
         projects: 2935,
       })
       setRevenueChartData([

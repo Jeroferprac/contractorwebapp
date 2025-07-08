@@ -1,19 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {  useState } from "react"
 import { signIn } from "next-auth/react"
-import { Bell, HelpCircle, Moon, Search, Sun } from "lucide-react"
+import {  Moon } from "lucide-react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { useSession } from "next-auth/react"
-import { API } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cookies } from "next/headers";
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
@@ -35,22 +32,14 @@ type FormData = z.infer<typeof schema>
 
 export default function SignInPage() {
   const router = useRouter()
-  const { status } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
-  const { data: session } = useSession()
   
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   })
- // ✅ Redirect if already authenticated
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/dashboard")
-    }
-  }, [status, router])
   const onSubmit = async (data: FormData) => {
     const res = await signIn("credentials", {
       redirect: false,

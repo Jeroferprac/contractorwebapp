@@ -5,37 +5,30 @@ import { API } from "@/lib/api" // your backend API wrapper
 import type { JWT } from "next-auth/jwt"
 
 interface BackendLoginResponse {
-  access_token: string;
+  access_token: string
   user: {
-    id: string;
-    email: string;
-    name: string;
-  };
-}
-
-interface GithubEmail {
-  email: string;
-  primary: boolean;
-  verified: boolean;
-  visibility: string | null;
+    id: string
+    email: string
+    name: string
+  }
 }
 
 declare module "next-auth" {
   interface Session {
-    backendAccessToken?: string;
-    userId?: string;
+    backendAccessToken?: string
+    userId?: string
   }
 
   interface User {
-    backendAccessToken?: string;
-    userId?: string;
+    backendAccessToken?: string
+    userId?: string
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    backendAccessToken?: string;
-    userId?: string;
+    backendAccessToken?: string
+    userId?: string
   }
 }
 
@@ -75,6 +68,8 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
+
   callbacks: {
     async jwt({ token, user, account, profile }: {
       token: JWT,
@@ -91,21 +86,20 @@ export const authOptions: NextAuthOptions = {
       // GitHub OAuth logic (already present)
       if (account?.provider === "github" && account.access_token) {
         try {
-          const githubAccessToken = account.access_token;
+          const githubAccessToken = account.access_token
 
           // 1. Get user profile
           const userProfileResp = await fetch("https://api.github.com/user", {
             headers: { Authorization: `Bearer ${githubAccessToken}` },
-          });
-          const userProfile = await userProfileResp.json();
+          })
+          const userProfile = await userProfileResp.json()
 
           // 2. Get email
           const emailResp = await fetch("https://api.github.com/user/emails", {
             headers: { Authorization: `Bearer ${githubAccessToken}` },
-          });
-          const emails: GithubEmail[] = await emailResp.json();
-          const primaryEmail =
-            emails.find((e) => e.primary)?.email ?? userProfile.email;
+          })
+          const emails = await emailResp.json()
+          const primaryEmail = emails.find((e: any) => e.primary)?.email ?? userProfile.email
 
           // 3. POST to FastAPI backend
           const payload = {
@@ -114,51 +108,44 @@ export const authOptions: NextAuthOptions = {
               email: primaryEmail,
               name: userProfile.name || userProfile.login,
               provider_id: String(userProfile.id),
-              provider: "github",
-            },
-          };
-
-          const backendResp = await fetch(
-            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/oauth/github/callback`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
+              provider: "github"
             }
-          );
+          }
 
-          const data: BackendLoginResponse = await backendResp.json();
+          const backendResp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/oauth/github/callback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          })
+
+          const data: BackendLoginResponse = await backendResp.json()
 
           if (!backendResp.ok) {
-            console.error("❌ Backend Error:", data);
-            throw new Error("Backend registration/login failed");
+            console.error("❌ Backend Error:", data)
+            throw new Error("Backend registration/login failed")
           }
 
           // 4. Add backend token and ID to token
-          token.backendAccessToken = data.access_token;
-          token.userId = data.user.id;
+          token.backendAccessToken = data.access_token
+          token.userId = data.user.id
         } catch (error) {
-          console.error("🚨 GitHub backend sync failed:", error);
+          console.error("🚨 GitHub backend sync failed:", error)
         }
       }
 
-      return token;
+      return token
     },
 
-    async session({
-      session,
-      token,
-    }: {
-      session: Session;
-      token: JWT;
+    async session({ session, token }: {
+      session: Session,
+      token: JWT
     }): Promise<Session> {
-      session.backendAccessToken = token.backendAccessToken;
-      session.userId = token.userId;
-      return session;
-    },
-  },
-};
+      session.backendAccessToken = token.backendAccessToken
+      session.userId = token.userId
+      return session
+    }
+  }
+}
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
