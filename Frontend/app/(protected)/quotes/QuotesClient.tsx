@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Session } from "next-auth";
+import { useSession } from "next-auth/react";
 
 interface Quotation {
   id: string;
@@ -9,103 +9,99 @@ interface Quotation {
   description: string;
   estimated_budget_min: number;
   estimated_budget_max: number;
-  deadline: string | null;
+  deadline: string;
+  attachments: { filename: string; content_type: string; base64: string }[];
 }
 
-interface QuotesClientProps {
-  session: Session | null;
-}
-
-export default function QuotesClient({ session }: QuotesClientProps) {
-  const [quotes, setQuotes] = useState<Quotation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function QuotesClient() {
+  const { data: session } = useSession();
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) {
-      console.warn("⚠️ No backend access token, skipping fetch.");
-      setQuotes([]);
-      return;
-    }
+    const fetchQuotations = async () => {
+      if (!session?.backendAccessToken) return;
 
-    const fetchQuotes = async () => {
-      setLoading(true);
-      setError(null);
       try {
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quotes`;
-        console.log("✅ Fetching quotes from:", url);
-
-        const res = await fetch(url, {
+        const res = await fetch("http://localhost:8000/api/v1/quotation/quotes", {
           headers: {
             Authorization: `Bearer ${session.backendAccessToken}`,
           },
         });
-
-        if (!res.ok) {
-          throw new Error(`API error ${res.status}`);
-        }
+        if (!res.ok) throw new Error("Failed to fetch quotations");
 
         const data = await res.json();
-        console.log("✅ Quotes API response:", data);
-
-        if (Array.isArray(data)) {
-          setQuotes(data);
-        } else if (Array.isArray(data.quotes)) {
-          setQuotes(data.quotes);
-        } else {
-          setQuotes([]);
-          setError("Quotes data format invalid");
+        if (Array.isArray(data.items)) {
+          setQuotations(data.items);
         }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-          console.error("❌ Error fetching quotes:", err.message);
-        } else {
-          setError("Unknown error");
-          console.error("❌ Unknown error fetching quotes");
-        }
-        setQuotes([]);
+      } catch (error) {
+        console.error("Error fetching quotations:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchQuotes();
+    fetchQuotations();
   }, [session]);
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 space-y-4">
-      <h3 className="text-xl font-semibold">Quotes</h3>
+    <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
+      <h2 className="text-xl font-bold mb-4">Your Quotations</h2>
 
       {loading ? (
-        <p>Loading quotes...</p>
-      ) : error ? (
-        <p className="text-red-500">Error: {error}</p>
-      ) : quotes.length === 0 ? (
-        <p className="text-gray-500">No quotes found.</p>
+        <p className="text-gray-600 dark:text-gray-400">Loading quotations...</p>
+      ) : quotations.length === 0 ? (
+        <p className="text-gray-600 dark:text-gray-400">No quotations found.</p>
       ) : (
-        <table className="min-w-full text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Project Title</th>
-              <th className="p-2">Description</th>
-              <th className="p-2">Budget</th>
-              <th className="p-2">Deadline</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quotes.map((quote) => (
-              <tr key={quote.id} className="border-b">
-                <td className="p-2">{quote.project_title}</td>
-                <td className="p-2">{quote.description}</td>
-                <td className="p-2">
-                  {quote.estimated_budget_min} - {quote.estimated_budget_max}
-                </td>
-                <td className="p-2">{quote.deadline ? new Date(quote.deadline).toLocaleDateString() : "N/A"}</td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+              <tr>
+                <th className="px-4 py-2">Project Title</th>
+                <th className="px-4 py-2">Description</th>
+                <th className="px-4 py-2">Budget (₹)</th>
+                <th className="px-4 py-2">Deadline</th>
+                <th className="px-4 py-2">Attachments</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {quotations.map((quote, index) => (
+                <tr
+                  key={quote.id}
+                  className={`${
+                    index % 2 === 0 ? "bg-gray-50 dark:bg-gray-700" : "bg-white dark:bg-gray-800"
+                  } hover:bg-purple-100 dark:hover:bg-purple-900 transition`}
+                >
+                  <td className="px-4 py-2 font-medium">{quote.project_title}</td>
+                  <td className="px-4 py-2 max-w-xs truncate">{quote.description}</td>
+                  <td className="px-4 py-2 text-purple-600 dark:text-purple-400">
+                    ₹{quote.estimated_budget_min} - ₹{quote.estimated_budget_max}
+                  </td>
+                  <td className="px-4 py-2">{new Date(quote.deadline).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    {quote.attachments?.length > 0 ? (
+                      <ul className="space-y-1">
+                        {quote.attachments.map((att, index) => (
+                          <li key={index}>
+                            <a
+                              href={`data:${att.content_type};base64,${att.base64}`}
+                              download={att.filename}
+                              className="text-blue-500 hover:underline text-sm"
+                            >
+                              {att.filename}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="text-gray-500 text-sm">No Attachments</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

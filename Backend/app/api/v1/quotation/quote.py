@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException, s
 from typing import Annotated, List, Optional
 from datetime import date
 import base64
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.schemas.quotation import QuotationOut, QuotationAttachmentOut, PaginatedQuotationResponse
 from app.models.quotation import Quotation, QuotationAttachment
@@ -102,6 +102,7 @@ def list_my_quotations(
      # Paginated fetch
         quotes = (
         db.query(Quotation)
+          .options(joinedload(Quotation.attachments))
           .filter(Quotation.user_id == current_user.id)
           .order_by(Quotation.created_at.desc())
           .limit(limit)

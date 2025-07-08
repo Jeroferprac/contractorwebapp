@@ -1,39 +1,88 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { submitQuotation, QuotationData } from "@/lib/quotation"
-import { useSession } from "next-auth/react"
+import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { submitQuotation, QuotationPayload, Attachment } from "@/lib/quotation";
 
 export default function QuotationForm() {
-  const { data: session } = useSession()
-  const [formData, setFormData] = useState<QuotationData>({
+  const { data: session } = useSession();
+
+  const [formData, setFormData] = useState({
     projectTitle: "",
     description: "",
-    budgetMin: "",
-    budgetMax: "",
+    estimatedBudgetMin: "",
+    estimatedBudgetMax: "",
     deadline: "",
-    file: null,
-  })
+    file: null as File | null,
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-
-    if (name === "file" && e.target instanceof HTMLInputElement && e.target.files) {
-      setFormData({ ...formData, file: e.target.files[0] })
+    const { name, value } = e.target;
+    if (name === "file" && e.target instanceof HTMLInputElement) {
+      const files = e.target.files;
+      setFormData({ ...formData, file: files?.[0] ?? null });
     } else {
-      setFormData({ ...formData, [name]: value })
+      setFormData({ ...formData, [name]: value });
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!session?.backendAccessToken) {
-      alert("You must be logged in to submit a quotation.")
-      return
+      alert("You must be logged in to submit a quotation.");
+      return;
     }
-    await submitQuotation(formData, session.backendAccessToken)
-    alert("Quotation submitted successfully!")
-  }
+
+    const attachments: Attachment[] = [];
+
+    if (formData.file) {
+      const base64 = await fileToBase64(formData.file);
+      attachments.push({
+        filename: formData.file.name,
+        content_type: formData.file.type,
+        base64,
+      });
+    }
+
+    const payload: QuotationPayload = {
+      projectTitle: formData.projectTitle,
+      description: formData.description,
+      estimated_budget_min: parseFloat(formData.estimatedBudgetMin),
+      estimated_budget_max: parseFloat(formData.estimatedBudgetMax),
+      deadline: formData.deadline,
+      attachments,
+    };
+
+    try {
+      await submitQuotation(payload, session.backendAccessToken);
+      alert("Quotation submitted successfully!");
+      setFormData({
+        projectTitle: "",
+        description: "",
+        estimatedBudgetMin: "",
+        estimatedBudgetMax: "",
+        deadline: "",
+        file: null,
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        alert(err.message || "Failed to submit quotation.");
+      } else {
+        alert("Failed to submit quotation.");
+      }
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = (reader.result as string).split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+    });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
@@ -48,7 +97,6 @@ export default function QuotationForm() {
           <input
             type="text"
             name="projectTitle"
-            placeholder="Enter project title"
             value={formData.projectTitle}
             onChange={handleChange}
             required
@@ -60,7 +108,6 @@ export default function QuotationForm() {
           <label className="block mb-1 text-gray-700 dark:text-gray-300">Description*</label>
           <textarea
             name="description"
-            placeholder="Enter project description"
             value={formData.description}
             onChange={handleChange}
             required
@@ -72,10 +119,9 @@ export default function QuotationForm() {
           <div className="w-1/2">
             <label className="block mb-1 text-gray-700 dark:text-gray-300">Budget Min*</label>
             <input
-              type="text"
-              name="budgetMin"
-              placeholder="Minimum budget"
-              value={formData.budgetMin}
+              type="number"
+              name="estimatedBudgetMin"
+              value={formData.estimatedBudgetMin}
               onChange={handleChange}
               required
               className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
@@ -84,10 +130,9 @@ export default function QuotationForm() {
           <div className="w-1/2">
             <label className="block mb-1 text-gray-700 dark:text-gray-300">Budget Max*</label>
             <input
-              type="text"
-              name="budgetMax"
-              placeholder="Maximum budget"
-              value={formData.budgetMax}
+              type="number"
+              name="estimatedBudgetMax"
+              value={formData.estimatedBudgetMax}
               onChange={handleChange}
               required
               className="w-full p-2 rounded-md border dark:bg-gray-700 dark:text-white dark:border-gray-600"
@@ -125,5 +170,5 @@ export default function QuotationForm() {
         </button>
       </form>
     </div>
-  )
+  );
 }
