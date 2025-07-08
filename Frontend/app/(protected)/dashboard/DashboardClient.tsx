@@ -16,7 +16,7 @@ import { TeamMembers } from "@/components/dashboard/widgets/team-members";
 import { SecurityCard } from "@/components/dashboard/widgets/security-card";
 import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card";
 import { LessonCard } from "@/components/dashboard/bottom/lesson-card";
-
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 interface DashboardClientProps {
   session: Session;
