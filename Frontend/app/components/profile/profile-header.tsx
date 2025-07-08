@@ -14,10 +14,9 @@ export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfile
   const { data: session } = useSession();
   const backendAccessToken = session?.backendAccessToken;
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
-  const avatarUrl =
-    user?.avatar_url
-      ? `${user.avatar_url}?v=${avatarVersion}`
-      : session?.user?.image || "/placeholder.svg";
+  const avatarUrl = user?.avatar_data && user?.avatar_mimetype
+    ? `data:${user.avatar_mimetype};base64,${user.avatar_data}`
+    : (user?.avatar_url || session?.user?.image || "/placeholder.svg");
 
   // Debugging: log token and session
   console.log('ProfileHeader backendAccessToken:', backendAccessToken, 'session:', session);
@@ -88,6 +87,8 @@ export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfile
     }
   };
 
+  console.log("Avatar URL in render:", avatarUrl);
+
   return (
     <>
       <Card className="relative overflow-hidden bg-white">
@@ -103,6 +104,10 @@ export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfile
               <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-red-600">
+                <Trash className="w-4 h-4 mr-2" />
+                Delete Profile
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -189,6 +194,25 @@ export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfile
               disabled={deleting}
             >
               {deleting ? "Deleting..." : "Delete"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Confirmation dialog for delete profile */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Profile</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            Profile deletion is not available from the app. Please contact support.
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Close
             </button>
           </div>
         </DialogContent>

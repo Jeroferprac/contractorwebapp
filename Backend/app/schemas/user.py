@@ -37,8 +37,9 @@ class UserResponse(UserBase):
     oauth_provider: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
     avatar_data: Optional[str] = None
     avatar_mimetype: Optional[str] = None
-    
+
     class Config:
         from_attributes = True

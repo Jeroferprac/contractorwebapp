@@ -1,5 +1,6 @@
-import SignInPage from "./sign-in-page"
+"use client";
+import SignInPage from "./sign-in-page";
 
-export default function Page() {
-  return <SignInPage />
+export default function LoginPage() {
+  return <SignInPage />;
 }
