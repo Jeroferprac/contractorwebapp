@@ -39,13 +39,20 @@ export type CompanyProfile = {
 
 type CompanyState = {
   company: CompanyProfile | null;
+  projects: CompanyProject[];
+  projectsLoading: boolean;
   fetchCompany: () => Promise<void>;
   createCompany: (data: Partial<CompanyProfile>) => Promise<void>;
   updateCompany: (data: Partial<CompanyProfile>) => Promise<void>;
+  fetchProjects: () => Promise<void>;
+  createProject: (data: Partial<CompanyProject>) => Promise<void>;
+  updateProject: (projectId: string, data: Partial<CompanyProject>) => Promise<void>;
 };
 
-export const useCompanyStore = create<CompanyState>((set) => ({
+export const useCompanyStore = create<CompanyState>((set, get) => ({
   company: null,
+  projects: [],
+  projectsLoading: false,
   fetchCompany: async () => {
     const session = await getSession();
     const res = await fetch(API.COMPANY.PROFILE, {
@@ -80,5 +87,51 @@ export const useCompanyStore = create<CompanyState>((set) => ({
       body: JSON.stringify(data),
     });
     if (res.ok) set({ company: await res.json() });
+  },
+  fetchProjects: async () => {
+    set({ projectsLoading: true });
+    const session = await getSession();
+    const res = await fetch(API.PROJECTS.LIST, {
+      headers: { Authorization: `Bearer ${session?.backendAccessToken}` },
+    });
+    if (res.ok) {
+      set({ projects: await res.json() });
+    } else {
+      set({ projects: [] });
+    }
+    set({ projectsLoading: false });
+  },
+  createProject: async (data) => {
+    set({ projectsLoading: true });
+    const session = await getSession();
+    const res = await fetch(API.PROJECTS.CREATE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.backendAccessToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      // Optionally refetch projects or append
+      await get().fetchProjects();
+    }
+    set({ projectsLoading: false });
+  },
+  updateProject: async (projectId, data) => {
+    set({ projectsLoading: true });
+    const session = await getSession();
+    const res = await fetch(API.PROJECTS.UPDATE(projectId), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.backendAccessToken}`,
+      },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      get().fetchProjects();
+    }
+    set({ projectsLoading: false });
   },
 }));

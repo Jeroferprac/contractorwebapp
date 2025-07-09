@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Sidebar } from "@/components/layout/sidebar"
 import { StorageWidget } from "@/components/profile/storage-widget"
 import { UploadWidget } from "@/components/profile/upload-widget"
 import { CompleteProfileWidget } from "@/components/profile/complete-profile-widget"
@@ -15,9 +14,9 @@ import { useAuth } from "@/store/authStore"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
 import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
-import { HeaderBar } from "@/components/dashboard/header/Header"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useUserStore } from "@/store/userStore"
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 type UserProfile = {
   avatar?: string;
@@ -73,74 +72,50 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout session={session} title="Profile">
       {/* ShadCN Toaster */}
       <Toaster />
-
-      {/* Mobile Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Main Content */}
-      <div className="lg:ml-64">
-        <header className="top-0 z-30 flex flex-row items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0b1437] border-b border-gray-200 dark:border-zinc-700 gap-3 sm:gap-4">
-
-        {/* Top Header */}
-        <HeaderBar session={session} userProfile={user} title="Profile" />
-        </header>
-
-        {/* Main Layout */}
-        <div className="p-4 lg:p-8">
-          {/* Mobile Layout */}
-          <div className="lg:hidden space-y-6">
-            {loading
-              ? <ProfileHeaderSkeleton />
-              : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
-            }
-            <Avatar>
-              <AvatarImage src={user?.avatar || "/placeholder.svg"} alt="User avatar" />
-              <AvatarFallback>{(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <StorageWidget />
-            <UploadWidget />
-            <CompleteProfileWidget />
+      <div className="p-4 lg:p-8">
+        {/* Mobile Layout */}
+        <div className="lg:hidden space-y-6">
+          {loading
+            ? <ProfileHeaderSkeleton />
+            : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+          }
+          <Avatar>
+            <AvatarImage src={user?.avatar || "/placeholder.svg"} alt="User avatar" />
+            <AvatarFallback>{(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <StorageWidget />
+          <UploadWidget />
+          <CompleteProfileWidget />
+          <AllProjects />
+          <GeneralInformation />
+          <NotificationSettings />
+        </div>
+        {/* Desktop Layout */}
+        <div className="hidden lg:block space-y-8">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-5">
+              {loading
+                ? <ProfileHeaderSkeleton />
+                : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+              }
+            </div>
+            <div className="col-span-4">
+              <StorageWidget />
+            </div>
+            <div className="col-span-3">
+              <CompleteProfileWidget />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-6">
             <AllProjects />
             <GeneralInformation />
             <NotificationSettings />
           </div>
-
-          {/* Desktop Layout */}
-          <div className="hidden lg:block space-y-8">
-            <div className="grid grid-cols-12 gap-6">
-              <div className="col-span-5">
-                {loading
-                  ? <ProfileHeaderSkeleton />
-                  : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
-                }
-              </div>
-              <div className="col-span-4">
-                <StorageWidget />
-              </div>
-              <div className="col-span-3">
-                <CompleteProfileWidget />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-6">
-              <AllProjects />
-              <GeneralInformation />
-              <NotificationSettings />
-            </div>
-          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

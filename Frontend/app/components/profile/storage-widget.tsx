@@ -2,7 +2,7 @@ import { Cloud, MoreHorizontal } from "lucide-react"
 
 export function StorageWidget() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-white dark:bg-[#020817] rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <div className="flex justify-end mb-2">
         <button className="p-1 text-gray-400 hover:text-gray-600">
           <MoreHorizontal className="w-4 h-4" />

@@ -94,10 +94,10 @@ export function ProjectCard({
   };
 
   return (
-    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+    <Card className="border-0 dark:bg-[#020817] shadow-lg hover:shadow-xl transition-all duration-300 group">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div>
+          <div className="dark:bg-[#020817]">
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
               {project.title}
             </h3>

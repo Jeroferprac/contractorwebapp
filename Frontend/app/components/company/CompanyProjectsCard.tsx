@@ -11,7 +11,7 @@ export function CompanyProjectsCard({ projects }: { projects: CompanyProject[] }
     );
   }
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 dark:bg-[#020817]">
       {/* Replace below with <ProjectCard project={project} /> when implemented */}
       {projects.map((project, idx) => (
         <div key={idx} className="rounded-xl border bg-white p-4 shadow-sm">

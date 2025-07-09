@@ -33,7 +33,7 @@ export function HeaderBar({ session: propSession, userProfile, title }: HeaderBa
 
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-7xl mx-auto rounded-xl border px-4 py-3 shadow-sm bg-white dark:bg-[#111c44] gap-2 sm:gap-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-7xl mx-auto rounded-xl border px-4 py-3 shadow-sm bg-white dark:bg-[#020817] gap-2 sm:gap-4">
       {/* Left: Title and Breadcrumb */}
       <div className="flex flex-col items-start flex-1 min-w-0">
         {title && (
@@ -44,7 +44,7 @@ export function HeaderBar({ session: propSession, userProfile, title }: HeaderBa
         )}
       </div>
       {/* Center: Search bar */}
-      <div className="relative w-full sm:w-72 dark:bg-[#0e1636] flex-shrink-0 mx-0 sm:mx-4">
+      <div className="relative w-full sm:w-72  flex-shrink-0 mx-0 sm:mx-4">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input type="search" placeholder="Search..." className="pl-9 rounded-full bg-muted text-sm w-full" />
       </div>

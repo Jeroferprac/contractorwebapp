@@ -11,6 +11,7 @@ import ProjectForm from "@/components/company/ProjectForm"
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useUserStore } from "@/store/userStore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 export default function CompanyPage() {
   const { data: session, status } = useSession();
@@ -21,8 +22,8 @@ export default function CompanyPage() {
   const updateCompany = useCompanyStore((s) => s.updateCompany);
   const user = useUserStore((s) => s.user);
 
-  const [showProfileForm, setShowProfileForm] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -50,41 +51,30 @@ export default function CompanyPage() {
       <div className="max-w-7xl mx-auto space-y-8 p-4 lg:p-8">
         {/* Company Profile Section */}
         {company ? (
-          <>
-            <CompanyProfileCard company={company} />
-            <Button onClick={() => setShowProfileForm(true)}>Edit Profile</Button>
-          </>
+          <CompanyProfileCard company={company} />
         ) : (
-          <CompanyForm
-            onSubmit={async (data) => {
-              await createCompany({ ...data, profile_type: "company" });
-              setShowProfileForm(false);
-            }}
-          />
-        )}
-        {showProfileForm && (
-          <CompanyForm
-            initial={company || undefined}
-            onSubmit={async (data) => {
-              await updateCompany(data);
-              setShowProfileForm(false);
-            }}
-          />
-        )}
-
-        {/* Projects Section */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Projects</h2>
-          <Button onClick={() => setShowProjectForm(true)}>New Project</Button>
-        </div>
-        <CompanyProjectsCard projects={company?.projects || []} />
-        {showProjectForm && (
-          <ProjectForm
-            onSubmit={async (data) => {
-              // TODO: Add project creation logic in your store and call it here
-              setShowProjectForm(false);
-            }}
-          />
+          <div className="flex flex-col items-center justify-center py-16">
+            <p className="mb-4 text-lg text-gray-600">You don't have a company profile yet.</p>
+            <Button onClick={() => setShowCreateForm(true)}>
+              Create Company Profile
+            </Button>
+            <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+              <DialogContent className="max-w-lg w-full">
+                <DialogHeader>
+                  <DialogTitle className="bg-gradient-to-r">Create Company Profile</DialogTitle>
+                  <DialogClose asChild>
+                    <button className="absolute top-2 right-2">×</button>
+                  </DialogClose>
+                </DialogHeader>
+                <CompanyForm
+                  onSubmit={async (data) => {
+                    await createCompany({ ...data, profile_type: "company" });
+                    setShowCreateForm(false);
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
     </DashboardLayout>

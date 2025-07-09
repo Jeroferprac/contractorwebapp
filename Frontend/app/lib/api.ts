@@ -36,10 +36,18 @@ const COMPANY = {
   PROFILE: `${BASE_URL}/api/v1/company/company/`,
 };
 
+const PROJECTS = {
+  LIST: `${BASE_URL}/api/v1/company/company/projects/`,
+  CREATE: `${BASE_URL}/api/v1/company/company/projects/`,
+  DETAIL: (projectId: string) => `${BASE_URL}/api/v1/company/company/projects/${projectId}`,
+  UPDATE: (projectId: string) => `${BASE_URL}/api/v1/company/company/projects/${projectId}`,
+};
+
 export const API = {
   ...AUTH,
   ...USERS,
   ...QUOTATION,
   ...UTILS,
   COMPANY,
+  PROJECTS,
 };
