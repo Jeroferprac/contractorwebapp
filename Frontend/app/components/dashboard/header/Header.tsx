@@ -31,7 +31,6 @@ export function HeaderBar({ session: propSession, userProfile, title }: HeaderBa
 
   if (!mounted) return null // Prevent mismatch during hydration
 
-  console.log("HeaderBar userProfile:", userProfile);
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-7xl mx-auto rounded-xl border px-4 py-3 shadow-sm bg-white dark:bg-[#111c44] gap-2 sm:gap-4">

@@ -1,6 +1,5 @@
 
 "use client";
-import { API } from "@/lib/api"
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
@@ -38,10 +37,6 @@ export default function DashboardClient({ session }: DashboardClientProps) {
   useEffect(() => {
 
     // Demo stats (replace with real API calls in production)
-
-    console.log("✅ Session received in DashboardClient:", session);
-
-
     const timer = setTimeout(() => {
       setStats({
         earnings: 350.4,

@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { API } from "@/lib/api";
+import { getSession } from "next-auth/react";
 
 interface UserProfile {
   avatar?: string;
@@ -16,11 +18,18 @@ export const useUserProfileStore = create<UserProfileState>((set) => ({
   userProfile: null,
   setUserProfile: (profile) => set({ userProfile: profile }),
   fetchUserProfile: async () => {
-    const res = await fetch("/api/profile");
+    const session = await getSession();
+    if (!session?.backendAccessToken) return;
+    const res = await fetch(API.PROFILE, {
+      headers: {
+        Authorization: `Bearer ${session.backendAccessToken}`,
+      },
+    });
     if (res.ok) {
       const data = await res.json();
-      if (data.avatar_url) {
-        data.avatar = data.avatar_url + "?v=" + Date.now();
+      // Build data URL if avatar_data and avatar_mimetype are present
+      if (data.avatar_data && data.avatar_mimetype) {
+        data.avatar = `data:${data.avatar_mimetype};base64,${data.avatar_data}`;
       }
       set({ userProfile: data });
     }

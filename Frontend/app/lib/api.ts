@@ -32,9 +32,14 @@ const UTILS = {
   ROOT: `${BASE_URL}/`,
 };
 
+const COMPANY = {
+  PROFILE: `${BASE_URL}/api/v1/company/company/`,
+};
+
 export const API = {
   ...AUTH,
   ...USERS,
   ...QUOTATION,
   ...UTILS,
+  COMPANY,
 };

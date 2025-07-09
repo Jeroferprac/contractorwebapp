@@ -16,13 +16,27 @@ import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
 import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
 import { HeaderBar } from "@/components/dashboard/header/Header"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { useUserStore } from "@/store/userStore"
+
+type UserProfile = {
+  avatar?: string;
+  avatar_data?: string;
+  avatar_mimetype?: string;
+  avatar_url?: string;
+  full_name?: string;
+  email?: string;
+  // Add any other fields you use
+  [key: string]: any;
+};
 
 export default function ProfilePage() {
   const { data: session } = useSession();
-  const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { notifySuccess, notifyError } = useToastNotification()
   const [loading, setLoading] = useState(true);
+  const user = useUserStore((state) => state.user);
+  const setUser = useUserStore((state) => state.setUser);
 
   console.log("Session in ProfilePage:", session);
 
@@ -36,11 +50,11 @@ export default function ProfilePage() {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log("Fetched user profile:", data);
-        if (data.avatar_url) {
-          data.avatar_url = data.avatar_url + "?v=" + Date.now();
+        if (data.avatar_data && data.avatar_mimetype) {
+          data.avatar = `data:${data.avatar_mimetype};base64,${data.avatar_data}`;
+        } else if (data.avatar_url) {
+          data.avatar = data.avatar_url + "?v=" + Date.now();
         }
-        console.log("User set in state:", data);
         setUser(data);
       })
       .finally(() => setLoading(false));
@@ -90,6 +104,10 @@ export default function ProfilePage() {
               ? <ProfileHeaderSkeleton />
               : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
             }
+            <Avatar>
+              <AvatarImage src={user?.avatar || "/placeholder.svg"} alt="User avatar" />
+              <AvatarFallback>{(user?.full_name?.[0] || user?.email?.[0] || "U").toUpperCase()}</AvatarFallback>
+            </Avatar>
             <StorageWidget />
             <UploadWidget />
             <CompleteProfileWidget />
