@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { submitQuotation } from "@/lib/quotation";
 
 export default function NewQuotationPage() {
-  const { data: session } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   const [projectTitle, setProjectTitle] = useState("");
@@ -29,7 +30,8 @@ export default function NewQuotationPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!session?.backendAccessToken) {
+
+    if (status !== "authenticated") {
       setError("You must be logged in to submit a quotation.");
       return;
     }
@@ -38,38 +40,26 @@ export default function NewQuotationPage() {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("project_title", projectTitle);
-      formData.append("description", description);
-      formData.append("estimated_budget_min", estimatedBudgetMin);
-      formData.append("estimated_budget_max", estimatedBudgetMax);
-      formData.append("deadline", deadline);
-
-      if (attachment) {
-        formData.append("attachments", attachment);
-      }
-
-      const res = await fetch("http://localhost:8000/api/v1/quotation/quote", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.backendAccessToken}`,
-        },
-        body: formData,
+      await submitQuotation({
+        project_title: projectTitle,
+        description,
+        estimated_budget_min: estimatedBudgetMin,
+        estimated_budget_max: estimatedBudgetMax,
+        deadline,
+        attachment,
       });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Failed to submit quotation: ${errorText}`);
-      }
 
       router.push("/quotes");
     } catch (err: any) {
-      console.error("Error:", err);
-      setError(err.message || "Submission failed.");
+      console.error("Error submitting quotation:", err);
+      setError("Failed to submit quotation. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (status === "loading") return <p className="text-center p-8">Loading session...</p>;
+  if (status === "unauthenticated") return <p className="text-center p-8">Please log in to continue.</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] p-6 text-gray-900 dark:text-white">
@@ -94,7 +84,7 @@ export default function NewQuotationPage() {
                 onChange={(e) => setProjectTitle(e.target.value)}
                 placeholder="Enter project title"
                 required
-                 className=" bg-white dark:bg-[#0f1b3e]"
+                className="bg-white dark:bg-[#0f1b3e]"
               />
             </div>
 
@@ -120,7 +110,7 @@ export default function NewQuotationPage() {
                   onChange={(e) => setEstimatedBudgetMin(e.target.value)}
                   placeholder="e.g. 10000"
                   required
-                   className=" bg-white dark:bg-[#0f1b3e]"
+                  className="bg-white dark:bg-[#0f1b3e]"
                 />
               </div>
 
@@ -133,7 +123,7 @@ export default function NewQuotationPage() {
                   onChange={(e) => setEstimatedBudgetMax(e.target.value)}
                   placeholder="e.g. 50000"
                   required
-                   className=" bg-white dark:bg-[#0f1b3e]"
+                  className="bg-white dark:bg-[#0f1b3e]"
                 />
               </div>
             </div>
@@ -146,24 +136,27 @@ export default function NewQuotationPage() {
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 required
-                 className=" bg-white dark:bg-[#0f1b3e]"
+                className="bg-white dark:bg-[#0f1b3e]"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="attachment">Attachment (optional)</Label>
-              <Input id="attachment" type="file" onChange={handleFileChange}
-               className=" bg-white dark:bg-[#0f1b3e]" />
+              <Input
+                id="attachment"
+                type="file"
+                onChange={handleFileChange}
+                className="bg-white dark:bg-[#0f1b3e]"
+              />
             </div>
 
             <Button
-  type="submit"
-  disabled={loading}
-  className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 dark:from-purple-600 dark:to-indigo-700 dark:hover:from-purple-700 dark:hover:to-indigo-800"
->
-  {loading ? "Submitting..." : "Submit Quotation"}
-</Button>
-  
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 dark:from-purple-600 dark:to-indigo-700 dark:hover:from-purple-700 dark:hover:to-indigo-800"
+            >
+              {loading ? "Submitting..." : "Submit Quotation"}
+            </Button>
           </form>
         </Card>
       </div>
