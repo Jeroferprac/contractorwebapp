@@ -25,3 +25,8 @@ export async function submitQuotation(payload: QuotationPayload) {
   const response = await axiosInstance.post("/api/v1/quotation/quote", formData);
   return response.data;
 }
+
+export async function fetchQuotations() {
+  const response = await axiosInstance.get("/api/v1/quotation/quotes");
+  return response.data.items;
+}

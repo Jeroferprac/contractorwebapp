@@ -1,145 +1,187 @@
-// app/components/forms/contractor-profile-form.tsx
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { useEffect, useState } from "react"
 import {
   getContractorProfile,
   createContractorProfile,
   updateContractorProfile,
-  ContractorProfile,
-} from "@/lib/contractor";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+} from "@/lib/contractor"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form"
+import { useSession } from "next-auth/react"
+
+const formSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(8),
+  address: z.string(),
+  logo: z
+    .custom<File>()
+    .refine((file) => file instanceof File || file === undefined, {
+      message: "Logo must be a file",
+    })
+    .optional(),
+})
+
+type ContractorFormValues = z.infer<typeof formSchema>
 
 export default function ContractorProfileForm() {
-  const { status } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [isExisting, setIsExisting] = useState(false);
-  const [profile, setProfile] = useState<ContractorProfile>({
-    company_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    logo: null,
-  });
+  // ✅ session is fetched but not used, so omit to avoid warning
+  // const { data: session } = useSession()
+  const [isExisting, setIsExisting] = useState(false)
+
+  const form = useForm<ContractorFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      logo: undefined,
+    },
+  })
 
   useEffect(() => {
-    if (status === "authenticated") {
-      getContractorProfile()
-        .then((data) => {
-          if (data) {
-            setProfile(data);
-            setIsExisting(true);
-          }
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+    const fetchProfile = async () => {
+      try {
+        const data = await getContractorProfile()
+        if (data) {
+          form.reset({
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            address: data.address || "",
+          })
+          setIsExisting(true)
+        }
+      } catch (error) {
+        console.error("❌ Fetch error", error)
+      }
     }
-  }, [status]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
-  };
+    fetchProfile()
+  }, [form])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setProfile((prev) => ({ ...prev, logo: file }));
-  };
+  const onSubmit = async (values: ContractorFormValues) => {
+    const formData = new FormData()
+    formData.append("name", values.name)
+    formData.append("email", values.email)
+    formData.append("phone", values.phone)
+    formData.append("address", values.address)
+    if (values.logo) {
+      formData.append("logo", values.logo)
+    }
 
-  const handleSubmit = async () => {
-    setLoading(true);
     try {
       if (isExisting) {
-        await updateContractorProfile(profile);
-        toast({ title: "Profile updated successfully!" });
+        await updateContractorProfile(formData)
+        toast.success("✅ Profile updated!")
       } else {
-        await createContractorProfile(profile);
-        toast({ title: "Profile created successfully!" });
-        setIsExisting(true);
+        await createContractorProfile(formData)
+        toast.success("✅ Profile created!")
+        setIsExisting(true)
       }
     } catch (err) {
-      console.error("Contractor profile error", err);
-      toast({
-        title: "Error",
-        description: "Profile creation failed. Check your session and fields.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      toast.error("❌ Failed to save profile")
+      console.error("Save error:", err)
     }
-  };
-
-  if (status === "loading") return <p className="text-center p-8">Checking authentication...</p>;
-  if (status === "unauthenticated") return <p className="text-center p-8">Please log in to continue.</p>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4">
-      <Card className="shadow-xl border rounded-2xl">
-        <CardContent className="p-8 space-y-6">
-          <h2 className="text-2xl font-semibold text-foreground">Contractor Profile</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="company_name">Company Name</Label>
-              <Input
-                id="company_name"
-                name="company_name"
-                value={profile.company_name}
-                onChange={handleChange}
-                placeholder="ABC Constructions"
+    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-2xl shadow-xl border border-border">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl font-bold">Contractor Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl><Input placeholder="Full Name" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
+              <FormField
+                control={form.control}
                 name="email"
-                value={profile.email}
-                onChange={handleChange}
-                placeholder="example@domain.com"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl><Input type="email" placeholder="Email" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
+              <FormField
+                control={form.control}
                 name="phone"
-                value={profile.phone}
-                onChange={handleChange}
-                placeholder="+91..."
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl><Input placeholder="Phone Number" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
+              <FormField
+                control={form.control}
                 name="address"
-                value={profile.address}
-                onChange={handleChange}
-                placeholder="Your full company address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl><Input placeholder="Address" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="logo">Company Logo</Label>
-              <Input id="logo" type="file" onChange={handleFileChange} />
-            </div>
-          </div>
-
-          <Button onClick={handleSubmit} disabled={loading} className="w-full mt-6">
-            {loading ? "Saving..." : isExisting ? "Update Profile" : "Create Profile"}
-          </Button>
+              <FormField
+                control={form.control}
+                name="logo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Logo (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => field.onChange(e.target.files?.[0])}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full">
+                {isExisting ? "Update Profile" : "Create Profile"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

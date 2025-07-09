@@ -1,38 +1,53 @@
-import { axiosInstance } from "@/lib/api";
+import { axiosInstance } from "./axios"
 
+// 🔹 Profile Types
 export interface ContractorProfile {
-  company_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  logo?: File | null;
+  name: string
+  email: string
+  phone: string
+  address: string
+  logo?: string
 }
 
+// 🔹 Project Types
+export interface Project {
+  id: string
+  title: string
+  description: string
+  budget_min: number
+  budget_max: number
+  deadline: string
+}
+
+// 🔹 Contractor Profile CRUD
 export async function getContractorProfile(): Promise<ContractorProfile | null> {
-  try {
-    const res = await axiosInstance.get("/api/v1/contractor/contractor/");
-    return res.data;
-  } catch {
-    return null;
-  }
+  const response = await axiosInstance.get("/api/v1/contractor/contractor/")
+  return response.data
 }
 
-export async function createContractorProfile(data: ContractorProfile) {
-  const formData = new FormData();
-  formData.append("company_name", data.company_name);
-  formData.append("email", data.email);
-  formData.append("phone", data.phone);
-  formData.append("address", data.address);
-  if (data.logo) formData.append("logo", data.logo);
-  return axiosInstance.post("/api/v1/contractor/contractor/", formData);
+export async function createContractorProfile(formData: FormData): Promise<void> {
+  await axiosInstance.post("/api/v1/contractor/contractor/", formData)
 }
 
-export async function updateContractorProfile(data: ContractorProfile) {
-  const formData = new FormData();
-  formData.append("company_name", data.company_name);
-  formData.append("email", data.email);
-  formData.append("phone", data.phone);
-  formData.append("address", data.address);
-  if (data.logo) formData.append("logo", data.logo);
-  return axiosInstance.patch("/api/v1/contractor/contractor/", formData);
+export async function updateContractorProfile(formData: FormData): Promise<void> {
+  await axiosInstance.patch("/api/v1/contractor/contractor/", formData)
+}
+
+// 🔹 Project CRUD
+export async function getAllContractorProjects(): Promise<Project[]> {
+  const response = await axiosInstance.get("/api/v1/contractor/contractor/projects/")
+  return response.data
+}
+
+export async function getContractorProjectById(id: string): Promise<Project> {
+  const response = await axiosInstance.get(`/api/v1/contractor/contractor/projects/${id}`)
+  return response.data
+}
+
+export async function createContractorProject(project: Omit<Project, "id">): Promise<void> {
+  await axiosInstance.post("/api/v1/contractor/contractor/projects/", project)
+}
+
+export async function updateContractorProject(id: string, project: Omit<Project, "id">): Promise<void> {
+  await axiosInstance.patch(`/api/v1/contractor/contractor/projects/${id}`, project)
 }

@@ -58,8 +58,9 @@ export default function NewQuotationPage() {
     }
   };
 
-  if (status === "loading") return <p className="text-center p-8">Loading session...</p>;
-  if (status === "unauthenticated") return <p className="text-center p-8">Please log in to continue.</p>;
+  if (status === "loading") {
+    return <p className="text-center py-10">Checking login...</p>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] p-6 text-gray-900 dark:text-white">
