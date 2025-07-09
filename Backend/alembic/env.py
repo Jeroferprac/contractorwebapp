@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, create_engine
 from alembic import context
 import os
 import sys
@@ -46,11 +46,12 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
+    connectable = create_engine(
+    database_url,
+    poolclass=pool.NullPool,
+    connect_args={"options": "-c statement_timeout=300000"}  # 5 minutes in ms
     )
+    
 
     with connectable.connect() as connection:
         context.configure(
