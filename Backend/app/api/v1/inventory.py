@@ -24,6 +24,11 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
     db.refresh(db_product)
     return db_product
 
+# GET /api/products/low-stock - Get products below min stock
+@router.get("/products/low-stock", response_model=List[ProductOut])
+def low_stock_products(db: Session = Depends(get_db)):
+    return db.query(Product).filter(Product.current_stock < Product.min_stock_level).all()
+
 # GET /api/products/{id} - Get product by ID
 @router.get("/products/{id}", response_model=ProductOut)
 def get_product(id: UUID, db: Session = Depends(get_db)):
@@ -55,11 +60,6 @@ def delete_product(id: UUID, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return
-
-# GET /api/products/low-stock - Get products below min stock
-@router.get("/products/low-stock", response_model=List[ProductOut])
-def low_stock_products(db: Session = Depends(get_db)):
-    return db.query(Product).filter(Product.current_stock < Product.min_stock_level).all()
 
               
                   ##################   Supplier API Calls  ######################
