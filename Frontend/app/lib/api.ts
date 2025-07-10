@@ -1,3 +1,5 @@
+import { getSession } from "next-auth/react";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 // 🔐 Authentication APIs
@@ -38,6 +40,7 @@ const UTILS = {
   HEALTH: `${BASE_URL}/health`,
   ROOT: `${BASE_URL}/`,
 };
+
 const COMPANY = {
   PROFILE: `${BASE_URL}/api/v1/company/company/`,
 };
@@ -58,3 +61,32 @@ export const API = {
   CONTRACTOR,
   PROJECTS,
 };
+
+// ✅ Universal Fetch Helper with Cookie Support
+export async function fetchWithAuth<T >(
+  url: string,
+  options: RequestInit = {}
+): Promise<T> {
+  // Get session and token
+  const session = await getSession();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+  if (session?.backendAccessToken) {
+    headers["Authorization"] = `Bearer ${session.backendAccessToken}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include", // ✅ Always send cookies
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || `Error ${response.status}`);
+  }
+
+  return response.json();
+}

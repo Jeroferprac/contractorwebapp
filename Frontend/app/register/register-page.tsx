@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { api } from "@/lib/api"; // ✅ Corrected usage
+import { API} from "@/lib/api"; // ✅ Corrected usage
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -72,7 +72,7 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await fetch(api.ROLES); // ✅ Corrected reference
+        const res = await fetch(API.ROLES); // ✅ Corrected reference
         if (!res.ok) throw new Error("Failed to fetch roles");
         const data = await res.json();
         setRoles(Array.isArray(data) ? data : data.roles || []);
@@ -89,7 +89,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const res = await fetch(api.REGISTER, {
+      const res = await fetch(API.REGISTER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

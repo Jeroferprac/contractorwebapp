@@ -1,50 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Project, fetchProjects } from "@/lib/contractor";
-import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+import { useState } from "react";
+import ContractorProjectsList from "@/components/contractor/ContractorProjectsList";
+import ContractorProjectForm from "@/components/forms/contractor-project-form";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function ContractorProjectsPage() {
+  const [editingProject, setEditingProject] = useState<any | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    fetchProjects()
-      .then((data: Project[]) => setProjects(data))
-      .catch((err) => console.error("Failed to load projects:", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const handleEdit = (project: any) => {
+    setEditingProject(project);
+    setShowForm(true);
+  };
+
+  const handleAdd = () => {
+    setEditingProject(null);
+    setShowForm(true);
+  };
+
+  const handleSuccess = () => {
+    setShowForm(false);
+    setEditingProject(null);
+    setRefreshKey((k) => k + 1); // trigger list refresh
+  };
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Projects</h1>
-        <Button asChild>
-          <Link href="/contractor/projects/new">New Project</Link>
+    <div className="max-w-5xl mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Projects</h1>
+        <Button
+          className="bg-gradient-to-r from-[#6a6dff] to-[#8f6aff] text-white font-bold px-6 py-2 rounded-lg shadow-md"
+          onClick={handleAdd}
+        >
+          Add Project
         </Button>
       </div>
-      {loading ? (
-        <Skeleton className="h-40 w-full" />
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <Card key={project.id}>
-              <CardContent className="p-4 space-y-2">
-                <h2 className="font-semibold text-lg">{project.title}</h2>
-                <p>{project.description}</p>
-                <p>Budget: ₹{project.budget}</p>
-                <p>Deadline: {project.deadline}</p>
-                <Button asChild>
-                  <Link href={`/contractor/projects/${project.id}`}>Edit</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+      {showForm && (
+        <div className="mb-8">
+          <ContractorProjectForm project={editingProject} onSuccess={handleSuccess} />
         </div>
       )}
+      <ContractorProjectsList key={refreshKey} onEdit={handleEdit} />
     </div>
   );
 }

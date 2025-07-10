@@ -1,8 +1,11 @@
-"use client";
-import { useParams } from "next/navigation";
 import ContractorProjectForm from "@/components/forms/contractor-project-form";
 
-export default function EditProjectPage() {
-  const { projectId } = useParams();
-  return <ContractorProjectForm projectId={projectId as string} />;
+interface ProjectPageProps {
+  params: {
+    projectId: string;
+  };
+}
+
+export default function EditContractorProjectPage({ params }: ProjectPageProps) {
+  return <ContractorProjectForm mode="edit" projectId={params.projectId} />;
 }

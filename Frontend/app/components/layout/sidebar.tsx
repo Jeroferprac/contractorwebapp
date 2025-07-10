@@ -20,6 +20,7 @@ const navItems = [
   { name: "Quotes", href: "/quotes", icon: FileText },
 
   { name: "Contractor", href: "/contractor", icon: User }, // ✅ New item
+  { name: "Projects", href: "/contractor/projects", icon: Kanban }, // Added projects link
   { name: "Kanban", href: "/kanban", icon: Kanban },
 
   { name: "company", href: "/company", icon: Kanban },

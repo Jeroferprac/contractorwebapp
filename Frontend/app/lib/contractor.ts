@@ -1,80 +1,86 @@
+// ✅ lib/contractor.ts — All contractor API functions
+import { API, fetchWithAuth } from "./api";
+
 export interface ContractorProfile {
+  id?: string;
+  user_id?: string;
   company_name: string;
-  address: string;
-  phone_number: string;
-  logo?: File | null;
+  profile_type: "contractor" | "company";
+  business_license?: string;
+  description?: string;
+  website_url?: string;
+  services?: string[];
+  location?: {
+    city?: string;
+    state?: string;
+    country?: string;
+    [key: string]: any;
+  };
+  verified?: boolean;
+  rating?: number;
+  total_reviews?: number;
+  created_at?: string;
+  updated_at?: string;
+  projects?: any[];
 }
 
 export interface Project {
-  id?: string;
+  id: string;
   title: string;
   description: string;
-  budget: number;
-  deadline: string;
+  attachment_url?: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Contractor Profile
+export async function getContractorProfile(): Promise<ContractorProfile> {
+  return fetchWithAuth(API.CONTRACTOR.BASE);
+}
 
-export const fetchContractorProfile = async (): Promise<ContractorProfile | null> => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
-    credentials: "include",
-  });
-  if (!res.ok) return null;
-  return res.json();
-};
-
-export const saveContractorProfile = async (data: FormData) => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
+export async function createContractorProfile(data: ContractorProfile): Promise<ContractorProfile> {
+  return fetchWithAuth(API.CONTRACTOR.BASE, {
     method: "POST",
-    credentials: "include",
-    body: data,
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
-  if (!res.ok) throw new Error("Failed to save profile");
-  return res.json();
-};
+}
 
-export const updateContractorProfile = async (data: FormData) => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
+export async function updateContractorProfile(data: ContractorProfile): Promise<ContractorProfile> {
+  return fetchWithAuth(API.CONTRACTOR.BASE, {
     method: "PATCH",
-    credentials: "include",
-    body: data,
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
-  if (!res.ok) throw new Error("Failed to update profile");
-  return res.json();
-};
+}
 
-export const fetchProjects = async (): Promise<Project[]> => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/`, {
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to fetch projects");
-  return res.json();
-};
+// Contractor Projects
+export async function getContractorProjects(): Promise<Project[]> {
+  return fetchWithAuth(API.CONTRACTOR.BASE + "projects/");
+}
 
-export const fetchProjectById = async (projectId: string): Promise<Project> => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/${projectId}`, {
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to fetch project");
-  return res.json();
-};
-
-export const createProject = async (data: FormData) => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/`, {
+export async function createContractorProject(data: any): Promise<Project> {
+  return fetchWithAuth(API.CONTRACTOR.BASE + "projects/", {
     method: "POST",
-    credentials: "include",
-    body: data,
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
-  if (!res.ok) throw new Error("Failed to create project");
-  return res.json();
-};
+}
 
-export const updateProject = async (projectId: string, data: FormData) => {
-  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/${projectId}`, {
+export async function getContractorProjectById(projectId: string): Promise<Project> {
+  return fetchWithAuth(API.CONTRACTOR.BASE + `projects/${projectId}`);
+}
+
+export async function updateContractorProject(projectId: string, data: any): Promise<Project> {
+  return fetchWithAuth(API.CONTRACTOR.BASE + `projects/${projectId}`, {
     method: "PATCH",
-    credentials: "include",
-    body: data,
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
-  if (!res.ok) throw new Error("Failed to update project");
-  return res.json();
-};
+}
