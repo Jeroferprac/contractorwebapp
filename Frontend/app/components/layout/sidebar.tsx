@@ -1,15 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
   FileText,
-  Kanban,
+  FolderKanban,
+  ListChecks,
   User,
   LogIn,
   CreditCard,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import clsx from "clsx";
@@ -18,19 +20,15 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Quotes", href: "/quotes", icon: FileText },
-
-  { name: "Contractor", href: "/contractor", icon: User }, // ✅ New item
-  { name: "Projects", href: "/contractor/projects", icon: Kanban }, // Added projects link
-  { name: "Kanban", href: "/kanban", icon: Kanban },
-
-  { name: "company", href: "/company", icon: Kanban },
-
+  { name: "Contractor", href: "/contractor", icon: User },
+  { name: "Projects", href: "/contractor/projects", icon: FolderKanban },
+  { name: "Kanban", href: "/kanban", icon: ListChecks },
+  { name: "Company", href: "/company", icon: Building2 },
   { name: "Profile", href: "/profile", icon: User },
-  
   { name: "Sign In", href: "/login", icon: LogIn },
 ];
 
-export function Sidebar() {
+export default function Sidebar() {
   const pathname = usePathname();
 
   return (

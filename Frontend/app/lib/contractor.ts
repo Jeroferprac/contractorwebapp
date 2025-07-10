@@ -1,86 +1,119 @@
 // ✅ lib/contractor.ts — All contractor API functions
-import { API, fetchWithAuth } from "./api";
+import { Contractor } from "@/types/contractor";
+import { Project } from "@/types/project"; // Make sure to define this type
 
-export interface ContractorProfile {
-  id?: string;
-  user_id?: string;
-  company_name: string;
-  profile_type: "contractor" | "company";
-  business_license?: string;
-  description?: string;
-  website_url?: string;
-  services?: string[];
-  location?: {
-    city?: string;
-    state?: string;
-    country?: string;
-    [key: string]: any;
-  };
-  verified?: boolean;
-  rating?: number;
-  total_reviews?: number;
-  created_at?: string;
-  updated_at?: string;
-  projects?: any[];
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Get Contractor Profile (GET)
+export async function getContractorProfile(token: string): Promise<Contractor> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch contractor profile");
+  return res.json();
 }
 
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  attachment_url?: string;
-}
-
-// Contractor Profile
-export async function getContractorProfile(): Promise<ContractorProfile> {
-  return fetchWithAuth(API.CONTRACTOR.BASE);
-}
-
-export async function createContractorProfile(data: ContractorProfile): Promise<ContractorProfile> {
-  return fetchWithAuth(API.CONTRACTOR.BASE, {
+// Create Contractor Profile (POST)
+export async function createContractorProfile(data: Partial<Contractor>, token: string): Promise<Contractor> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
     method: "POST",
-    body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(data),
   });
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error creating contractor profile:", errorText);
+    throw new Error(errorText || "Failed to create contractor profile");
+  }
+  return res.json();
 }
 
-export async function updateContractorProfile(data: ContractorProfile): Promise<ContractorProfile> {
-  return fetchWithAuth(API.CONTRACTOR.BASE, {
+// Update Contractor Profile (PATCH)
+export async function updateContractorProfile(data: Partial<Contractor>, token: string): Promise<Contractor> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/`, {
     method: "PATCH",
-    body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(data),
   });
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error updating contractor profile:", errorText);
+    throw new Error(errorText || "Failed to update contractor profile");
+  }
+  return res.json();
 }
 
-// Contractor Projects
-export async function getContractorProjects(): Promise<Project[]> {
-  return fetchWithAuth(API.CONTRACTOR.BASE + "projects/");
+// List all projects for the authenticated contractor (GET)
+export async function fetchContractorProjects(token: string): Promise<Project[]> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch contractor projects");
+  return res.json();
 }
 
-export async function createContractorProject(data: any): Promise<Project> {
-  return fetchWithAuth(API.CONTRACTOR.BASE + "projects/", {
+// Create Project (POST)
+export async function createContractorProject(data: Partial<Project>, token: string): Promise<Project> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/`, {
     method: "POST",
-    body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(data),
   });
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error creating project:", errorText);
+    throw new Error(errorText || "Failed to create project");
+  }
+  return res.json();
 }
 
-export async function getContractorProjectById(projectId: string): Promise<Project> {
-  return fetchWithAuth(API.CONTRACTOR.BASE + `projects/${projectId}`);
-}
-
-export async function updateContractorProject(projectId: string, data: any): Promise<Project> {
-  return fetchWithAuth(API.CONTRACTOR.BASE + `projects/${projectId}`, {
+// Update Project (PATCH)
+export async function updateContractorProject(project_id: string, data: Partial<Project>, token: string): Promise<Project> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/${project_id}`, {
     method: "PATCH",
-    body: JSON.stringify(data),
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error updating project:", errorText);
+    throw new Error(errorText || "Failed to update project");
+  }
+  return res.json();
+}
+
+// Get a specific project by ID (GET)
+export async function fetchContractorProject(project_id: string, token: string): Promise<Project> {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/${project_id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch project");
+  return res.json();
+}
+
+export async function deleteContractorProject(id: string, token: string) {
+  const res = await fetch(`${API_BASE}/api/v1/contractor/contractor/projects/${id}/`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
   });
+  if (!res.ok) {
+    // Log the error response for debugging
+    const errorText = await res.text();
+    console.error("Delete failed:", errorText);
+    throw new Error("Failed to delete project");
+  }
 }

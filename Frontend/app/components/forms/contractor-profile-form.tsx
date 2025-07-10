@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
-import {
-  ContractorProfile,
-  getContractorProfile,
-  createContractorProfile,
-  updateContractorProfile,
-} from "@/lib/contractor";
+import { createContractorProfile, updateContractorProfile, getContractorProfile } from "@/lib/contractor";
+import { Contractor } from "@/types/contractor";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const defaultProfile: ContractorProfile = {
+const defaultProfile: Contractor = {
+  id: "",
   company_name: "",
   profile_type: "contractor",
   business_license: "",
@@ -24,41 +23,49 @@ const defaultProfile: ContractorProfile = {
   verified: false,
   rating: 0.0,
   total_reviews: 0,
+  email: "",
+  // add any other required fields with default values
 };
 
 export default function ContractorProfileForm() {
-  const [profile, setProfile] = useState<ContractorProfile>(defaultProfile);
+  const { data: session } = useSession();
+  const token = session?.backendAccessToken || session?.accessToken;
+  const router = useRouter();
+
+  const [profile, setProfile] = useState<Contractor>(defaultProfile);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    getContractorProfile().then((data: ContractorProfile | null) => {
-      if (data) {
-        setProfile({
-          ...defaultProfile,
-          ...data,
-        });
-        setEditing(true);
-      }
-    });
-  }, []);
+    // Replace 'profile.id' with the actual contractor id if you have it
+    if (token) {
+      getContractorProfile(token).then((data: Contractor | null) => {
+        if (data) {
+          setProfile({
+            ...defaultProfile,
+            ...data,
+          });
+          setEditing(true);
+        }
+      });
+    }
+  }, [token, profile.id]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
-      // TypeScript-safe checkbox handling
-      setProfile((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+      setProfile((prev: Contractor) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else if (name === "services") {
-      setProfile((prev) => ({ ...prev, services: value.split(",").map((s) => s.trim()).filter(Boolean) }));
+      setProfile((prev: Contractor) => ({ ...prev, services: value.split(",").map((s) => s.trim()).filter(Boolean) }));
     } else if (name === "rating" || name === "total_reviews") {
-      setProfile((prev) => ({ ...prev, [name]: Number(value) }));
+      setProfile((prev: Contractor) => ({ ...prev, [name]: Number(value) }));
     } else {
-      setProfile((prev) => ({ ...prev, [name]: value }));
+      setProfile((prev: Contractor) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleLocationChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({
+    setProfile((prev: Contractor) => ({
       ...prev,
       location: {
         ...(prev.location || {}),
@@ -68,19 +75,24 @@ export default function ContractorProfileForm() {
   };
 
   const handleCheckboxChange = (checked: boolean) => {
-    setProfile((prev) => ({ ...prev, verified: checked }));
+    setProfile((prev: Contractor) => ({ ...prev, verified: checked }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      alert("You must be logged in to save your profile.");
+      return;
+    }
     const payload = { ...profile };
     try {
       if (editing) {
-        await updateContractorProfile(payload);
+        await updateContractorProfile(payload, token);
       } else {
-        await createContractorProfile(payload);
+        await createContractorProfile(payload, token);
       }
       alert("Profile saved successfully");
+      router.push("/contractor/profile");
     } catch (error) {
       console.error("Error saving profile", error);
       alert("Failed to save profile");

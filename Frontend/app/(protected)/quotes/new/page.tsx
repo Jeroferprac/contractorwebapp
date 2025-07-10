@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function NewQuotationPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [projectTitle, setProjectTitle] = useState("");
@@ -30,7 +30,8 @@ export default function NewQuotationPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (status !== "authenticated") {
+    const token = session?.backendAccessToken || session?.accessToken;
+    if (status !== "authenticated" || !token) {
       setError("You must be logged in to submit a quotation.");
       return;
     }
@@ -53,8 +54,10 @@ export default function NewQuotationPage() {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quote`,
         {
           method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
           body: formData,
-          credentials: "include",
         }
       );
 
@@ -65,7 +68,7 @@ export default function NewQuotationPage() {
       }
 
       router.push("/quotes");
-    } catch (err:any) {
+    } catch (err: any) {
       console.error("Error submitting quotation:", err);
       setError(err.message || "Submission failed. Try again.");
     } finally {

@@ -1,11 +1,19 @@
-import { useState } from "react";
-import { createContractorProject, updateContractorProject } from "@/lib/contractor";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import {
+  createContractorProject,
+  updateContractorProject,
+  fetchContractorProject,
+} from "@/lib/contractor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Project } from "@/types/project"; // Use your actual Project type
 
-export default function ContractorProjectForm({ project, onSuccess }: { project?: any, onSuccess?: () => void }) {
+export default function ContractorProjectForm({ project, onSuccess }: { project?: Project, onSuccess?: () => void }) {
+  const { data: session } = useSession();
+  const token = session?.backendAccessToken || session?.accessToken;
   const [form, setForm] = useState({
     title: project?.title || "",
     description: project?.description || "",
@@ -26,17 +34,28 @@ export default function ContractorProjectForm({ project, onSuccess }: { project?
     setLoading(true);
     try {
       if (project?.id) {
-        await updateContractorProject(project.id, form);
+        await updateContractorProject(project.id, form, token ?? "");
       } else {
-        await createContractorProject(form);
+        await createContractorProject(form, token ?? "");
       }
       if (onSuccess) onSuccess();
-    } catch (err) {
-      alert("Failed to save project");
+    } catch {
+      // handle error if needed, or leave empty if not used
     } finally {
       setLoading(false);
     }
   };
+
+  const [projectId] = useState<string>();
+
+  useEffect(() => {
+    // If you need to fetch a project by ID, make sure projectId is always a string
+    // Example:
+    // if (!project?.id || !token) return;
+    // fetchContractorProject(project.id, token)
+    //   .then((project) => { /* ... */ })
+    //   .catch(() => { /* ... */ });
+  }, [token]);
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-6">

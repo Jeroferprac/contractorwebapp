@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { submitQuotation } from "@/lib/quotation";
 
 export default function QuotationForm() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const [formData, setFormData] = useState({
     projectTitle: "",
@@ -31,7 +31,12 @@ export default function QuotationForm() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (status !== "authenticated") {
+    const token = session?.backendAccessToken || session?.accessToken;
+    console.log("Session:", session);
+    console.log("Status:", status);
+    console.log("Token:", token);
+
+    if (status !== "authenticated" || !token) {
       alert("You must be logged in to submit a quotation.");
       return;
     }
@@ -48,7 +53,7 @@ export default function QuotationForm() {
     }
 
     try {
-      await submitQuotation(form);
+      await submitQuotation(form, token);
       alert("Quotation submitted successfully!");
       setFormData({
         projectTitle: "",

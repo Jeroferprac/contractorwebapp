@@ -4,6 +4,7 @@ import { useState } from "react";
 import ContractorProjectsList from "@/components/contractor/ContractorProjectsList";
 import ContractorProjectForm from "@/components/forms/contractor-project-form";
 import { Button } from "@/components/ui/button";
+import { deleteContractorProject } from "@/lib/contractor";
 
 export default function ContractorProjectsPage() {
   const [editingProject, setEditingProject] = useState<any | null>(null);
@@ -24,6 +25,17 @@ export default function ContractorProjectsPage() {
     setShowForm(false);
     setEditingProject(null);
     setRefreshKey((k) => k + 1); // trigger list refresh
+  };
+
+  const handleDelete = async (projectId: string) => {
+    if (!token) return;
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await deleteContractorProject(projectId, token);
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+    } catch (err: any) {
+      alert(err.message || "Failed to delete project");
+    }
   };
 
   return (
