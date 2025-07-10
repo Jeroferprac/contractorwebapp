@@ -18,8 +18,12 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Quotes", href: "/quotes", icon: FileText },
+
   { name: "Contractor", href: "/contractor", icon: User }, // ✅ New item
   { name: "Kanban", href: "/kanban", icon: Kanban },
+
+  { name: "company", href: "/company", icon: Kanban },
+
   { name: "Profile", href: "/profile", icon: User },
   
   { name: "Sign In", href: "/login", icon: LogIn },

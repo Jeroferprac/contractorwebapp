@@ -27,7 +27,7 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 shadow-sm dark:bg-[#020817]">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
         <button className="p-1 text-gray-400 hover:text-gray-600">

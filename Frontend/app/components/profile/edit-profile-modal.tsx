@@ -167,8 +167,8 @@ export function EditProfileModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent className="max-w-md ">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Edit Profile

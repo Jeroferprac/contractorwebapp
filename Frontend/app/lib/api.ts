@@ -47,12 +47,23 @@ const UTILS = {
   HEALTH: `${BASE_URL}/health`,
   ROOT: `${BASE_URL}/`,
 };
+const COMPANY = {
+  PROFILE: `${BASE_URL}/api/v1/company/company/`,
+};
 
-// 🌐 Export all API paths
+const PROJECTS = {
+  LIST: `${BASE_URL}/api/v1/company/company/projects/`,
+  CREATE: `${BASE_URL}/api/v1/company/company/projects/`,
+  DETAIL: (projectId: string) => `${BASE_URL}/api/v1/company/company/projects/${projectId}`,
+  UPDATE: (projectId: string) => `${BASE_URL}/api/v1/company/company/projects/${projectId}`,
+};
+
 export const API = {
-  AUTH,
-  USERS,
-  QUOTATION,
+  ...AUTH,
+  ...USERS,
+  ...QUOTATION,
+  ...UTILS,
+  COMPANY,
   CONTRACTOR,
-  UTILS,
+  PROJECTS,
 };
