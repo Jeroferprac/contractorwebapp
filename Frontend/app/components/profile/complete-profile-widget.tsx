@@ -2,7 +2,7 @@ import { Upload } from "lucide-react"
 
 export function CompleteProfileWidget() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm h-full flex flex-col">
+    <div className="bg-white dark:bg-[#020817] rounded-2xl p-6 shadow-sm h-full flex flex-col">
       <h3 className="text-xl font-bold text-gray-900 mb-2">Complete your profile</h3>
       <p className="text-gray-400 text-sm mb-6 leading-relaxed flex-grow">
         Stay on the pulse of distributed projects with an online whiteboard to plan, coordinate and discuss
