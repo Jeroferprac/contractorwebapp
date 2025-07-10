@@ -1,6 +1,6 @@
 export function GeneralInformation() {
   return (
-    <div className="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+    <div className="bg-white dark:bg-[#020817] rounded-2xl p-4 lg:p-6 shadow-sm">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-4 lg:mb-6">General Information</h3>
 
       <div className="space-y-4 lg:space-y-6">

@@ -26,7 +26,7 @@ const projects = [
 
 export function AllProjects() {
   return (
-    <div className="bg-white rounded-2xl p-4 lg:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 lg:p-6 shadow-sm dark:bg-[#020817]">
       <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-2">All Projects</h3>
       <p className="text-gray-400 text-sm mb-4 lg:mb-6 leading-relaxed">
         Here you can find more details about your projects. Keep you user engaged by providing meaningful information.

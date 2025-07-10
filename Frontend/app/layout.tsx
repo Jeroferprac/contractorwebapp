@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import Providers from "./providers"
 import { ToastProvider } from "./components/ui/toast"
+import { UserSyncer } from "@/components/UserSyncer"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,8 +28,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${geistSans.variable} ${geistMono.variable}`}>
-
         <Providers>
+          <UserSyncer />
           {children}
           <ToastProvider />
         </Providers>

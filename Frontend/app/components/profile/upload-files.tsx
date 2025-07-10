@@ -5,7 +5,7 @@ import { Upload } from "lucide-react"
 export function UploadFiles() {
   return (
     <Card>
-      <CardHeader className="text-center">
+      <CardHeader className="text-center dark:bg-[#020817]">
         <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
           <Upload className="w-6 h-6 text-purple-600" />
         </div>

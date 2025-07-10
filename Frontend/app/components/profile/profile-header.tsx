@@ -91,7 +91,7 @@ export function ProfileHeader({ user, onProfileUpdated }: { user: any, onProfile
 
   return (
     <>
-      <Card className="relative overflow-hidden bg-white">
+      <Card className="relative overflow-hidden bg-white dark:bg-[#020817]">
         <div className="h-32 md:h-40 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-800 relative">
           <div className="absolute inset-0 bg-black bg-opacity-20"></div>
           <DropdownMenu>

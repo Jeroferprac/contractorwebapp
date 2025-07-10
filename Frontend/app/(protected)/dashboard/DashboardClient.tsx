@@ -1,6 +1,5 @@
 
 "use client";
-import { API } from "@/lib/api"
 import type { Session } from "next-auth";
 import { useEffect, useState } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
@@ -16,7 +15,7 @@ import { TeamMembers } from "@/components/dashboard/widgets/team-members";
 import { SecurityCard } from "@/components/dashboard/widgets/security-card";
 import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card";
 import { LessonCard } from "@/components/dashboard/bottom/lesson-card";
-
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 interface DashboardClientProps {
   session: Session;
@@ -38,10 +37,6 @@ export default function DashboardClient({ session }: DashboardClientProps) {
   useEffect(() => {
 
     // Demo stats (replace with real API calls in production)
-
-    console.log("✅ Session received in DashboardClient:", session);
-
-
     const timer = setTimeout(() => {
       setStats({
         earnings: 350.4,
@@ -64,43 +59,40 @@ export default function DashboardClient({ session }: DashboardClientProps) {
   }, [session]);
 
   return (
-    <div className="space-y-6">
-      <MetricsCards stats={stats} loading={loading} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RevenueChart data={revenueChartData} loading={loading} />
+    <DashboardLayout session={session} title="Main Dashboard">
+      <div className="space-y-6">
+        <MetricsCards stats={stats} loading={loading} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <RevenueChart data={revenueChartData} loading={loading} />
+          </div>
+          <div>
+            <WeeklyRevenueChart />
+          </div>
         </div>
-        <div>
-          <WeeklyRevenueChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CheckTable />
+          <div className="space-y-6">
+            <DailyTrafficChart />
+            <PieChart />
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CheckTable />
-        <div className="space-y-6">
-          <DailyTrafficChart />
-          <PieChart />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ComplexTable />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TasksWidget />
+            <CalendarWidget />
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ComplexTable />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TasksWidget />
-          <CalendarWidget />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <LessonCard />
-        <TeamMembers />
-        <div className="space-y-6">
-          <SecurityCard />
-          <StarbucksCard />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LessonCard />
+          <TeamMembers />
+          <div className="space-y-6">
+            <SecurityCard />
+            <StarbucksCard />
+          </div>
         </div>
       </div>
-
     </DashboardLayout>
   )
 }

@@ -10,6 +10,7 @@ type User = {
   country?: string
   role: "company" | "contractor" | "admin"
   avatar_url?: string
+  avatar?: string
 }
 
 type UserState = {
