@@ -1,55 +1,27 @@
-export interface Attachment {
-  filename: string;
-  content_type: string;
-  base64: string;
-}
+// app/lib/quotation.ts
+import { axiosInstance } from "@/lib/api";
 
 export interface QuotationPayload {
-  projectTitle: string;
+  project_title: string;
   description: string;
-  estimated_budget_min: number;
-  estimated_budget_max: number;
+  estimated_budget_min: string;
+  estimated_budget_max: string;
   deadline: string;
-  attachments: Attachment[];
+  attachment?: File | null;
 }
 
-export const submitQuotation = async (payload: QuotationPayload, token: string) => {
+export async function submitQuotation(payload: QuotationPayload) {
   const formData = new FormData();
-
-  formData.append("project_title", payload.projectTitle);
+  formData.append("project_title", payload.project_title);
   formData.append("description", payload.description);
-  formData.append("estimated_budget_min", String(payload.estimated_budget_min));
-  formData.append("estimated_budget_max", String(payload.estimated_budget_max));
+  formData.append("estimated_budget_min", payload.estimated_budget_min);
+  formData.append("estimated_budget_max", payload.estimated_budget_max);
   formData.append("deadline", payload.deadline);
 
-  payload.attachments.forEach((att) => {
-    const blob = base64ToBlob(att.base64, att.content_type);
-    formData.append("attachments", new File([blob], att.filename, { type: att.content_type }));
-  });
-
-  const res = await fetch("http://localhost:8000/api/v1/quotation/quote", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Failed to submit quotation: ${errorText}`);
+  if (payload.attachment) {
+    formData.append("attachments", payload.attachment);
   }
 
-  return res.json();
-};
-
-const base64ToBlob = (base64: string, contentType: string): Blob => {
-  const byteCharacters = atob(base64);
-  const byteArrays = [];
-
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.charCodeAt(i));
-  }
-
-  return new Blob([new Uint8Array(byteArrays)], { type: contentType });
-};
+  const response = await axiosInstance.post("/api/v1/quotation/quote", formData);
+  return response.data;
+}
