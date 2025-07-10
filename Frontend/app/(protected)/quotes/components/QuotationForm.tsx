@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { submitQuotation } from "@/lib/quotation";
 
@@ -16,7 +16,9 @@ export default function QuotationForm() {
     file: null as File | null,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     if (name === "file" && e.target instanceof HTMLInputElement) {
       const files = e.target.files;
@@ -26,7 +28,7 @@ export default function QuotationForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (status !== "authenticated") {

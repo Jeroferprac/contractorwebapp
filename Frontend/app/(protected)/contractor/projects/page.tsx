@@ -1,43 +1,50 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAllContractorProjects, Project } from "@/lib/contractor";
+import { Project, fetchProjects } from "@/lib/contractor";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default function ProjectListPage() {
+export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    getAllContractorProjects()
-      .then(setProjects)
-      .catch(() => console.error("Failed to fetch projects"));
+    fetchProjects()
+      .then((data: Project[]) => setProjects(data))
+      .catch((err) => console.error("Failed to load projects:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Your Projects</h2>
-        <Link href="/contractor/projects/new">
-          <Button>Add New Project</Button>
-        </Link>
+        <h1 className="text-2xl font-bold">Projects</h1>
+        <Button asChild>
+          <Link href="/contractor/projects/new">New Project</Link>
+        </Button>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
-          <Card key={project.id}>
-            <CardContent className="p-4 space-y-2">
-              <h3 className="font-semibold">{project.title}</h3>
-              <p className="text-sm text-muted-foreground">{project.description}</p>
-              <p className="text-sm">Budget: ₹{project.budget_min} - ₹{project.budget_max}</p>
-              <p className="text-sm">Deadline: {project.deadline}</p>
-              <Link href={`/contractor/projects/${project.id}`}>
-                <Button size="sm" variant="outline" className="mt-2 w-full">Edit</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {loading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((project) => (
+            <Card key={project.id}>
+              <CardContent className="p-4 space-y-2">
+                <h2 className="font-semibold text-lg">{project.title}</h2>
+                <p>{project.description}</p>
+                <p>Budget: ₹{project.budget}</p>
+                <p>Deadline: {project.deadline}</p>
+                <Button asChild>
+                  <Link href={`/contractor/projects/${project.id}`}>Edit</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

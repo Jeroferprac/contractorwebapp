@@ -1,187 +1,81 @@
-"use client"
+"use client";
 
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { toast } from "sonner"
-import { useEffect, useState } from "react"
-import {
-  getContractorProfile,
-  createContractorProfile,
+  ContractorProfile,
+  fetchContractorProfile,
+  saveContractorProfile,
   updateContractorProfile,
-} from "@/lib/contractor"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form"
-import { useSession } from "next-auth/react"
-
-const formSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(8),
-  address: z.string(),
-  logo: z
-    .custom<File>()
-    .refine((file) => file instanceof File || file === undefined, {
-      message: "Logo must be a file",
-    })
-    .optional(),
-})
-
-type ContractorFormValues = z.infer<typeof formSchema>
+} from "@/lib/contractor";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function ContractorProfileForm() {
-  // ✅ session is fetched but not used, so omit to avoid warning
-  // const { data: session } = useSession()
-  const [isExisting, setIsExisting] = useState(false)
-
-  const form = useForm<ContractorFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      logo: undefined,
-    },
-  })
+  const [profile, setProfile] = useState<ContractorProfile>({
+    company_name: "",
+    address: "",
+    phone_number: "",
+    logo: null,
+  });
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await getContractorProfile()
-        if (data) {
-          form.reset({
-            name: data.name || "",
-            email: data.email || "",
-            phone: data.phone || "",
-            address: data.address || "",
-          })
-          setIsExisting(true)
-        }
-      } catch (error) {
-        console.error("❌ Fetch error", error)
+    fetchContractorProfile().then((data: ContractorProfile | null) => {
+      if (data) {
+        setProfile(data);
+        setEditing(true);
       }
-    }
+    });
+  }, []);
 
-    fetchProfile()
-  }, [form])
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfile((prev: ContractorProfile) => ({ ...prev, [name]: value }));
+  };
 
-  const onSubmit = async (values: ContractorFormValues) => {
-    const formData = new FormData()
-    formData.append("name", values.name)
-    formData.append("email", values.email)
-    formData.append("phone", values.phone)
-    formData.append("address", values.address)
-    if (values.logo) {
-      formData.append("logo", values.logo)
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setProfile((prev: ContractorProfile) => ({
+        ...prev,
+        logo: e.target.files![0],
+      }));
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("company_name", profile.company_name);
+    formData.append("address", profile.address);
+    formData.append("phone_number", profile.phone_number);
+    if (profile.logo) formData.append("logo", profile.logo);
 
     try {
-      if (isExisting) {
-        await updateContractorProfile(formData)
-        toast.success("✅ Profile updated!")
+      if (editing) {
+        await updateContractorProfile(formData);
       } else {
-        await createContractorProfile(formData)
-        toast.success("✅ Profile created!")
-        setIsExisting(true)
+        await saveContractorProfile(formData);
       }
-    } catch (err) {
-      toast.error("❌ Failed to save profile")
-      console.error("Save error:", err)
+      alert("Profile saved successfully");
+    } catch (error) {
+      console.error("Error saving profile", error);
+      alert("Failed to save profile");
     }
-  }
+  };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-2xl shadow-xl border border-border">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl font-bold">Contractor Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl><Input placeholder="Full Name" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="Email" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl><Input placeholder="Phone Number" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl><Input placeholder="Address" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="logo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Logo (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => field.onChange(e.target.files?.[0])}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full">
-                {isExisting ? "Update Profile" : "Create Profile"}
-              </Button>
-            </form>
-          </Form>
+    <form onSubmit={handleSubmit} className="max-w-xl space-y-4 p-4">
+      <Card>
+        <CardContent className="space-y-4 p-6">
+          <h2 className="text-xl font-semibold">Contractor Profile</h2>
+          <Input name="company_name" value={profile.company_name} onChange={handleChange} placeholder="Company Name" required />
+          <Input name="address" value={profile.address} onChange={handleChange} placeholder="Address" required />
+          <Input name="phone_number" value={profile.phone_number} onChange={handleChange} placeholder="Phone Number" required />
+          <Input type="file" accept="image/*" onChange={handleFileChange} />
+          <Button type="submit">{editing ? "Update Profile" : "Save Profile"}</Button>
         </CardContent>
       </Card>
-    </div>
-  )
+    </form>
+  );
 }

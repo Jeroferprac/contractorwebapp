@@ -1,145 +1,93 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Project, createContractorProject, updateContractorProject } from "@/lib/contractor"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form"
-import { toast } from "sonner"
+  Project,
+  fetchProjectById,
+  createProject,
+  updateProject,
+} from "@/lib/contractor";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-const formSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().min(10),
-  budget_min: z.coerce.number().min(0),
-  budget_max: z.coerce.number().min(0),
-  deadline: z.string(),
-})
+export default function ContractorProjectForm({ projectId }: { projectId?: string }) {
+  const [project, setProject] = useState<Project>({
+    title: "",
+    description: "",
+    budget: 0,
+    deadline: "",
+  });
 
-type ProjectFormValues = z.infer<typeof formSchema>
-
-interface ContractorProjectFormProps {
-  project?: Project | null
-}
-
-export default function ContractorProjectForm({ project }: ContractorProjectFormProps) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-
-  const form = useForm<ProjectFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: project?.title || "",
-      description: project?.description || "",
-      budget_min: project?.budget_min || 0,
-      budget_max: project?.budget_max || 0,
-      deadline: project?.deadline || "",
-    },
-  })
-
-  const onSubmit = async (values: ProjectFormValues) => {
-    setLoading(true)
-    try {
-      if (project?.id) {
-        await updateContractorProject(project.id, values)
-        toast.success("✅ Project updated!")
-      } else {
-        await createContractorProject(values)
-        toast.success("✅ Project created!")
-      }
-      router.push("/contractor/projects")
-    } catch (err) {
-      toast.error("❌ Failed to save project")
-      console.error(err)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectById(projectId).then((data: Project) => {
+        setProject(data);
+      });
     }
-  }
+  }, [projectId]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProject((prev: Project) => ({
+      ...prev,
+      [name]: name === "budget" ? parseFloat(value) : value,
+    }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("title", project.title);
+    formData.append("description", project.description);
+    formData.append("budget", project.budget.toString());
+    formData.append("deadline", project.deadline);
+
+    try {
+      if (projectId) {
+        await updateProject(projectId, formData);
+      } else {
+        await createProject(formData);
+      }
+      alert("Project saved successfully");
+    } catch (error) {
+      console.error("Error saving project", error);
+      alert("Failed to save project");
+    }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Project title" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Input placeholder="Short description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="budget_min"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Budget Min</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Min budget" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+    <form onSubmit={handleSubmit} className="max-w-xl space-y-4 p-4">
+      <Card>
+        <CardContent className="space-y-4 p-6">
+          <h2 className="text-xl font-semibold">{projectId ? "Edit Project" : "New Project"}</h2>
+          <Input name="title" value={project.title} onChange={handleChange} placeholder="Title" required />
+          <textarea
+            name="description"
+            value={project.description}
+            onChange={handleChange}
+            placeholder="Description"
+            className="w-full border rounded p-2"
+            required
           />
-          <FormField
-            control={form.control}
-            name="budget_max"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Budget Max</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Max budget" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <Input
+            name="budget"
+            type="number"
+            value={project.budget}
+            onChange={handleChange}
+            placeholder="Budget"
+            required
           />
-        </div>
-        <FormField
-          control={form.control}
-          name="deadline"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Deadline</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Saving..." : project ? "Update Project" : "Create Project"}
-        </Button>
-      </form>
-    </Form>
-  )
+          <Input
+            name="deadline"
+            type="date"
+            value={project.deadline}
+            onChange={handleChange}
+            required
+          />
+          <Button type="submit">{projectId ? "Update Project" : "Create Project"}</Button>
+        </CardContent>
+      </Card>
+    </form>
+  );
 }

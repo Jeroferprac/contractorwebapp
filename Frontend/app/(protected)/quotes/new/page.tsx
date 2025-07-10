@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitQuotation } from "@/lib/quotation";
 
 export default function NewQuotationPage() {
   const { status } = useSession();
@@ -40,19 +39,35 @@ export default function NewQuotationPage() {
     setError(null);
 
     try {
-      await submitQuotation({
-        project_title: projectTitle,
-        description,
-        estimated_budget_min: estimatedBudgetMin,
-        estimated_budget_max: estimatedBudgetMax,
-        deadline,
-        attachment,
-      });
+      const formData = new FormData();
+      formData.append("project_title", projectTitle);
+      formData.append("description", description);
+      formData.append("estimated_budget_min", estimatedBudgetMin);
+      formData.append("estimated_budget_max", estimatedBudgetMax);
+      formData.append("deadline", deadline);
+      if (attachment) {
+        formData.append("attachments", attachment);
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quote`,
+        {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.detail || "Failed to submit quotation.");
+      }
 
       router.push("/quotes");
-    } catch (err: any) {
+    } catch (err:any) {
       console.error("Error submitting quotation:", err);
-      setError("Failed to submit quotation. Please try again.");
+      setError(err.message || "Submission failed. Try again.");
     } finally {
       setLoading(false);
     }

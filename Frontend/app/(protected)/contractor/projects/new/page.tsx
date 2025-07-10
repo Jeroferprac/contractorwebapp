@@ -1,4 +1,4 @@
-// app/(protected)/contractor/projects/new/page.tsx
+"use client";
 import ContractorProjectForm from "@/components/forms/contractor-project-form";
 
 export default function NewProjectPage() {

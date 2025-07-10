@@ -1,6 +1,8 @@
-// app/(protected)/contractor/projects/[projectId]/page.tsx
+"use client";
+import { useParams } from "next/navigation";
 import ContractorProjectForm from "@/components/forms/contractor-project-form";
 
 export default function EditProjectPage() {
-  return <ContractorProjectForm />;
+  const { projectId } = useParams();
+  return <ContractorProjectForm projectId={projectId as string} />;
 }

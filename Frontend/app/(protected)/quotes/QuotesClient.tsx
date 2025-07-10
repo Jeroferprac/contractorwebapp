@@ -14,35 +14,40 @@ interface Quotation {
 }
 
 export default function QuotesClient() {
-  const { data: session } = useSession();
+  const { status } = useSession();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchQuotations = async () => {
-      if (!session?.backendAccessToken) return;
+      if (status !== "authenticated") return;
 
       try {
-        const res = await fetch("http://localhost:8000/api/v1/quotation/quotes", {
-          headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch quotations");
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quotes`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch quotations");
+        }
 
         const data = await res.json();
         if (Array.isArray(data.items)) {
           setQuotations(data.items);
         }
       } catch (error) {
-        console.error("Error fetching quotations:", error);
+        console.error("❌ Error fetching quotations:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchQuotations();
-  }, [session]);
+  }, [status]);
 
   return (
     <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow">
@@ -77,7 +82,9 @@ export default function QuotesClient() {
                   <td className="px-4 py-2 text-purple-600 dark:text-purple-400">
                     ₹{quote.estimated_budget_min} - ₹{quote.estimated_budget_max}
                   </td>
-                  <td className="px-4 py-2">{new Date(quote.deadline).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    {new Date(quote.deadline).toLocaleDateString()}
+                  </td>
                   <td className="px-4 py-2">
                     {quote.attachments?.length > 0 ? (
                       <ul className="space-y-1">
