@@ -16,7 +16,7 @@ export function WeeklyRevenueChart() {
   ]
 
   return (
-    <Card className="border-0 shadow-sm bg-white dark:bg-zinc-900">
+    <Card className="border-0 shadow-sm bg-white dark:bg-[#020817]">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Weekly Revenue</CardTitle>
         <Button variant="ghost" size="icon">
