@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -51,31 +51,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   }
 
   return (
-    <div
-      className={clsx(
-        "fixed left-0 top-0 w-64 bg-white dark:bg-[#0b1437] z-50 transform transition-transform duration-300 ease-in-out shadow-xl",
-        isOpen ? "translate-x-0" : "-translate-x-full",
-        "lg:translate-x-0 lg:shadow-none"
-      )}
-    >
-      {/* Content wrapper: flex-col, fills height, keeps bottom card at bottom */}
-      <div className="flex flex-col justify-between min-h-screen">
-        {/* Mobile close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 lg:hidden"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Brand Header */}
-        <div className="p-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg"></div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">HORIZON</span>
-            <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
-          </div>
+    <div className="w-64 bg-white dark:bg-[#0b1437] transition-colors duration-200 border-r border-gray-200 dark:border-zinc-700 flex flex-col h-screen">
+      {/* Brand Header */}
+      <div className="p-6">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg"></div>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">HORIZON</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
         </div>
+      </div>
 
         {/* Navigation */}
         <nav className="px-4 flex-1">
@@ -176,22 +160,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </ul>
         </nav>
 
-        {/* Upgrade Card */}
-        <div className="p-4">
-          <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white text-center">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-6 h-6 text-white" />
-            </div>
-            <h3 className="font-semibold mb-2">Upgrade to PRO</h3>
-            <p className="text-sm opacity-90 mb-4">
-              to get access to all features! Connect with Venus World!
-            </p>
-            <Button className="w-full bg-white text-purple-600 hover:bg-gray-100 font-medium" size="sm">
-              Get Started
-            </Button>
+      {/* Upgrade Card */}
+      <div className="p-4">
+        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CreditCard className="w-6 h-6 text-white" />
           </div>
+          <h3 className="font-semibold mb-2">Upgrade to PRO</h3>
+          <p className="text-sm opacity-90 mb-4">
+            to get access to all features! Connect with Venus World!
+          </p>
+          <Button className="w-full bg-white text-purple-600 hover:bg-gray-100 font-medium" size="sm">
+            Get Started
+          </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -48,13 +48,9 @@ class QuotationOut(BaseModel):
     estimated_budget_max: float
     description: str
     deadline: date
-    ##created_at: datetime       # Add this for ordering/pagination
     created_at: datetime = Field(default_factory=datetime.now)
     attachments: List[QuotationAttachmentOut] = []
     model_config = ConfigDict(from_attributes=True)
-
-        #class Config:
-        #orm_mode = True
 
 class PaginatedQuotationResponse(BaseModel):
     total: int

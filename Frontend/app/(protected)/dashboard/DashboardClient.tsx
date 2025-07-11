@@ -1,5 +1,7 @@
 
+
 "use client";
+
 import type { Session } from "next-auth";
 import { useEffect, useState, Suspense, useMemo, memo } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
@@ -33,6 +35,7 @@ const WidgetSkeleton = memo(() => (
     <Skeleton className="h-32 w-full" />
   </div>
 ));
+
 
 interface DashboardClientProps {
   session: Session;
@@ -137,4 +140,3 @@ export default function DashboardClient({ session }: DashboardClientProps) {
     </DashboardLayout>
   )
 }
-

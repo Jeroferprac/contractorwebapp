@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { useSession } from "next-auth/react";
-import { submitQuotation, QuotationPayload, Attachment } from "@/lib/quotation";
+import { submitQuotation } from "@/lib/quotation";
 
 export default function QuotationForm() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const [formData, setFormData] = useState({
     projectTitle: "",
@@ -16,7 +16,9 @@ export default function QuotationForm() {
     file: null as File | null,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     if (name === "file" && e.target instanceof HTMLInputElement) {
       const files = e.target.files;
@@ -26,35 +28,32 @@ export default function QuotationForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!session?.backendAccessToken) {
+
+    const token = session?.backendAccessToken || session?.accessToken;
+    console.log("Session:", session);
+    console.log("Status:", status);
+    console.log("Token:", token);
+
+    if (status !== "authenticated" || !token) {
       alert("You must be logged in to submit a quotation.");
       return;
     }
 
-    const attachments: Attachment[] = [];
+    const form = new FormData();
+    form.append("project_title", formData.projectTitle);
+    form.append("description", formData.description);
+    form.append("estimated_budget_min", formData.estimatedBudgetMin);
+    form.append("estimated_budget_max", formData.estimatedBudgetMax);
+    form.append("deadline", formData.deadline);
 
     if (formData.file) {
-      const base64 = await fileToBase64(formData.file);
-      attachments.push({
-        filename: formData.file.name,
-        content_type: formData.file.type,
-        base64,
-      });
+      form.append("attachments", formData.file);
     }
 
-    const payload: QuotationPayload = {
-      projectTitle: formData.projectTitle,
-      description: formData.description,
-      estimated_budget_min: parseFloat(formData.estimatedBudgetMin),
-      estimated_budget_max: parseFloat(formData.estimatedBudgetMax),
-      deadline: formData.deadline,
-      attachments,
-    };
-
     try {
-      await submitQuotation(payload, session.backendAccessToken);
+      await submitQuotation(form, token);
       alert("Quotation submitted successfully!");
       setFormData({
         projectTitle: "",
@@ -65,24 +64,10 @@ export default function QuotationForm() {
         file: null,
       });
     } catch (err) {
-      if (err instanceof Error) {
-        alert(err.message || "Failed to submit quotation.");
-      } else {
-        alert("Failed to submit quotation.");
-      }
+      console.error(err);
+      alert("Failed to submit quotation.");
     }
   };
-
-  const fileToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64String = (reader.result as string).split(",")[1];
-        resolve(base64String);
-      };
-      reader.onerror = (error) => reject(error);
-    });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">

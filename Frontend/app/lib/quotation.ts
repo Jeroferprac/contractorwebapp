@@ -1,55 +1,51 @@
-export interface Attachment {
-  filename: string;
-  content_type: string;
-  base64: string;
-}
-
-export interface QuotationPayload {
-  projectTitle: string;
+export interface Quotation {
+  id: string;
+  project_title: string;
   description: string;
   estimated_budget_min: number;
   estimated_budget_max: number;
   deadline: string;
-  attachments: Attachment[];
+  // ...add other fields as needed
 }
 
-export const submitQuotation = async (payload: QuotationPayload, token: string) => {
-  const formData = new FormData();
-
-  formData.append("project_title", payload.projectTitle);
-  formData.append("description", payload.description);
-  formData.append("estimated_budget_min", String(payload.estimated_budget_min));
-  formData.append("estimated_budget_max", String(payload.estimated_budget_max));
-  formData.append("deadline", payload.deadline);
-
-  payload.attachments.forEach((att) => {
-    const blob = base64ToBlob(att.base64, att.content_type);
-    formData.append("attachments", new File([blob], att.filename, { type: att.content_type }));
-  });
-
-  const res = await fetch("http://localhost:8000/api/v1/quotation/quote", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+export async function fetchQuotations(token: string): Promise<Quotation[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quotes`,
+    {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`Failed to submit quotation: ${errorText}`);
+    console.error("❌ Error fetching quotations:", errorText);
+    throw new Error("Forbidden: You might not be logged in or lack permissions.");
   }
 
+  const result = await res.json();
+  return Array.isArray(result.items) ? result.items : [];
+}
+
+export async function submitQuotation(form: FormData, token: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quote`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: form,
+    }
+  );
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error submitting quotation:", errorText);
+    throw new Error("Failed to submit quotation");
+  }
   return res.json();
-};
-
-const base64ToBlob = (base64: string, contentType: string): Blob => {
-  const byteCharacters = atob(base64);
-  const byteArrays = [];
-
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.charCodeAt(i));
-  }
-
-  return new Blob([new Uint8Array(byteArrays)], { type: contentType });
-};
+}

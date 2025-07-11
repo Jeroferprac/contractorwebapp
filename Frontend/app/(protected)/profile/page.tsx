@@ -16,18 +16,7 @@ import { API } from "@/lib/api"
 import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useUserStore } from "@/store/userStore"
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
-
-type UserProfile = {
-  avatar?: string;
-  avatar_data?: string;
-  avatar_mimetype?: string;
-  avatar_url?: string;
-  full_name?: string;
-  email?: string;
-  // Add any other fields you use
-  [key: string]: any;
-};
+import DashboardLayout from "@/components/layout/dashboard-layout";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -36,9 +25,7 @@ export default function ProfilePage() {
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
 
-  console.log("Session in ProfilePage:", session);
-
-  const fetchUser = () => {
+  useEffect(() => {
     setLoading(true);
     if (!session?.backendAccessToken) return;
     fetch(API.PROFILE, {
@@ -72,14 +59,13 @@ export default function ProfilePage() {
 
   return (
     <DashboardLayout session={session} title="Profile">
-      {/* ShadCN Toaster */}
       <Toaster />
       <div className="p-4 lg:p-8">
         {/* Mobile Layout */}
         <div className="lg:hidden space-y-6">
           {loading
             ? <ProfileHeaderSkeleton />
-            : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+            : user && <ProfileHeader user={user} onProfileUpdated={() => {}} />
           }
           <Avatar>
             <AvatarImage src={user?.avatar || "/placeholder.svg"} alt="User avatar" />
@@ -98,7 +84,7 @@ export default function ProfilePage() {
             <div className="col-span-5">
               {loading
                 ? <ProfileHeaderSkeleton />
-                : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+                : user && <ProfileHeader user={user} onProfileUpdated={() => {}} />
               }
             </div>
             <div className="col-span-4">
