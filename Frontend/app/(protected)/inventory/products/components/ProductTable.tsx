@@ -3,6 +3,9 @@
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 export interface Product {
   id: string;
@@ -21,9 +24,11 @@ export interface Product {
 
 interface ProductTableProps {
   products: Product[]
+  onEdit?: (product: Product) => void;
+  onDelete?: (product: Product) => void;
 }
 
-export function ProductTable({ products }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -44,6 +49,7 @@ export function ProductTable({ products }: ProductTableProps) {
                 <th className="py-3 px-4 text-right">Min Stock</th>
                 <th className="py-3 px-4 text-right">Cost Price</th>
                 <th className="py-3 px-4 text-right">Selling Price</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -58,6 +64,19 @@ export function ProductTable({ products }: ProductTableProps) {
                   <td className="py-3 px-4 text-right">{p.min_stock_level}</td>
                   <td className="py-3 px-4 text-right">{p.cost_price}</td>
                   <td className="py-3 px-4 text-right">{p.selling_price}</td>
+                  <td className="py-3 px-4 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit && onEdit(p)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete && onDelete(p)}>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -83,6 +102,18 @@ export function ProductTable({ products }: ProductTableProps) {
                     <Badge variant="secondary">Stock: {product.current_stock}</Badge>
                   </div>
                 </div>
+                {/* Actions dropdown for mobile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit && onEdit(product)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete && onDelete(product)}>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </Card>
           ))}

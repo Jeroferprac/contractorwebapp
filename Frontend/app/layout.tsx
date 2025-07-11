@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import Providers from "./providers"
-import { ToastProvider } from "./components/ui/toast"
 import { UserSyncer } from "@/components/UserSyncer"
+import { Toaster } from "./components/ui/toaster"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +30,8 @@ export default function RootLayout({
       <body className={`font-sans ${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
           <UserSyncer />
+          <Toaster />
           {children}
-          <ToastProvider />
         </Providers>
       </body>
     </html>

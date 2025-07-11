@@ -9,7 +9,7 @@ import { GeneralInformation } from "@/components/profile/general-information"
 import { NotificationSettings } from "@/components/profile/notification-settings"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { Toaster } from "@/components/ui/toaster"
-import { useToastNotification } from "@/lib/hooks/use-toast-notifications"
+import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/store/authStore"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
@@ -32,7 +32,6 @@ type UserProfile = {
 export default function ProfilePage() {
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { notifySuccess, notifyError } = useToastNotification()
   const [loading, setLoading] = useState(true);
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
@@ -64,11 +63,11 @@ export default function ProfilePage() {
   }, [session]);
 
   const handleSave = () => {
-    notifySuccess("Profile saved", "Your changes have been successfully saved.")
+    toast({ title: "Profile saved", description: "Your changes have been successfully saved.", variant: "success" })
   }
 
   const handleError = () => {
-    notifyError("Error saving profile", "Something went wrong.")
+    toast({ title: "Error saving profile", description: "Something went wrong.", variant: "error" })
   }
 
   return (

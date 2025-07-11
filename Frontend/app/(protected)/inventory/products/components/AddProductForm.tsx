@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Form, FormField, FormLabel, FormControl, FormMessage, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,56 +8,83 @@ import { Button } from "@/components/ui/button";
 interface AddProductFormProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  initialData?: any; // Add this line
+  loading?: boolean; // Add this line
 }
 
-export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
-  const [form, setForm] = useState({
-    name: "",
-    sku: "",
-    category: "",
-    brand: "",
-    unit: "",
-    current_stock: "",
-    min_stock_level: "",
-    cost_price: "",
-    selling_price: "",
-    description: "",
-  });
+export function AddProductForm({ onSubmit, onCancel, initialData, loading }: AddProductFormProps) {
+  const [form, setForm] = useState(
+    initialData || {
+      name: "",
+      sku: "",
+      category: "",
+      brand: "",
+      unit: "",
+      current_stock: "",
+      min_stock_level: "",
+      cost_price: "",
+      selling_price: "",
+      description: "",
+    }
+  );
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const firstErrorRef = useRef<HTMLInputElement | null>(null);
 
-  function validate() {
+  function validate(currentForm = form) {
     const newErrors: { [key: string]: string } = {};
-    if (!form.name.trim()) newErrors.name = "Name is required.";
-    if (!form.sku.trim()) newErrors.sku = "SKU is required.";
-    if (!form.selling_price.trim()) newErrors.selling_price = "Selling price is required.";
+    if (!currentForm.name.trim()) newErrors.name = "Name is required.";
+    if (!currentForm.sku.trim()) newErrors.sku = "SKU is required.";
+    if (!currentForm.selling_price.trim()) newErrors.selling_price = "Selling price is required.";
+    if (currentForm.selling_price && isNaN(Number(currentForm.selling_price))) newErrors.selling_price = "Selling price must be a number.";
+    if (currentForm.current_stock && isNaN(Number(currentForm.current_stock))) newErrors.current_stock = "Current stock must be a number.";
+    if (currentForm.min_stock_level && isNaN(Number(currentForm.min_stock_level))) newErrors.min_stock_level = "Min stock level must be a number.";
+    if (currentForm.cost_price && isNaN(Number(currentForm.cost_price))) newErrors.cost_price = "Cost price must be a number.";
     return newErrors;
   }
 
+  // Real-time validation
+  useEffect(() => {
+    setErrors(validate());
+    // eslint-disable-next-line
+  }, [form]);
+
+  useEffect(() => {
+    if (initialData) setForm(initialData);
+  }, [initialData]);
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
-    if (errors[e.target.name]) {
-      const { [e.target.name]: removed, ...rest } = errors;
-      setErrors(rest);
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validationErrors = validate();
+    setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+      // Focus the first error field
+      const firstErrorKey = Object.keys(validationErrors)[0];
+      const errorField = document.getElementById(firstErrorKey);
+      if (errorField) (errorField as HTMLInputElement).focus();
       return;
     }
     setSubmitting(true);
     try {
-      await onSubmit(form);
+      // Convert numeric fields to numbers before submitting
+      const payload = {
+        ...form,
+        current_stock: form.current_stock ? Number(form.current_stock) : undefined,
+        min_stock_level: form.min_stock_level ? Number(form.min_stock_level) : undefined,
+        cost_price: form.cost_price ? Number(form.cost_price) : undefined,
+        selling_price: form.selling_price ? Number(form.selling_price) : undefined,
+      };
+      await onSubmit(payload);
     } finally {
       setSubmitting(false);
     }
   }
 
-  const isInvalid = Object.keys(validate()).length > 0;
+  const isInvalid = Object.keys(errors).length > 0;
 
   return (
     <form
@@ -67,6 +94,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="name">
           Name <span className="text-red-500">*</span>
+          <span className="text-xs text-gray-400 ml-2">(Product name, e.g. "Macbook Pro")</span>
         </label>
         <Input
           id="name"
@@ -81,6 +109,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="sku">
           SKU <span className="text-red-500">*</span>
+          <span className="text-xs text-gray-400 ml-2">(Unique product code, e.g. "MBP-2023-16")</span>
         </label>
         <Input
           id="sku"
@@ -95,6 +124,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="category">
           Category
+          <span className="text-xs text-gray-400 ml-2">(e.g. "Bricks")</span>
         </label>
         <Input
           id="category"
@@ -107,6 +137,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="brand">
           Brand
+          <span className="text-xs text-gray-400 ml-2">(e.g. "Ultratech")</span>
         </label>
         <Input
           id="brand"
@@ -119,6 +150,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="unit">
           Unit
+          <span className="text-xs text-gray-400 ml-2">(e.g. "pcs", "kg", "box")</span>
         </label>
         <Input
           id="unit"
@@ -131,46 +163,57 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="current_stock">
           Current Stock
+          <span className="text-xs text-gray-400 ml-2">(How many in stock now)</span>
         </label>
         <Input
           id="current_stock"
           name="current_stock"
+          type="number"
           value={form.current_stock}
           onChange={handleChange}
           placeholder="Current Stock"
         />
+        {errors.current_stock && <div className="text-red-500 text-sm mt-1">{errors.current_stock}</div>}
       </div>
       <div>
         <label className="block font-medium mb-1" htmlFor="min_stock_level">
           Min Stock Level
+          <span className="text-xs text-gray-400 ml-2">(Alert if stock falls below this)</span>
         </label>
         <Input
           id="min_stock_level"
           name="min_stock_level"
+          type="number"
           value={form.min_stock_level}
           onChange={handleChange}
           placeholder="Min Stock Level"
         />
+        {errors.min_stock_level && <div className="text-red-500 text-sm mt-1">{errors.min_stock_level}</div>}
       </div>
       <div>
         <label className="block font-medium mb-1" htmlFor="cost_price">
           Cost Price
+          <span className="text-xs text-gray-400 ml-2">(What you pay per unit)</span>
         </label>
         <Input
           id="cost_price"
           name="cost_price"
+          type="number"
           value={form.cost_price}
           onChange={handleChange}
           placeholder="Cost Price"
         />
+        {errors.cost_price && <div className="text-red-500 text-sm mt-1">{errors.cost_price}</div>}
       </div>
       <div>
         <label className="block font-medium mb-1" htmlFor="selling_price">
           Selling Price <span className="text-red-500">*</span>
+          <span className="text-xs text-gray-400 ml-2">(What you sell per unit)</span>
         </label>
         <Input
           id="selling_price"
           name="selling_price"
+          type="number"
           value={form.selling_price}
           onChange={handleChange}
           placeholder="Selling Price"
@@ -181,6 +224,7 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
       <div>
         <label className="block font-medium mb-1" htmlFor="description">
           Description
+          <span className="text-xs text-gray-400 ml-2">(Optional details)</span>
         </label>
         <Textarea
           id="description"
@@ -194,10 +238,11 @@ export function AddProductForm({ onSubmit, onCancel }: AddProductFormProps) {
         <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit" disabled={submitting || isInvalid} className="w-full sm:w-auto">
-          {submitting ? "Adding..." : "Add Product"}
+        <Button type="submit" disabled={submitting || isInvalid || loading} className="w-full sm:w-auto">
+          {loading ? "Saving..." : submitting ? "Adding..." : initialData ? "Save Changes" : "Add Product"}
         </Button>
       </div>
+      {/* addError && <div className="text-red-500 text-sm mt-2">{addError}</div> */}
     </form>
   );
 }

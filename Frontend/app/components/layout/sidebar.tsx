@@ -27,8 +27,9 @@ const navItems = [
   { name: "Inventory", href: "/inventory", icon: Boxes, children: [
     { name: "Dashboard", href: "/inventory" },
     { name: "Products", href: "/inventory/products" },
-    { name: "Categories", href: "/inventory/categories" },
+    { name: "Sales Orders", href: "/inventory/sales" },
     { name: "Suppliers", href: "/inventory/suppliers" },
+    { name: "Reports", href: "/inventory/reports" },
   ] },
   { name: "Projects", href: "/projects", icon: FolderKanban },
   { name: "Profile", href: "/profile", icon: User },
