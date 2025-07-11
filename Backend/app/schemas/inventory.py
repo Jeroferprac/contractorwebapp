@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict,condecimal
+from typing import Optional,List
 from uuid import UUID
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime,date
 
                 ###################      Products   #####################
 
@@ -33,7 +33,7 @@ class ProductOut(ProductBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
 
                ###################     Supplier    #####################
 
@@ -60,4 +60,120 @@ class SupplierOut(SupplierBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        model_config = ConfigDict(from_attributes=True)
+
+
+#######################################  product-supplier   ############################################
+
+# --- Base Schema ---
+class ProductSupplierBase(BaseModel):
+    product_id: UUID
+    supplier_id: UUID
+    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
+    lead_time_days: Optional[int] = None
+    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
+    is_preferred: Optional[bool] = False
+
+# --- Create ---
+class ProductSupplierCreate(ProductSupplierBase):
+    pass
+
+# --- Update ---
+class ProductSupplierUpdate(BaseModel):
+    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
+    lead_time_days: Optional[int] = None
+    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
+    is_preferred: Optional[bool] = None
+
+# --- Output ---
+class ProductSupplierOut(ProductSupplierBase):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+
+#############     sale Items     ##############
+
+# --- SaleItem Schemas ---
+class SaleItemBase(BaseModel):
+    product_id: UUID
+    quantity: Decimal = Field(..., ge=0)
+    unit_price: Decimal = Field(..., decimal_places=4, ge=0)
+    line_total: Decimal = Field(..., decimal_places=2, ge=0)
+
+class SaleItemCreate(SaleItemBase):
+    pass
+
+class SaleItemOut(SaleItemBase):
+    id: UUID
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+#############     sale      ##############
+# --- Sale Schemas ---
+class SaleBase(BaseModel):
+    customer_name: Optional[str] = None
+    sale_date: Optional[date] = None
+    status: Optional[str] = "completed"
+    notes: Optional[str] = None
+
+class SaleCreate(SaleBase):
+    total_amount: Decimal = Field(..., decimal_places=2, ge=0)
+    items: List[SaleItemCreate]
+
+class SaleOut(SaleBase):
+    id: UUID
+    total_amount: Decimal
+    created_at: datetime
+    items: List[SaleItemOut]
+
+    class Config:
+        from_attributes = True
+
+          #############    Purchase order Items    ##############
+class PurchaseOrderItemBase(BaseModel):
+    product_id: UUID
+    quantity: Decimal = Field(..., ge=0)
+    unit_price: Decimal = Field(..., decimal_places=4, ge=0)
+    line_total: Decimal = Field(..., decimal_places=2, ge=0)
+    received_qty: Optional[Decimal] = Field(default=0, ge=0)
+
+class PurchaseOrderItemCreate(PurchaseOrderItemBase):
+    pass
+
+class PurchaseOrderItemOut(PurchaseOrderItemBase):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+          #############    Purchase order   ##############
+
+class PurchaseOrderBase(BaseModel):
+    supplier_id: UUID
+    po_number: Optional[str] = None
+    order_date: Optional[date] = None
+    status: Optional[str] = "pending"
+
+class PurchaseOrderCreate(PurchaseOrderBase):
+    total_amount: Decimal = Field(..., decimal_places=2, ge=0)
+    items: List[PurchaseOrderItemCreate]
+
+class PurchaseOrderUpdate(PurchaseOrderBase):
+    status: Optional[str] = None
+
+class PurchaseOrderOut(PurchaseOrderBase):
+    id: UUID
+    total_amount: Decimal
+    created_at: datetime
+    items: List[PurchaseOrderItemOut]
+
+    class Config:
+        from_attributes = True
+
+
+
