@@ -6,20 +6,31 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Kanban,
+  Building2,
+  Boxes,
+  FolderKanban,
   User,
   LogIn,
   CreditCard,
   X,
+  ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
+import { useState } from "react"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Quotes", href: "/quotes", icon: FileText },
-  { name: "company", href: "/company", icon: Kanban },
+  { name: "company", href: "/company", icon: Building2 },
+  { name: "Inventory", href: "/inventory", icon: Boxes, children: [
+    { name: "Dashboard", href: "/inventory" },
+    { name: "Products", href: "/inventory/products" },
+    { name: "Categories", href: "/inventory/categories" },
+    { name: "Suppliers", href: "/inventory/suppliers" },
+  ] },
+  { name: "Projects", href: "/projects", icon: FolderKanban },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Sign In", href: "/login", icon: LogIn },
 ]
@@ -31,6 +42,12 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const [inventoryOpen, setInventoryOpen] = useState(false)
+
+  const handleNavClick = () => {
+    setInventoryOpen(false)
+    onClose()
+  }
 
   return (
     <div
@@ -64,27 +81,96 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <ul className="space-y-2">
             {navItems.map((item) => {
               const isActive =
-                pathname === item.href || pathname.startsWith(item.href)
+                pathname === item.href || pathname.startsWith(item.href);
 
-              return (
-                <li key={item.name}>
-                  <Link href={item.href}>
+              // Inventory with submenu
+              if (item.children) {
+                return (
+                  <li
+                    key={item.name}
+                    className="relative"
+                    onMouseEnter={() => setInventoryOpen(true)}
+                    onMouseLeave={() => setInventoryOpen(false)}
+                  >
                     <Button
                       variant="ghost"
                       className={clsx(
-                        "w-full justify-start transition-all duration-200",
+                        "w-full justify-start transition-all duration-200 flex items-center",
                         isActive
                           ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600"
                           : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800"
                       )}
-                      onClick={onClose}
+                      aria-haspopup="menu"
+                      aria-expanded={inventoryOpen}
+                      aria-controls="inventory-submenu"
+                      tabIndex={0}
+                      onClick={() => setInventoryOpen((open) => !open)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setInventoryOpen((open) => !open);
+                        } else if (e.key === "Escape") {
+                          setInventoryOpen(false);
+                        }
+                      }}
                     >
                       <item.icon className="w-5 h-5 mr-3" />
                       {item.name}
+                      <ChevronRight className={clsx("ml-auto transition-transform", inventoryOpen && "rotate-90")} />
                     </Button>
-                  </Link>
+                    {/* Submenu */}
+                    {inventoryOpen && (
+                      <ul
+                        id="inventory-submenu"
+                        className="absolute left-full top-0 bg-white dark:bg-[#0b1437] shadow-lg rounded min-w-[200px] z-10 border border-gray-100 dark:border-zinc-800 py-2"
+                        role="menu"
+                        tabIndex={-1}
+                      >
+                        {item.children.map((child) => (
+                          <li key={child.name} role="none">
+                            <Link
+                              href={child.href}
+                              className={clsx(
+                                "block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap",
+                                pathname === child.href && "font-semibold text-blue-600"
+                              )}
+                              tabIndex={0}
+                              role="menuitem"
+                              onClick={handleNavClick}
+                              onKeyDown={(e) => {
+                                if (e.key === "Escape") setInventoryOpen(false);
+                              }}
+                            >
+                              {child.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+
+              // All other nav items (keep as is)
+              return (
+                <li key={item.name}>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className={clsx(
+                      "w-full justify-start transition-all duration-200 flex items-center",
+                      isActive
+                        ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600"
+                        : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800"
+                    )}
+                    onClick={handleNavClick}
+                  >
+                    <Link href={item.href}>
+                      <item.icon className="w-5 h-5 mr-3" />
+                      {item.name}
+                    </Link>
+                  </Button>
                 </li>
-              )
+              );
             })}
           </ul>
         </nav>

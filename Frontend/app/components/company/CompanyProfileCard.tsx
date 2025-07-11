@@ -109,15 +109,6 @@ export function CompanyProfileCard({
             </a>
           </div>
         )}
-        {/* View Project Button */}
-        <div className="flex justify-end mt-4">
-          <Button
-            onClick={() => router.push('/company/projects')}
-            variant="gradient"
-          >
-            View Project
-          </Button>
-        </div>
       </div>
       {/* Three dots menu inside the card, top-right */}
       <div className="absolute top-4 right-4 z-10">

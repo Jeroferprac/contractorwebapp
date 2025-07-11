@@ -1,7 +1,7 @@
 
 "use client";
 import type { Session } from "next-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, useMemo, memo } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
 import { RevenueChart } from "@/components/dashboard/charts/revenue-chart";
 import { WeeklyRevenueChart } from "@/components/dashboard/charts/weekly-revenue-chart";
@@ -16,47 +16,64 @@ import { SecurityCard } from "@/components/dashboard/widgets/security-card";
 import { StarbucksCard } from "@/components/dashboard/widgets/starbucks-card";
 import { LessonCard } from "@/components/dashboard/bottom/lesson-card";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { useCompanyStore } from "@/store/companyStore";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Loading skeleton components
+const ChartSkeleton = memo(() => (
+  <div className="border-0 shadow-sm bg-white dark:bg-[#020817] rounded-lg p-6">
+    <Skeleton className="h-4 w-32 mb-4" />
+    <Skeleton className="h-48 w-full" />
+  </div>
+));
+
+const WidgetSkeleton = memo(() => (
+  <div className="border-0 shadow-sm bg-white dark:bg-[#020817] rounded-lg p-6">
+    <Skeleton className="h-4 w-24 mb-4" />
+    <Skeleton className="h-32 w-full" />
+  </div>
+));
 
 interface DashboardClientProps {
   session: Session;
 }
 
 export default function DashboardClient({ session }: DashboardClientProps) {
-  const [stats, setStats] = useState({
-    earnings: 0,
-    quotation: 0,
-    projects: 0,
-  });
-
-  const [revenueChartData, setRevenueChartData] = useState<
-    { month: string; thisMonth: number; lastMonth: number }[]
-  >([]);
-  
-  const [loading, setLoading] = useState(true);
+  const projects = useCompanyStore((state) => state.projects);
+  const projectsLoading = useCompanyStore((state) => state.projectsLoading);
+  const fetchProjects = useCompanyStore((state) => state.fetchProjects);
 
   useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
-    // Demo stats (replace with real API calls in production)
-    const timer = setTimeout(() => {
-      setStats({
-        earnings: 350.4,
-        quotation: 12,
-        projects: 2935,
-      })
-      setRevenueChartData([
-        { month: "SEP", thisMonth: 100, lastMonth: 60 },
-        { month: "OCT", thisMonth: 120, lastMonth: 70 },
-        { month: "NOV", thisMonth: 90, lastMonth: 50 },
-        { month: "DEC", thisMonth: 110, lastMonth: 60 },
-        { month: "JAN", thisMonth: 130, lastMonth: 80 },
-        { month: "FEB", thisMonth: 95, lastMonth: 65 },
-      ]);
+  // Calculate total projects
+  const stats = useMemo(() => ({
+    earnings: 350.4, // Replace with real calculation if available
+    quotation: 12,   // Replace with real calculation if available
+    projects: projects.length,
+  }), [projects.length]);
 
-      setLoading(false);
-    }, 1000);
+  // Aggregate project values by month for the revenue chart
+  const revenueChartData = useMemo(() => {
+    const monthly: Record<string, number> = {};
+    projects.forEach(project => {
+      if (!project.completion_date || !project.project_value) return;
+      const date = new Date(project.completion_date);
+      const month = date.toLocaleString('default', { month: 'short' });
+      if (!monthly[month]) monthly[month] = 0;
+      monthly[month] += project.project_value;
+    });
+    // Optionally, sort months in calendar order
+    const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return monthOrder.map(month => ({
+      month,
+      thisMonth: monthly[month] || 0,
+      lastMonth: 0, // You can add logic for lastMonth if you want
+    })).filter(item => item.thisMonth > 0);
+  }, [projects]);
 
-    return () => clearTimeout(timer);
-  }, [session]);
+  const loading = projectsLoading;
 
   return (
     <DashboardLayout session={session} title="Main Dashboard">
@@ -64,32 +81,56 @@ export default function DashboardClient({ session }: DashboardClientProps) {
         <MetricsCards stats={stats} loading={loading} />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
+            <Suspense fallback={<ChartSkeleton />}>
             <RevenueChart data={revenueChartData} loading={loading} />
+            </Suspense>
           </div>
           <div>
+            <Suspense fallback={<ChartSkeleton />}>
             <WeeklyRevenueChart />
+            </Suspense>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Suspense fallback={<WidgetSkeleton />}>
           <CheckTable />
+          </Suspense>
           <div className="space-y-6">
+            <Suspense fallback={<ChartSkeleton />}>
             <DailyTrafficChart />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton />}>
             <PieChart />
+            </Suspense>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Suspense fallback={<WidgetSkeleton />}>
           <ComplexTable />
+          </Suspense>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Suspense fallback={<WidgetSkeleton />}>
             <TasksWidget />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton />}>
             <CalendarWidget />
+            </Suspense>
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Suspense fallback={<WidgetSkeleton />}>
           <LessonCard />
+          </Suspense>
+          <Suspense fallback={<WidgetSkeleton />}>
           <TeamMembers />
+          </Suspense>
           <div className="space-y-6">
+            <Suspense fallback={<WidgetSkeleton />}>
             <SecurityCard />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton />}>
             <StarbucksCard />
+            </Suspense>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { CompanyProject } from "@/store/companyStore"; // Use your actual type
+import type { CompanyProject } from "@/store/companyStore";
 
 export function ProjectCard({
   project,
@@ -30,31 +30,21 @@ export function ProjectCard({
 }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />;
-      case "active":
-        return <Clock className="h-4 w-4" />;
-      case "on-hold":
-        return <AlertCircle className="h-4 w-4" />;
-      case "cancelled":
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
+      case "completed": return <CheckCircle className="h-4 w-4" />;
+      case "active": return <Clock className="h-4 w-4" />;
+      case "on-hold": return <AlertCircle className="h-4 w-4" />;
+      case "cancelled": return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "active":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "on-hold":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "completed": return "bg-green-100 text-green-800 border-green-200";
+      case "active": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "on-hold": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "cancelled": return "bg-red-100 text-red-800 border-red-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -63,7 +53,7 @@ export function ProjectCard({
       Plumbing: "bg-blue-100 text-blue-800 border-blue-200",
       Electrical: "bg-yellow-100 text-yellow-800 border-yellow-200",
       Renovation: "bg-purple-100 text-purple-800 border-purple-200",
-      Landscaping: "bg-green-100 text-green-800 border-green-100",
+      Landscaping: "bg-green-100 text-green-800 border-green-200",
       Construction: "bg-orange-100 text-orange-800 border-orange-200",
       "Interior Design": "bg-pink-100 text-pink-800 border-pink-200",
       Roofing: "bg-red-100 text-red-800 border-red-200",
@@ -76,12 +66,9 @@ export function ProjectCard({
 
   const getMediaIcon = (mediaType: string) => {
     switch (mediaType) {
-      case "image":
-        return <ImageIcon className="h-3 w-3" />;
-      case "video":
-        return <Video className="h-3 w-3" />;
-      default:
-        return <FileText className="h-3 w-3" />;
+      case "image": return <ImageIcon className="h-3 w-3" />;
+      case "video": return <Video className="h-3 w-3" />;
+      default: return <FileText className="h-3 w-3" />;
     }
   };
 
@@ -93,20 +80,31 @@ export function ProjectCard({
     });
   };
 
+  const StatusBadge = ({ status }: { status: string }) => (
+    <Badge className={`${getStatusColor(status)} rounded-full px-2 py-0.5 text-xs flex items-center gap-1 whitespace-nowrap`}>
+      {getStatusIcon(status)}
+      {status.replace("-", " ")}
+    </Badge>
+  );
+
+  const CategoryBadge = ({ category }: { category: string }) => (
+    <Badge className={`${getCategoryColor(category)} rounded-full px-2 py-0.5 text-xs flex items-center gap-1 whitespace-nowrap`}>
+      {category}
+    </Badge>
+  );
+
   return (
     <Card className="border-0 dark:bg-[#020817] shadow-lg hover:shadow-xl transition-all duration-300 group">
       <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="dark:bg-[#020817]">
+        <div className="flex items-start justify-between w-full">
+          <div className="w-full">
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">
               {project.title}
             </h3>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge className={`${getStatusColor(project.status)} flex items-center gap-1`}>
-                {getStatusIcon(project.status)}
-                {project.status.replace("-", " ")}
-              </Badge>
-              <Badge className={getCategoryColor(project.category)}>{project.category}</Badge>
+
+            <div className="flex flex-wrap gap-1 mt-2">
+              <StatusBadge status={project.status} />
+              {project.category && <CategoryBadge category={project.category} />}
             </div>
           </div>
 
@@ -126,37 +124,34 @@ export function ProjectCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Description */}
         <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">{project.description}</p>
 
-        {/* Project Details */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-red-500" />
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-2">
+          <div className="flex gap-2">
+            <MapPin className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-gray-600">Location</p>
-              <p className="font-medium text-gray-900">{project.location}</p>
+              <p className="text-sm text-gray-500">Location</p>
+              <p className="text-base font-medium text-gray-900">{project.location}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-blue-500" />
+
+          <div className="flex gap-2">
+            <Calendar className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-gray-600">Completion</p>
-              <p className="font-medium text-gray-900">{formatDate(project.completion_date)}</p>
+              <p className="text-sm text-gray-500">Completion</p>
+              <p className="text-base font-medium text-gray-900">{formatDate(project.completion_date)}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 col-span-2">
+            <DollarSign className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-gray-500">Project Value</p>
+              <p className="text-lg font-bold text-green-600">${project.project_value.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
-        {/* Project Value */}
-        <div className="flex items-center gap-2 text-sm">
-          <DollarSign className="h-4 w-4 text-green-500" />
-          <div>
-            <p className="text-gray-600">Project Value</p>
-            <p className="font-bold text-green-600 text-lg">${project.project_value.toLocaleString()}</p>
-          </div>
-        </div>
-
-        {/* Media Files */}
         {project.media.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -182,7 +177,6 @@ export function ProjectCard({
           </div>
         )}
 
-        {/* Action Buttons */}
         <div className="flex gap-2 pt-4 border-t border-gray-100">
           {onView && (
             <Button
