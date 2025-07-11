@@ -1,27 +1,51 @@
-// app/lib/quotation.ts
-import { axiosInstance } from "@/lib/api";
-
-export interface QuotationPayload {
+export interface Quotation {
+  id: string;
   project_title: string;
   description: string;
-  estimated_budget_min: string;
-  estimated_budget_max: string;
+  estimated_budget_min: number;
+  estimated_budget_max: number;
   deadline: string;
-  attachment?: File | null;
+  // ...add other fields as needed
 }
 
-export async function submitQuotation(payload: QuotationPayload) {
-  const formData = new FormData();
-  formData.append("project_title", payload.project_title);
-  formData.append("description", payload.description);
-  formData.append("estimated_budget_min", payload.estimated_budget_min);
-  formData.append("estimated_budget_max", payload.estimated_budget_max);
-  formData.append("deadline", payload.deadline);
+export async function fetchQuotations(token: string): Promise<Quotation[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quotes`,
+    {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    }
+  );
 
-  if (payload.attachment) {
-    formData.append("attachments", payload.attachment);
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error fetching quotations:", errorText);
+    throw new Error("Forbidden: You might not be logged in or lack permissions.");
   }
 
-  const response = await axiosInstance.post("/api/v1/quotation/quote", formData);
-  return response.data;
+  const result = await res.json();
+  return Array.isArray(result.items) ? result.items : [];
+}
+
+export async function submitQuotation(form: FormData, token: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quote`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: form,
+    }
+  );
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("❌ Error submitting quotation:", errorText);
+    throw new Error("Failed to submit quotation");
+  }
+  return res.json();
 }

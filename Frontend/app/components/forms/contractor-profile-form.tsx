@@ -1,145 +1,264 @@
-// app/components/forms/contractor-profile-form.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, ChangeEvent, FormEvent } from "react";
+import { createContractorProfile, updateContractorProfile, getContractorProfile } from "@/lib/contractor";
+import { Contractor } from "@/types/contractor";
 import { useSession } from "next-auth/react";
-import {
-  getContractorProfile,
-  createContractorProfile,
-  updateContractorProfile,
-  ContractorProfile,
-} from "@/lib/contractor";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/use-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const defaultProfile: Contractor = {
+  id: "",
+  company_name: "",
+  profile_type: "contractor",
+  business_license: "",
+  description: "",
+  website_url: "",
+  services: [],
+  location: {},
+  verified: false,
+  rating: 0.0,
+  total_reviews: 0,
+  email: "",
+  // add any other required fields with default values
+};
 
 export default function ContractorProfileForm() {
-  const { status } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [isExisting, setIsExisting] = useState(false);
-  const [profile, setProfile] = useState<ContractorProfile>({
-    company_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    logo: null,
-  });
+  const { data: session } = useSession();
+  const token = session?.backendAccessToken || session?.accessToken;
+  const router = useRouter();
+
+  const [profile, setProfile] = useState<Contractor>(defaultProfile);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    if (status === "authenticated") {
-      getContractorProfile()
-        .then((data) => {
-          if (data) {
-            setProfile(data);
-            setIsExisting(true);
-          }
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [status]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    setProfile((prev) => ({ ...prev, logo: file }));
-  };
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      if (isExisting) {
-        await updateContractorProfile(profile);
-        toast({ title: "Profile updated successfully!" });
-      } else {
-        await createContractorProfile(profile);
-        toast({ title: "Profile created successfully!" });
-        setIsExisting(true);
-      }
-    } catch (err) {
-      console.error("Contractor profile error", err);
-      toast({
-        title: "Error",
-        description: "Profile creation failed. Check your session and fields.",
-        variant: "destructive",
+    // Replace 'profile.id' with the actual contractor id if you have it
+    if (token) {
+      getContractorProfile(token).then((data: Contractor | null) => {
+        if (data) {
+          setProfile({
+            ...defaultProfile,
+            ...data,
+          });
+          setEditing(true);
+        }
       });
-    } finally {
-      setLoading(false);
+    }
+  }, [token, profile.id]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setProfile((prev: Contractor) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else if (name === "services") {
+      setProfile((prev: Contractor) => ({ ...prev, services: value.split(",").map((s) => s.trim()).filter(Boolean) }));
+    } else if (name === "rating" || name === "total_reviews") {
+      setProfile((prev: Contractor) => ({ ...prev, [name]: Number(value) }));
+    } else {
+      setProfile((prev: Contractor) => ({ ...prev, [name]: value }));
     }
   };
 
-  if (status === "loading") return <p className="text-center p-8">Checking authentication...</p>;
-  if (status === "unauthenticated") return <p className="text-center p-8">Please log in to continue.</p>;
+  const handleLocationChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfile((prev: Contractor) => ({
+      ...prev,
+      location: {
+        ...(prev.location || {}),
+        [name]: value,
+      },
+    }));
+  };
+
+  const handleCheckboxChange = (checked: boolean) => {
+    setProfile((prev: Contractor) => ({ ...prev, verified: checked }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      alert("You must be logged in to save your profile.");
+      return;
+    }
+    const payload = { ...profile };
+    try {
+      if (editing) {
+        await updateContractorProfile(payload, token);
+      } else {
+        await createContractorProfile(payload, token);
+      }
+      alert("Profile saved successfully");
+      router.push("/contractor/profile");
+    } catch (error) {
+      console.error("Error saving profile", error);
+      alert("Failed to save profile");
+    }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4">
-      <Card className="shadow-xl border rounded-2xl">
-        <CardContent className="p-8 space-y-6">
-          <h2 className="text-2xl font-semibold text-foreground">Contractor Profile</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="company_name">Company Name</Label>
+    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 min-h-[700px] flex flex-col justify-between">
+      <Card className="shadow-lg rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181C32] flex flex-col h-full">
+        <CardHeader>
+          <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Contractor Profile
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 p-8 flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+            <div>
+              <Label htmlFor="company_name" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Company Name
+              </Label>
               <Input
                 id="company_name"
                 name="company_name"
                 value={profile.company_name}
                 onChange={handleChange}
-                placeholder="ABC Constructions"
+                placeholder="Company Name"
+                required
+                className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div>
+              <Label htmlFor="business_license" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Business License
+              </Label>
               <Input
-                id="email"
-                name="email"
-                value={profile.email}
+                id="business_license"
+                name="business_license"
+                value={profile.business_license || ""}
                 onChange={handleChange}
-                placeholder="example@domain.com"
+                placeholder="Business License"
+                className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+            <div className="md:col-span-2">
+              <Label htmlFor="description" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Description
+              </Label>
               <Input
-                id="phone"
-                name="phone"
-                value={profile.phone}
+                id="description"
+                name="description"
+                value={profile.description || ""}
                 onChange={handleChange}
-                placeholder="+91..."
+                placeholder="Description"
+                className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+            <div className="md:col-span-2">
+              <Label htmlFor="services" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Services
+              </Label>
               <Input
-                id="address"
-                name="address"
-                value={profile.address}
+                id="services"
+                name="services"
+                value={profile.services?.join(", ") || ""}
                 onChange={handleChange}
-                placeholder="Your full company address"
+                placeholder="Services (comma separated)"
+                className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
               />
             </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="logo">Company Logo</Label>
-              <Input id="logo" type="file" onChange={handleFileChange} />
+            <div>
+              <Label htmlFor="website_url" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Website URL
+              </Label>
+              <Input
+                id="website_url"
+                name="website_url"
+                value={profile.website_url || ""}
+                onChange={handleChange}
+                placeholder="Website URL"
+                className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+              />
+            </div>
+            <div className="flex flex-row gap-6">
+              <div className="flex-1">
+                <Label htmlFor="rating" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                  Rating
+                </Label>
+                <Input
+                  id="rating"
+                  name="rating"
+                  type="number"
+                  step="0.1"
+                  value={profile.rating}
+                  onChange={handleChange}
+                  placeholder="Rating"
+                  min={0}
+                  max={5}
+                  className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+                />
+              </div>
+              <div className="flex-1">
+                <Label htmlFor="total_reviews" className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                  Total Reviews
+                </Label>
+                <Input
+                  id="total_reviews"
+                  name="total_reviews"
+                  type="number"
+                  value={profile.total_reviews}
+                  onChange={handleChange}
+                  placeholder="Total Reviews"
+                  min={0}
+                  className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 md:col-span-2">
+              <Checkbox
+                id="verified"
+                checked={profile.verified}
+                onCheckedChange={handleCheckboxChange}
+                className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-navy-800"
+              />
+              <Label htmlFor="verified" className="text-gray-900 dark:text-white font-semibold">
+                Verified
+              </Label>
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-gray-900 dark:text-gray-100 font-semibold mb-2">
+                Location
+              </Label>
+              <div className="flex flex-col md:flex-row gap-2">
+                <Input
+                  name="city"
+                  value={profile.location?.city || ""}
+                  onChange={handleLocationChange}
+                  placeholder="City"
+                  className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+                />
+                <Input
+                  name="state"
+                  value={profile.location?.state || ""}
+                  onChange={handleLocationChange}
+                  placeholder="State"
+                  className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+                />
+                <Input
+                  name="country"
+                  value={profile.location?.country || ""}
+                  onChange={handleLocationChange}
+                  placeholder="Country"
+                  className="bg-white dark:bg-[#23263A] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border border-gray-300 dark:border-gray-700"
+                />
+              </div>
             </div>
           </div>
-
-          <Button onClick={handleSubmit} disabled={loading} className="w-full mt-6">
-            {loading ? "Saving..." : isExisting ? "Update Profile" : "Create Profile"}
-          </Button>
+          <div className="pt-4 flex justify-end">
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-[#6a6dff] to-[#8f6aff] text-white font-bold py-2 px-6 rounded-lg shadow-md"
+            >
+              {editing ? "Update Profile" : "Save Profile"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
-    </div>
+    </form>
   );
 }

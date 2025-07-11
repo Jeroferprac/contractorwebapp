@@ -1,5 +1,5 @@
 // app/(protected)/layout.tsx
-import { Sidebar } from "@/components/layout/sidebar";
+import Sidebar from "@/components/layout/sidebar";
 import { HeaderBar } from "@/components/dashboard/header/Header";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {

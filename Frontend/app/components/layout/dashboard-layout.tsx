@@ -25,7 +25,7 @@ export function DashboardLayout({ children, session, title = "Main Dashboard" }:
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] dark:text-white transition-colors duration-200">
       {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
 
       {/* Overlay for mobile */}
       {sidebarOpen && (

@@ -9,37 +9,20 @@ import { GeneralInformation } from "@/components/profile/general-information"
 import { NotificationSettings } from "@/components/profile/notification-settings"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { Toaster } from "@/components/ui/toaster"
-import { useToastNotification } from "@/lib/hooks/use-toast-notifications"
-import { useAuth } from "@/store/authStore"
 import { useSession } from "next-auth/react"
 import { API } from "@/lib/api"
 import { ProfileHeaderSkeleton } from "@/components/profile/profile-header-skeleton"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useUserStore } from "@/store/userStore"
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
-
-type UserProfile = {
-  avatar?: string;
-  avatar_data?: string;
-  avatar_mimetype?: string;
-  avatar_url?: string;
-  full_name?: string;
-  email?: string;
-  // Add any other fields you use
-  [key: string]: any;
-};
+import DashboardLayout from "@/components/layout/dashboard-layout";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { notifySuccess, notifyError } = useToastNotification()
   const [loading, setLoading] = useState(true);
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
 
-  console.log("Session in ProfilePage:", session);
-
-  const fetchUser = () => {
+  useEffect(() => {
     setLoading(true);
     if (!session?.backendAccessToken) return;
     fetch(API.PROFILE, {
@@ -57,30 +40,17 @@ export default function ProfilePage() {
         setUser(data);
       })
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchUser();
-  }, [session]);
-
-  const handleSave = () => {
-    notifySuccess("Profile saved", "Your changes have been successfully saved.")
-  }
-
-  const handleError = () => {
-    notifyError("Error saving profile", "Something went wrong.")
-  }
+  }, [session, setUser]);
 
   return (
     <DashboardLayout session={session} title="Profile">
-      {/* ShadCN Toaster */}
       <Toaster />
       <div className="p-4 lg:p-8">
         {/* Mobile Layout */}
         <div className="lg:hidden space-y-6">
           {loading
             ? <ProfileHeaderSkeleton />
-            : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+            : user && <ProfileHeader user={user} onProfileUpdated={() => {}} />
           }
           <Avatar>
             <AvatarImage src={user?.avatar || "/placeholder.svg"} alt="User avatar" />
@@ -99,7 +69,7 @@ export default function ProfilePage() {
             <div className="col-span-5">
               {loading
                 ? <ProfileHeaderSkeleton />
-                : user && <ProfileHeader user={user} onProfileUpdated={fetchUser} />
+                : user && <ProfileHeader user={user} onProfileUpdated={() => {}} />
               }
             </div>
             <div className="col-span-4">

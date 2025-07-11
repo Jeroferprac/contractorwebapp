@@ -8,10 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { submitQuotation } from "@/lib/quotation";
 
 export default function NewQuotationPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [projectTitle, setProjectTitle] = useState("");
@@ -31,7 +30,8 @@ export default function NewQuotationPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (status !== "authenticated") {
+    const token = session?.backendAccessToken || session?.accessToken;
+    if (status !== "authenticated" || !token) {
       setError("You must be logged in to submit a quotation.");
       return;
     }
@@ -40,26 +40,45 @@ export default function NewQuotationPage() {
     setError(null);
 
     try {
-      await submitQuotation({
-        project_title: projectTitle,
-        description,
-        estimated_budget_min: estimatedBudgetMin,
-        estimated_budget_max: estimatedBudgetMax,
-        deadline,
-        attachment,
-      });
+      const formData = new FormData();
+      formData.append("project_title", projectTitle);
+      formData.append("description", description);
+      formData.append("estimated_budget_min", estimatedBudgetMin);
+      formData.append("estimated_budget_max", estimatedBudgetMax);
+      formData.append("deadline", deadline);
+      if (attachment) {
+        formData.append("attachments", attachment);
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/quotation/quote`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.detail || "Failed to submit quotation.");
+      }
 
       router.push("/quotes");
     } catch (err: any) {
       console.error("Error submitting quotation:", err);
-      setError("Failed to submit quotation. Please try again.");
+      setError(err.message || "Submission failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (status === "loading") return <p className="text-center p-8">Loading session...</p>;
-  if (status === "unauthenticated") return <p className="text-center p-8">Please log in to continue.</p>;
+  if (status === "loading") {
+    return <p className="text-center py-10">Checking login...</p>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] p-6 text-gray-900 dark:text-white">
