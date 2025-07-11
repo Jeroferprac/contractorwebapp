@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict,condecimal
-from typing import Optional,List
+from typing import Optional,List,Literal,Annotated
 from uuid import UUID
 from decimal import Decimal
 from datetime import datetime,date
@@ -175,5 +175,26 @@ class PurchaseOrderOut(PurchaseOrderBase):
     class Config:
         from_attributes = True
 
+                ########  Inventory Transactions ############
+class InventoryTransactionCreate(BaseModel):
+    product_id: UUID
+    transaction_type: Literal["inbound", "outbound"]
+    quantity: Annotated[Decimal, condecimal(gt=0, max_digits=10, decimal_places=2)]
+    reference_type: Optional[str] = None
+    reference_id: Optional[UUID] = None
+    notes: Optional[str] = None
 
+
+class InventoryTransactionOut(BaseModel):
+    id: UUID
+    product_id: UUID
+    transaction_type: str
+    quantity: Decimal
+    reference_type: Optional[str]
+    reference_id: Optional[UUID]
+    notes: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
