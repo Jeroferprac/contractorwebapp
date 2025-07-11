@@ -1,3 +1,5 @@
+import { getSession } from "next-auth/react";
+
 export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 // 🔐 Authentication APIs
@@ -67,9 +69,28 @@ export async function fetchWithAuth<T >(
 ): Promise<T> {
   // Get session and token
   const session = await getSession();
-  const headers: HeadersInit = {
+  const baseHeaders: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers || {}),
+  };
+
+  let extraHeaders: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        extraHeaders[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => {
+        extraHeaders[key] = value;
+      });
+    } else {
+      extraHeaders = options.headers as Record<string, string>;
+    }
+  }
+
+  const headers: Record<string, string> = {
+    ...baseHeaders,
+    ...extraHeaders,
   };
   if (session?.backendAccessToken) {
     headers["Authorization"] = `Bearer ${session.backendAccessToken}`;

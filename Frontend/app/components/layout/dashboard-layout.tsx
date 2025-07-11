@@ -1,8 +1,9 @@
+"use client"
+
 import type React from "react"
 import type { Session } from "next-auth"
 import { Sidebar } from "./sidebar"
 import { HeaderBar } from "@/components/dashboard/header/Header"
-
 import { useState, useEffect } from "react"
 import { Menu } from "lucide-react"
 import { useUserProfileStore } from "@/store/userProfileStore"
@@ -25,7 +26,7 @@ export function DashboardLayout({ children, session, title = "Main Dashboard" }:
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] dark:text-white transition-colors duration-200">
       {/* Sidebar */}
-      {/* <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} /> */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
@@ -43,11 +44,10 @@ export function DashboardLayout({ children, session, title = "Main Dashboard" }:
             <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
           <HeaderBar session={session} userProfile={userProfile} title={title} />
-
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 px-6 pb-6 min-w-0 overflow-hidden">{children}</main>
+        <main className="p-4 sm:p-6">{children}</main>
       </div>
     </div>
   )
