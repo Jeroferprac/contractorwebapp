@@ -113,7 +113,6 @@ export const useCompanyStore = create<CompanyState>((set, get) => ({
       body: JSON.stringify(data),
     });
     if (res.ok) {
-      // Optionally refetch projects or append
       await get().fetchProjects();
     }
     set({ projectsLoading: false });
