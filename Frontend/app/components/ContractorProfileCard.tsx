@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
@@ -47,7 +48,7 @@ const ContractorProfileCard: React.FC<ContractorProfileCardProps> = ({ profile, 
         <h2 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white text-center">{profile.company_name}</h2>
         <div className="mb-4 flex gap-2">
           <Badge variant="secondary" className="bg-blue-600 text-white">contractor</Badge>
-          <Badge variant="success" className="bg-green-600 text-white">Verified</Badge>
+          <Badge variant="secondary" className="bg-green-600 text-white">Verified</Badge>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-4 w-full text-black dark:text-white">

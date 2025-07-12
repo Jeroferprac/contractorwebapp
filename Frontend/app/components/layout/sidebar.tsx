@@ -6,13 +6,13 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Building2,
-  Boxes,
   FolderKanban,
+  ListChecks,
   User,
   LogIn,
   CreditCard,
-  X,
+  Building2,
+  Boxes,
   ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,15 +23,22 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Clients", href: "/clients", icon: Users },
   { name: "Quotes", href: "/quotes", icon: FileText },
-  { name: "company", href: "/company", icon: Building2 },
-  { name: "Inventory", href: "/inventory", icon: Boxes, children: [
-    { name: "Dashboard", href: "/inventory" },
-    { name: "Products", href: "/inventory/products" },
-    { name: "Sales Orders", href: "/inventory/sales" },
-    { name: "Suppliers", href: "/inventory/suppliers" },
-    { name: "Reports", href: "/inventory/reports" },
-  ] },
-  { name: "Projects", href: "/projects", icon: FolderKanban },
+  { name: "Contractor", href: "/contractor", icon: User },
+  { name: "Projects", href: "/contractor/projects", icon: FolderKanban },
+  { name: "Kanban", href: "/kanban", icon: ListChecks },
+  { name: "Company", href: "/company", icon: Building2 },
+  {
+    name: "Inventory",
+    href: "/inventory",
+    icon: Boxes,
+    children: [
+      { name: "Dashboard", href: "/inventory" },
+      { name: "Products", href: "/inventory/products" },
+      { name: "Sales Orders", href: "/inventory/sales" },
+      { name: "Suppliers", href: "/inventory/suppliers" },
+      { name: "Reports", href: "/inventory/reports" },
+    ],
+  },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Sign In", href: "/login", icon: LogIn },
 ]
@@ -65,7 +72,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 lg:hidden"
         >
-          <X className="w-5 h-5" />
+          {/* <X className="w-5 h-5" /> */}
+          <span className="text-2xl">×</span>
         </button>
 
         {/* Brand Header */}
