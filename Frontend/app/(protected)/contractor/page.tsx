@@ -52,11 +52,7 @@ export default function ContractorPage() {
               transition-colors
             "
           >
-            <ContractorProfileForm
-              profile={profile}
-              onCancel={() => setEditing(false)}
-              onSave={() => setEditing(false)} // Replace with your save logic
-            />
+            <ContractorProfileForm />
           </div>
         ) : (
           <div
