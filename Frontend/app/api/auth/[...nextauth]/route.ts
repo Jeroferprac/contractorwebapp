@@ -1,7 +1,6 @@
-import NextAuth, { NextAuthOptions, User, Account, Profile, Session, TokenSet } from "next-auth"
+import NextAuth, { NextAuthOptions, User, Account, Session } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { API } from "@/lib/api" // your backend API wrapper
 import type { JWT } from "next-auth/jwt"
 
 interface BackendLoginResponse {
@@ -45,37 +44,47 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Call your backend login API
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: credentials?.email,
-            password: credentials?.password,
-          }),
-        });
-        const data = await res.json();
+        try {
+          // Call your backend login API
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials?.email,
+              password: credentials?.password,
+            }),
+          });
+          
+          if (!res.ok) {
+            console.error("Login failed:", res.status, res.statusText);
+            return null;
+          }
+          
+          const data = await res.json();
 
-        if (res.ok && data.access_token && data.user) {
-          // Attach backend token and userId to user object
-          return {
-            ...data.user,
-            backendAccessToken: data.access_token,
-            userId: data.user.id,
-          };
+          if (data.access_token && data.user) {
+            // Attach backend token and userId to user object
+            return {
+              ...data.user,
+              backendAccessToken: data.access_token,
+              userId: data.user.id,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error("Authorize error:", error);
+          return null;
         }
-        return null;
       },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    async jwt({ token, user, account, profile }: {
+    async jwt({ token, user, account }: {
       token: JWT,
       user?: User | null,
       account?: Account | null,
-      profile?: Profile | undefined
     }): Promise<JWT> {
       // On initial sign in (manual or OAuth)
       if (user && user.backendAccessToken) {
@@ -99,7 +108,7 @@ export const authOptions: NextAuthOptions = {
             headers: { Authorization: `Bearer ${githubAccessToken}` },
           })
           const emails = await emailResp.json()
-          const primaryEmail = emails.find((e: any) => e.primary)?.email ?? userProfile.email
+          const primaryEmail = emails.find((e: { primary: boolean }) => e.primary)?.email ?? userProfile.email
 
           // 3. POST to FastAPI backend
           const payload = {

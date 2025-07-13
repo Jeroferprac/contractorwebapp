@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 NEXTAUTH_SECRET=your-super-secret-key-here-change-this-in-production NEXTAUTH_URL=http://localhost:3000 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

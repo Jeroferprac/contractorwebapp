@@ -34,6 +34,7 @@ const navItems = [
     children: [
       { name: "Dashboard", href: "/inventory" },
       { name: "Products", href: "/inventory/products" },
+      { name: "Purchase Orders", href: "/inventory/purchase-orders" },
       { name: "Sales Orders", href: "/inventory/sales" },
       { name: "Suppliers", href: "/inventory/suppliers" },
       { name: "Reports", href: "/inventory/reports" },
@@ -41,6 +42,7 @@ const navItems = [
   },
   { name: "Profile", href: "/profile", icon: User },
   { name: "Sign In", href: "/login", icon: LogIn },
+  
 ]
 
 interface SidebarProps {
