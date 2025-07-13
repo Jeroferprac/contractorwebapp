@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, FolderKanban } from "lucide-react";
+import { Project } from "@/types/contractor";
 
-export default function ContractorProjectsList({ onEdit }: { onEdit?: (project: any) => void }) {
+export default function ContractorProjectsList({ onEdit }: { onEdit?: (project: Project) => void }) {
   const { data: session } = useSession();
   const token = session?.backendAccessToken || session?.accessToken;
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +72,7 @@ export default function ContractorProjectsList({ onEdit }: { onEdit?: (project: 
                           : "#3b82f6",
                     }}
                   />
-                  {project.status.replace("_", " ")}
+                  {project.status?.replace("_", " ") || "Unknown"}
                 </Badge>
               </div>
             </CardHeader>

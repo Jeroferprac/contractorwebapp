@@ -1,6 +1,5 @@
 // ✅ lib/contractor.ts — All contractor API functions
-import { Contractor } from "@/types/contractor";
-import { Project } from "@/types/project"; // Make sure to define this type
+import { Contractor, Project } from "@/types/contractor";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
