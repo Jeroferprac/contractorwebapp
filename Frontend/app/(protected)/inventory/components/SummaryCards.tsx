@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ShoppingCart, Package, FileText, Users } from 'lucide-react'
-import { getProducts, getSuppliers } from '@/lib/inventory'
+import { getProducts, getSuppliers, getLowStockProducts } from '@/lib/inventory'
 
 export default function SalesSummaryCards() {
   const [products, setProducts] = useState<any[]>([])
@@ -11,6 +11,7 @@ export default function SalesSummaryCards() {
 
   useEffect(() => {
     getProducts().then(setProducts)
+    getLowStockProducts().then(setLowStock)
     getSuppliers().then(setSuppliers)
   }, [])
 

@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { getSuppliers } from "@/lib/inventory";
+import { getSuppliers, createSupplier, createProduct, updateSupplier, deleteSupplier } from "@/lib/inventory";
 import { SuppliersSearchBar } from "./components/SupplierSearch";
 import { EditSupplierButton } from "./components/EditSupplier";
 import { SuppliersTable, Supplier } from "./components/SuppliersTable";
 import { TopSuppliersChart } from "./components/TopSuppliersChart";
 import QuickActions from "../components/QuickActions";
 import { SupplierModal, SupplierFormData } from "./components/SupplierModal";
-import { createSupplier, updateSupplier, deleteSupplier, getSupplier } from "@/lib/inventory";
+import { AddProductForm } from "../products/components/AddProductForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast, useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { SaleForm, SaleFormData } from "../sales/components/SaleForm";
+import { createSale } from "@/lib/inventory";
 
 export default function SuppliersPage() {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -22,6 +25,10 @@ export default function SuppliersPage() {
     const [modalLoading, setModalLoading] = useState(false);
     const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [addProductOpen, setAddProductOpen] = useState(false);
+    const [createOrderOpen, setCreateOrderOpen] = useState(false);
+    const [orderLoading, setOrderLoading] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         getSuppliers()
@@ -49,6 +56,17 @@ export default function SuppliersPage() {
             toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" });
         } finally {
             setModalLoading(false);
+        }
+    };
+
+    // Add Product
+    const handleAddProduct = async (form: any) => {
+        try {
+            await createProduct(form);
+            setAddProductOpen(false);
+            toast({ title: "Product added", description: `Product '${form.name}' was added successfully.`, variant: "success" });
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message || "Failed to add product", variant: "error" });
         }
     };
 
@@ -81,6 +99,42 @@ export default function SuppliersPage() {
         setDeleteId(null);
     };
 
+    // Export to CSV for suppliers
+    function handleExport() {
+      const rows = [
+        ["Name", "Contact Person", "Email", "Phone", "Address", "Payment Terms"],
+        ...filteredSuppliers.map(s => [
+          s.name,
+          s.contact_person,
+          s.email,
+          s.phone,
+          s.address || "",
+          s.payment_terms ?? ""
+        ])
+      ];
+      const csv = rows.map(r => r.map(String).map(x => `"${x.replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "suppliers_export.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function handleCreateOrder(form: SaleFormData) {
+      setOrderLoading(true);
+      try {
+        await createSale(form);
+        setCreateOrderOpen(false);
+        toast({ title: "Order placed", description: `Order for '${form.customer_name}' was created successfully.`, variant: "success" });
+      } catch (err: any) {
+        toast({ title: "Error", description: err.message || "Failed to create order", variant: "error" });
+      } finally {
+        setOrderLoading(false);
+      }
+    }
+
     return (
         <DashboardLayout title="Suppliers">
             <div className="p-4 lg:p-6">
@@ -105,26 +159,56 @@ export default function SuppliersPage() {
                         </div>
                         {/* Right Sidebar - Top Suppliers Chart and Quick Actions */}
                         <div className="xl:col-span-1 space-y-6">
-                            <QuickActions />
+                            <QuickActions
+                                onAddProduct={() => setAddProductOpen(true)}
+                                onAddSupplier={() => { setEditSupplier(null); setModalOpen(true); }}
+                                onCreateOrder={() => setCreateOrderOpen(true)}
+                                onExport={handleExport}
+                            />
                             <TopSuppliersChart />
                         </div>
                     </div>
                 )}
-                {/* Add/Edit Modal */}
+                {/* Add Product Dialog */}
+                <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Product</DialogTitle>
+                    </DialogHeader>
+                    <AddProductForm
+                      onSubmit={handleAddProduct}
+                      onCancel={() => setAddProductOpen(false)}
+                    />
+                  </DialogContent>
+                </Dialog>
+                {/* Add Supplier Dialog */}
                 <SupplierModal
-                    open={modalOpen}
-                    onClose={() => { setModalOpen(false); setEditSupplier(null); }}
-                    onSubmit={editSupplier ? handleEditSupplier : handleAddSupplier}
-                    initialData={editSupplier ? {
-                        name: editSupplier.name,
-                        contact_person: editSupplier.contact_person,
-                        email: editSupplier.email,
-                        phone: editSupplier.phone,
-                        address: editSupplier.address,
-                        payment_terms: editSupplier.payment_terms,
-                    } : null}
-                    loading={modalLoading}
+                  open={modalOpen}
+                  onClose={() => { setModalOpen(false); setEditSupplier(null); }}
+                  onSubmit={editSupplier ? handleEditSupplier : handleAddSupplier}
+                  initialData={editSupplier ? {
+                    name: editSupplier.name,
+                    contact_person: editSupplier.contact_person,
+                    email: editSupplier.email,
+                    phone: editSupplier.phone,
+                    address: editSupplier.address,
+                    payment_terms: editSupplier.payment_terms,
+                  } : undefined}
+                  loading={modalLoading}
                 />
+                {/* Create Order Dialog */}
+                <Dialog open={createOrderOpen} onOpenChange={setCreateOrderOpen}>
+                  <DialogContent className="p-0">
+                    <DialogHeader>
+                      <DialogTitle>Create Order</DialogTitle>
+                    </DialogHeader>
+                    <SaleForm
+                      onSubmit={handleCreateOrder}
+                      onCancel={() => setCreateOrderOpen(false)}
+                      loading={orderLoading}
+                    />
+                  </DialogContent>
+                </Dialog>
                 {/* Delete Confirm Dialog */}
                 {deleteId && (
                     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">

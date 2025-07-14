@@ -131,7 +131,7 @@ export function ProjectCard({
             <MapPin className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Location</p>
-              <p className="text-base font-medium text-gray-900">{project.location}</p>
+              <p className="text-sm font-medium text-gray-900">{project.location}</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export function ProjectCard({
             <Calendar className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Completion</p>
-              <p className="text-base font-medium text-gray-900">{formatDate(project.completion_date)}</p>
+              <p className="text-sm font-medium text-gray-900">{formatDate(project.completion_date)}</p>
             </div>
           </div>
 
@@ -147,7 +147,7 @@ export function ProjectCard({
             <DollarSign className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Project Value</p>
-              <p className="text-lg font-bold text-green-600">${project.project_value.toLocaleString()}</p>
+              <p className="text-sm font-bold text-green-600">${project.project_value.toLocaleString()}</p>
             </div>
           </div>
         </div>
