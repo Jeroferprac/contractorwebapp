@@ -19,6 +19,9 @@ class Product(BaseModel):
     description = Column(Text)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
+    transactions = relationship("InventoryTransaction", back_populates="product")
+
+
 class Supplier(BaseModel):
     __tablename__ = "suppliers"
 
@@ -98,3 +101,15 @@ class PurchaseOrderItem(BaseModel):
 
     purchase_order = relationship("PurchaseOrder", back_populates="items")
     product = relationship("Product")
+
+class InventoryTransaction(BaseModel):
+    __tablename__ = "inventory_transactions"
+
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    transaction_type = Column(String(20), nullable=False)  # 'inbound' or 'outbound'
+    quantity = Column(DECIMAL(10, 2), nullable=False)
+    reference_type = Column(String(50))  # 'purchase_order', 'sale', 'adjustment'
+    reference_id = Column(UUID(as_uuid=True))  # ID of the PO or Sale
+    notes = Column(Text)
+
+    product = relationship("Product", back_populates="transactions")

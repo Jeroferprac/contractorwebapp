@@ -61,8 +61,8 @@ export function PurchaseOrderTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {purchaseOrders.map((order) => (
-          <TableRow key={order.id}>
+        {purchaseOrders.map((order, idx) => (
+          <TableRow key={idx}>
             <TableCell className="font-medium">{order.po_number || 'N/A'}</TableCell>
             <TableCell>{order.supplier?.name || 'N/A'}</TableCell>
             <TableCell>{formatDate(order.order_date)}</TableCell>
