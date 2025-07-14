@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Phone, Mail, User } from "lucide-react";
+import { MoreHorizontal, Phone, Mail, User, Pencil, Trash, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -77,9 +77,15 @@ export function SuppliersTable({ suppliersData, onEdit, onDelete }: SuppliersTab
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onEdit && onEdit(supplier)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onDelete && onDelete(supplier)}>Delete</DropdownMenuItem>
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onEdit && onEdit(supplier)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onDelete && onDelete(supplier)}>
+                            <Trash className="h-4 w-4 mr-2 text-red-500" /> Delete
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Eye className="h-4 w-4 mr-2" /> View Details
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -108,9 +114,15 @@ export function SuppliersTable({ suppliersData, onEdit, onDelete }: SuppliersTab
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit && onEdit(supplier)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete && onDelete(supplier)}>Delete</DropdownMenuItem>
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit && onEdit(supplier)}>
+                      <Pencil className="h-4 w-4 mr-2" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete && onDelete(supplier)}>
+                      <Trash className="h-4 w-4 mr-2 text-red-500" /> Delete
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Eye className="h-4 w-4 mr-2" /> View Details
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
