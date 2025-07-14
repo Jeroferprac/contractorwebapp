@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getProducts, createProduct, updateProduct, deleteProduct } from "@/lib/inventory";
+import { getProducts, createProduct, updateProduct, deleteProduct, createSupplier } from "@/lib/inventory";
 import { ProductTable, Product } from "./components/ProductTable";
 import { ProductSearchBar } from "./components/ProductSearchBar";
 import { AddProductButton } from "./components/AddProductButton";
@@ -11,9 +11,12 @@ import QuickActions from "../components/QuickActions";
 import { RecentActivity } from "./components/RecentActivity";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { AddProductForm } from "./components/AddProductForm";
+import { SupplierModal } from "../suppliers/components/SupplierModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { SaleForm, SaleFormData } from "../sales/components/SaleForm";
+import { createSale } from "@/lib/inventory";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -21,12 +24,16 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,7 +58,6 @@ export default function ProductsPage() {
     try {
       const newProduct = await createProduct(form);
       setDialogOpen(false);
-      // Optimistically add the new product to the top of the list
       setProducts(prev => [newProduct, ...prev]);
       toast({ title: "Product added", description: `Product '${form.name}' was added successfully.`, variant: "success" });
     } catch (err: any) {
@@ -59,6 +65,16 @@ export default function ProductsPage() {
       toast({ title: "Error", description: err.message || "Failed to add product", variant: "error" });
     } finally {
       setAdding(false);
+    }
+  }
+
+  async function handleAddSupplier(form: any) {
+    try {
+      await createSupplier(form);
+      setAddSupplierOpen(false);
+      toast({ title: "Supplier added", description: `Supplier '${form.name}' was added successfully.`, variant: "success" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" });
     }
   }
 
@@ -82,12 +98,60 @@ export default function ProductsPage() {
   async function handleDeleteProduct(id: string) {
     try {
       await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      setProducts((prev) => prev.filter((p) => p.id !== id)); // <-- This line updates the UI
       toast({ title: "Product deleted", description: "Product was deleted successfully.", variant: "success" });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to delete product", variant: "error" });
+      // If backend returns 500, show a user-friendly message
+      if (err?.message?.includes("Failed to delete product")) {
+        toast({
+          title: "Error",
+          description: "Cannot delete product: This product is referenced by other records (e.g., sales or purchase orders). Please remove those references first.",
+          variant: "error"
+        });
+      } else {
+        toast({ title: "Error", description: err.message || "Failed to delete product", variant: "error" });
+      }
     }
     setDeleteId(null);
+  }
+
+  async function handleCreateOrder(form: SaleFormData) {
+    setOrderLoading(true);
+    try {
+      await createSale(form);
+      setOrderDialogOpen(false);
+      toast({ title: "Order placed", description: `Order for '${form.customer_name}' was created successfully.`, variant: "success" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to create order", variant: "error" });
+    } finally {
+      setOrderLoading(false);
+    }
+  }
+
+  function handleExport() {
+    const rows = [
+      ["Name", "SKU", "Category", "Brand", "Unit", "Current Stock", "Min Stock", "Cost Price", "Selling Price", "Description"],
+      ...filteredProducts.map(p => [
+        p.name,
+        p.sku,
+        p.category,
+        p.brand,
+        p.unit,
+        p.current_stock,
+        p.min_stock_level,
+        p.cost_price,
+        p.selling_price,
+        p.description || ""
+      ])
+    ];
+    const csv = rows.map(r => r.map(String).map(x => `"${x.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "products_export.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   if (loading) {
@@ -128,6 +192,14 @@ export default function ProductsPage() {
             {addError && <div className="text-red-500 text-sm mt-2">{addError}</div>}
           </DialogContent>
         </Dialog>
+
+        {/* Add Supplier Dialog */}
+        <SupplierModal
+          open={addSupplierOpen}
+          onClose={() => setAddSupplierOpen(false)}
+          onSubmit={handleAddSupplier}
+          loading={false}
+        />
 
         {/* Edit Product Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) setEditProduct(null); }}>
@@ -179,10 +251,28 @@ export default function ProductsPage() {
           </div>
           {/* Sidebar: Quick Actions & Recent Activity */}
           <div className="xl:col-span-1 space-y-6">
-            <QuickActions />
+            <QuickActions
+              onAddProduct={() => setDialogOpen(true)}
+              onAddSupplier={() => setAddSupplierOpen(true)}
+              onCreateOrder={() => setOrderDialogOpen(true)}
+              onExport={handleExport}
+            />
             <RecentActivity activities={recentActivities} />
           </div>
         </div>
+        {/* Create Order Dialog */}
+        <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
+          <DialogContent className="p-0">
+            <DialogHeader>
+              <DialogTitle>Create Order</DialogTitle>
+            </DialogHeader>
+            <SaleForm
+              onSubmit={handleCreateOrder}
+              onCancel={() => setOrderDialogOpen(false)}
+              loading={orderLoading}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
