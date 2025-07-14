@@ -104,5 +104,38 @@ export const updateSale = async (id: string, data: any) => {
 };
 export const getSalesSummary = () => fetchWithError(`${API_BASE}/sales/summary`);
 
-// Add more as needed...
+// --- SALES API LOGIC ---
+
+// List Sales
+export const getSales = () => fetchWithError(`${API_BASE}/sales`);
+
+// Create Sale
+export const createSale = async (data: any) => {
+  const res = await fetch(`${API_BASE}/sales`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to create sale");
+  return res.json();
+};
+
+// Sales Summary
+export const getSalesSummary = () => fetchWithError(`${API_BASE}/sales/summary`);
+
+// Get Sale by ID
+export const getSale = (id: string) => fetchWithError(`${API_BASE}/sales/${id}`);
+
+// Update Sale by ID
+export const updateSale = async (id: string, data: any) => {
+  const res = await fetch(`${API_BASE}/sales/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to update sale");
+  return res.json();
+};
 

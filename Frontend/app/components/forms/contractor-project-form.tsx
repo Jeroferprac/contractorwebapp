@@ -3,13 +3,12 @@ import { useSession } from "next-auth/react";
 import {
   createContractorProject,
   updateContractorProject,
-  fetchContractorProject,
 } from "@/lib/contractor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Project } from "@/types/project"; // Use your actual Project type
+import { Project } from "@/types/contractor";
 
 export default function ContractorProjectForm({ project, onSuccess }: { project?: Project, onSuccess?: () => void }) {
   const { data: session } = useSession();
@@ -18,15 +17,19 @@ export default function ContractorProjectForm({ project, onSuccess }: { project?
     title: project?.title || "",
     description: project?.description || "",
     category: project?.category || "",
-    project_value: project?.project_value || "",
+    project_value: project?.project_value || 0,
     completion_date: project?.completion_date ? project.completion_date.slice(0, 10) : "",
     status: project?.status || "completed",
   });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    if (type === "number") {
+      setForm((prev) => ({ ...prev, [name]: Number(value) }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,8 +48,6 @@ export default function ContractorProjectForm({ project, onSuccess }: { project?
       setLoading(false);
     }
   };
-
-  const [projectId] = useState<string>();
 
   useEffect(() => {
     // If you need to fetch a project by ID, make sure projectId is always a string

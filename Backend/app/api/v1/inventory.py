@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session,joinedload
-from typing import List
+from typing import Optional,List,Literal,Annotated
 from uuid import UUID
 from sqlalchemy import func
 from datetime import date
+from pydantic import BaseModel, Field, ConfigDict,condecimal
+from decimal import Decimal
 
 from app.schemas.inventory import (ProductCreate, ProductOut, ProductUpdate, SupplierCreate, SupplierUpdate, SupplierOut,
                                    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,SaleBase,SaleCreate,SaleItemBase,SaleOut,
                                     PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,
-                                    PurchaseOrderItemCreate, PurchaseOrderItemOut)
-from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder
+                                    PurchaseOrderItemCreate, PurchaseOrderItemOut,InventoryTransactionCreate, InventoryTransactionOut)
+from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder,InventoryTransaction
 from app.api.deps import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -285,6 +287,78 @@ def update_po(id: UUID, data: PurchaseOrderUpdate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(po)
     return po
+
+# ✅ 1. GET /inventory - Current Stock Levels
+@router.get("/", summary="Current stock levels")
+def get_current_inventory(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    return [
+        {
+            "product_id": p.id,
+            "name": p.name,
+            "sku": p.sku,
+            "current_stock": p.current_stock,
+            "min_stock_level": p.min_stock_level
+        }
+        for p in products
+    ]
+
+# ✅ 2. POST /inventory/adjust - Manual Stock Adjustment
+class StockAdjustRequest(BaseModel):
+    product_id: UUID
+    transaction_type: Literal["inbound", "outbound"]
+    quantity: Annotated[Decimal, condecimal(gt=0, max_digits=10, decimal_places=2)]
+    notes: Optional[str] = None
+
+@router.post("/adjust", response_model=InventoryTransactionOut, summary="Adjust stock level manually")
+def adjust_inventory(
+    data: StockAdjustRequest,
+    db: Session = Depends(get_db)
+):
+    product = db.query(Product).filter(Product.id == data.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if data.transaction_type == "inbound":
+        product.current_stock += data.quantity
+    elif data.transaction_type == "outbound":
+        if product.current_stock < data.quantity:
+            raise HTTPException(status_code=400, detail="Insufficient stock")
+        product.current_stock -= data.quantity
+
+    txn = InventoryTransaction(
+        product_id=data.product_id,
+        transaction_type=data.transaction_type,
+        quantity=data.quantity,
+        reference_type="adjustment",
+        reference_id=None,
+        notes=data.notes
+    )
+
+    db.add(txn)
+    db.commit()
+    db.refresh(txn)
+    return txn
+
+# ✅ 3. GET /inventory/transactions - All Inventory Transactions
+@router.get("/transactions", response_model=List[InventoryTransactionOut], summary="Inventory transaction history")
+def get_transactions(db: Session = Depends(get_db)):
+    return db.query(InventoryTransaction).order_by(InventoryTransaction.created_at.desc()).all()
+
+# ✅ 4. GET /inventory/reports - Inventory Summary
+@router.get("/reports", summary="Inventory summary report")
+def inventory_report(db: Session = Depends(get_db)):
+    total_products = db.query(Product).count()
+    low_stock = db.query(Product).filter(Product.current_stock < Product.min_stock_level).count()
+    total_inbound = db.query(InventoryTransaction).filter(InventoryTransaction.transaction_type == "inbound").count()
+    total_outbound = db.query(InventoryTransaction).filter(InventoryTransaction.transaction_type == "outbound").count()
+
+    return {
+        "total_products": total_products,
+        "low_stock_items": low_stock,
+        "total_inbound_transactions": total_inbound,
+        "total_outbound_transactions": total_outbound
+    }
 
 
 
