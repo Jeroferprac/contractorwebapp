@@ -6,21 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-
-export interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  brand: string;
-  unit: string;
-  current_stock: string;
-  min_stock_level: string;
-  cost_price: string;
-  selling_price: string;
-  description: string;
-  created_at: string;
-}
+import { Product } from "@/lib/inventory";
 
 interface ProductTableProps {
   products: Product[]
@@ -57,13 +43,13 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                 <tr key={p.id} className="border-b last:border-0">
                   <td className="py-3 px-4 font-medium">{p.name}</td>
                   <td className="py-3 px-4">{p.sku}</td>
-                  <td className="py-3 px-4">{p.category}</td>
-                  <td className="py-3 px-4">{p.brand}</td>
-                  <td className="py-3 px-4">{p.unit}</td>
+                  <td className="py-3 px-4">{p.category || '-'}</td>
+                  <td className="py-3 px-4">{p.brand || '-'}</td>
+                  <td className="py-3 px-4">{p.unit || '-'}</td>
                   <td className="py-3 px-4 text-right">{p.current_stock}</td>
                   <td className="py-3 px-4 text-right">{p.min_stock_level}</td>
-                  <td className="py-3 px-4 text-right">{p.cost_price}</td>
-                  <td className="py-3 px-4 text-right">{p.selling_price}</td>
+                  <td className="py-3 px-4 text-right">{p.cost_price || '-'}</td>
+                  <td className="py-3 px-4 text-right">{p.selling_price || '-'}</td>
                   <td className="py-3 px-4 text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -95,10 +81,10 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{product.name}</div>
                   <div className="text-sm text-gray-500">
-                    {product.sku} • {product.category}
+                    {product.sku} • {product.category || 'No category'}
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="font-medium">{product.selling_price}</span>
+                    <span className="font-medium">{product.selling_price || '-'}</span>
                     <Badge variant="secondary">Stock: {product.current_stock}</Badge>
                   </div>
                 </div>

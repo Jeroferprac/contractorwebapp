@@ -86,7 +86,7 @@ export default function ProjectForm({
     onSubmit(formData);
   };
 
-  const handleChange = (field: keyof ProjectFormData, value: any) => {
+  const handleChange = (field: keyof ProjectFormData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

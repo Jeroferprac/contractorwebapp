@@ -47,6 +47,7 @@ contractor_portal/
 │   │   │    ├── auth.py       # Authentication routes
 │   │   │    ├── users.py      # User management routes
 │   │   │    ├── contractor.py # Contractor routes
+│   │   │    ├── inventory.py  # inventory routes
 |   |   │    └── quotation/    # Quotation routes
 │   │   │       ├── __init__.py  
 │   │   │       └──  quote.py  
@@ -59,14 +60,16 @@ contractor_portal/
 │   ├── models/
 │   │   ├── __init__.py      # Init file
 │   │   ├── base.py          # Base model class
-│   │   └── contractor.py    # Contractor model
+│   │   ├── contractor.py    # Contractor model
+│   │   ├── inventory.py     # inventory model
 │   │   ├── quotation.py     # quotation model
 │   │   ├── user.py          # User model
 │   │   └── session.py       # Session model 
 │   ├── schemas/
 │   │   ├── __init__.py      # Init file
 │   │   ├── auth.py          # Auth request/response schemas
-│   │   └── contractor.py    # Contractor schemas
+│   │   ├── contractor.py    # Contractor schemas
+│   │   ├── inventory.py     # inventory schemas
 │   │   ├── quotation.py     # quotation schemas
 │   │   └── user.py          # User schemas
 │   ├── services/
