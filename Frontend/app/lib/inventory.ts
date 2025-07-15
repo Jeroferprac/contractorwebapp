@@ -11,6 +11,8 @@ async function fetchWithError(url: string) {
 export const getProducts = () => fetchWithError(`${API_BASE}/products`);
 export const getLowStockProducts = () => fetchWithError(`${API_BASE}/products/low-stock`);
 export const getSuppliers = () => fetchWithError(`${API_BASE}/suppliers`);
+export const getProductSuppliers = () =>
+  fetchWithError(`${API_BASE}/product-suppliers`);
 
 export const createProduct = async (data: any) => {
   const res = await fetch(`${API_BASE}/products`, {
@@ -80,30 +82,6 @@ export const deleteProduct = async (id: string) => {
   return;
 };
 
-export const getSales = () => fetchWithError(`${API_BASE}/sales`);
-export const createSale = async (data: any) => {
-  const res = await fetch(`${API_BASE}/sales`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to create sale");
-  return res.json();
-};
-export const getSale = (id: string) => fetchWithError(`${API_BASE}/sales/${id}`);
-export const updateSale = async (id: string, data: any) => {
-  const res = await fetch(`${API_BASE}/sales/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Failed to update sale");
-  return res.json();
-};
-export const getSalesSummary = () => fetchWithError(`${API_BASE}/sales/summary`);
-
 // --- SALES API LOGIC ---
 
 // List Sales
@@ -138,4 +116,53 @@ export const updateSale = async (id: string, data: any) => {
   if (!res.ok) throw new Error("Failed to update sale");
   return res.json();
 };
+
+export const getInventoryTransactions = () =>
+  fetchWithError(`${API_BASE}/transactions`);
+
+export const adjustInventory = async (product_id: string, quantity: number, notes: string, transaction_type: 'inbound' | 'outbound') => {
+  const res = await fetch(`${API_BASE}/adjust`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product_id, quantity, notes, transaction_type }),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to adjust inventory");
+  return res.json();
+};
+
+export const createProductSupplier = async (data: any) => {
+  const res = await fetch(`${API_BASE}/product-suppliers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to add product supplier");
+  return res.json();
+};
+
+export const updateProductSupplier = async (id: string, data: any) => {
+  const res = await fetch(`${API_BASE}/product-suppliers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to update product supplier");
+  return res.json();
+};
+
+export const deleteProductSupplier = async (id: string) => {
+  const res = await fetch(`${API_BASE}/product-suppliers/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete product supplier");
+  return res.json();
+};
+
+export const getInventorySummary = () =>
+  fetchWithError(`${API_BASE}/reports`);
+
 

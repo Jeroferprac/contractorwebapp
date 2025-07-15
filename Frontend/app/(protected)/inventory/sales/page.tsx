@@ -326,12 +326,12 @@ export default function SalesPage() {
             ) : chartError ? (
               <div className="p-8 text-center text-red-500">{chartError}</div>
             ) : (
-              <SalesReportChart chartData={chartData} />
+            <SalesReportChart chartData={chartData} />
             )}
           </div>
           {/* Right Sidebar - Quick Actions and Recent Activity */}
           <div className="xl:col-span-1 space-y-6">
-            <QuickActions
+          <QuickActions
               onAddProduct={() => setDialogOpen(true)}
               onAddSupplier={handleAddSupplier}
               onCreateOrder={() => setAddSaleOpen(true)}

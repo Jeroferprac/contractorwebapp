@@ -7,6 +7,7 @@ import { SupplierPerformanceChart } from "./components/SupplierPerformance";
 import { ReportActions } from "./components/ReportActions";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import SalesByCustomerReport from "../sales/components/SalesByCustomerReport";
 
 export default function ReportsPage() {
   return (
@@ -25,7 +26,7 @@ export default function ReportsPage() {
           <div className="xl:col-span-3 space-y-5">
             <WeeklySalesChart />
             <SupplierPerformanceChart />
-
+            <SalesByCustomerReport />
           </div>
           {/* Right Column - Top Suppliers and Quick Actions */}
           <div className="space-y-5">

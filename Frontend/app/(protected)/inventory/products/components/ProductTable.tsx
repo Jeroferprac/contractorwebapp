@@ -6,6 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils'; // If you have a classnames util, otherwise remove
+import SupplierPricingComparison from "../../suppliers/components/SupplierPricingComparison";
 
 export interface Product {
   id: string;
@@ -26,9 +31,32 @@ interface ProductTableProps {
   products: Product[]
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  onAdjust?: (product: Product, data: { quantity: number; notes: string; transaction_type: 'inbound' | 'outbound' }) => void;
 }
 
-export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete, onAdjust }: ProductTableProps) {
+  const [adjustProduct, setAdjustProduct] = useState<Product | null>(null);
+  const [adjustQty, setAdjustQty] = useState(0);
+  const [adjustNotes, setAdjustNotes] = useState("");
+  const [adjustType, setAdjustType] = useState<'inbound' | 'outbound'>('inbound');
+  const [adjustLoading, setAdjustLoading] = useState(false);
+  const [compareProductId, setCompareProductId] = useState<string | null>(null);
+
+  function openAdjustModal(product: Product) {
+    setAdjustProduct(product);
+    setAdjustQty(0);
+    setAdjustNotes("");
+    setAdjustType('inbound');
+  }
+
+  function handleAdjust() {
+    if (!adjustProduct) return;
+    setAdjustLoading(true);
+    onAdjust && onAdjust(adjustProduct, { quantity: adjustQty, notes: adjustNotes, transaction_type: adjustType });
+    setAdjustLoading(false);
+    setAdjustProduct(null);
+  }
+
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -74,6 +102,8 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEdit && onEdit(p)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onDelete && onDelete(p)}>Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openAdjustModal(p)}>Adjust</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setCompareProductId(p.id)}>Compare Prices</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -112,12 +142,74 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onEdit && onEdit(product)}>Edit</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete && onDelete(product)}>Delete</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openAdjustModal(product)}>Adjust</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setCompareProductId(product.id)}>Compare Prices</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </Card>
           ))}
         </div>
+
+        {/* Adjustment Modal */}
+        <Dialog open={!!adjustProduct} onOpenChange={() => setAdjustProduct(null)}>
+          <DialogContent className="sm:max-w-md w-full max-w-full overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Adjust Stock</DialogTitle>
+            </DialogHeader>
+            {adjustProduct && (
+              <div className="space-y-4">
+                <div className="text-sm text-gray-700">Product: <span className="font-medium">{adjustProduct.name}</span> (SKU: {adjustProduct.sku})</div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Adjustment Quantity</label>
+                  <Input
+                    type="number"
+                    value={adjustQty}
+                    onChange={e => setAdjustQty(Number(e.target.value))}
+                    className="w-full"
+                    placeholder="Enter quantity (e.g. -5 or 10)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Transaction Type</label>
+                  <select
+                    className="border rounded-md px-3 h-10 w-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={adjustType}
+                    onChange={e => setAdjustType(e.target.value as 'inbound' | 'outbound')}
+                  >
+                    <option value="inbound">Inbound (Add Stock)</option>
+                    <option value="outbound">Outbound (Remove Stock)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">Reason/Notes</label>
+                  <Input
+                    type="text"
+                    value={adjustNotes}
+                    onChange={e => setAdjustNotes(e.target.value)}
+                    className="w-full"
+                    placeholder="Reason for adjustment"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button variant="outline" onClick={() => setAdjustProduct(null)} className="w-full sm:w-auto">Cancel</Button>
+                  <Button onClick={handleAdjust} disabled={adjustLoading || adjustQty === 0} className="w-full sm:w-auto">
+                    {adjustLoading ? <span className="spinner-class" /> : "Adjust"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        {/* Supplier Pricing Comparison Modal */}
+        <Dialog open={!!compareProductId} onOpenChange={() => setCompareProductId(null)}>
+          <DialogContent className="max-w-lg w-full">
+            <DialogTitle>Supplier Pricing Comparison</DialogTitle>
+            {compareProductId && (
+              <SupplierPricingComparison productId={compareProductId} onClose={() => setCompareProductId(null)} />
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )

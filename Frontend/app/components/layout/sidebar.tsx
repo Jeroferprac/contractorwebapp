@@ -18,30 +18,14 @@ import {
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
 import { useState } from "react"
+import { useUserStore } from "@/store/userStore"
 
-const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Clients", href: "/clients", icon: Users },
-  { name: "Quotes", href: "/quotes", icon: FileText },
-  { name: "Contractor", href: "/contractor", icon: User },
-  { name: "Projects", href: "/contractor/projects", icon: FolderKanban },
-  { name: "Kanban", href: "/kanban", icon: ListChecks },
-  { name: "Company", href: "/company", icon: Building2 },
-  {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Boxes,
-    children: [
-      { name: "Dashboard", href: "/inventory" },
-      { name: "Products", href: "/inventory/products" },
-      { name: "Sales Orders", href: "/inventory/sales" },
-      { name: "Suppliers", href: "/inventory/suppliers" },
-      { name: "Reports", href: "/inventory/reports" },
-    ],
-  },
-  { name: "Profile", href: "/profile", icon: User },
-  { name: "Sign In", href: "/login", icon: LogIn },
-]
+type NavItem = {
+  name: string;
+  href: string;
+  icon: any;
+  children?: { name: string; href: string }[];
+};
 
 interface SidebarProps {
   isOpen: boolean
@@ -51,11 +35,52 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [inventoryOpen, setInventoryOpen] = useState(false)
+  const user = useUserStore((s) => s.user)
 
   const handleNavClick = () => {
     setInventoryOpen(false)
     onClose()
   }
+
+  // Build nav items based on user role
+  let navItems: NavItem[] = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Quotes", href: "/quotes", icon: FileText },
+    { name: "Profile", href: "/profile", icon: User },
+  ];
+
+  if (user?.role === "company") {
+    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
+    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
+  } else if (user?.role === "contractor") {
+    navItems.splice(1, 0, { name: "Contractor", href: "/contractor", icon: User });
+    navItems.splice(2, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
+  } else if (user?.role === "admin") {
+    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
+    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
+    navItems.splice(3, 0, { name: "Contractor", href: "/contractor", icon: User });
+    navItems.splice(4, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
+    navItems.splice(5, 0, { name: "Clients", href: "/clients", icon: Users });
+  }
+
+  // Inventory is available to all roles
+  navItems.splice(-1, 0, {
+    name: "Inventory",
+    href: "/inventory",
+    icon: Boxes,
+    children: [
+      { name: "Dashboard", href: "/inventory" },
+      { name: "Products", href: "/inventory/products" },
+      { name: "Sales Orders", href: "/inventory/sales" },
+      { name: "Suppliers", href: "/inventory/suppliers" },
+      { name: "Reports", href: "/inventory/reports" },
+      { name: "Transactions", href: "/inventory/transactions" },
+      
+      
+    ],
+  });
+
+  navItems.push({ name: "Sign In", href: "/login", icon: LogIn });
 
   return (
     <div

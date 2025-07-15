@@ -5,9 +5,7 @@ import { useSession } from "next-auth/react";
 import { useCompanyStore } from "@/store/companyStore";
 import { useRouter } from "next/navigation";
 import { CompanyProfileCard } from "@/components/company/CompanyProfileCard";
-import { CompanyProjectsCard } from "@/components/company/CompanyProjectsCard";
 import { CompanyForm } from "@/components/company/CompanyForm";
-import ProjectForm from "@/components/company/ProjectForm"
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useUserStore } from "@/store/userStore";
@@ -19,18 +17,12 @@ export default function CompanyPage() {
   const company = useCompanyStore((s) => s.company);
   const fetchCompany = useCompanyStore((s) => s.fetchCompany);
   const createCompany = useCompanyStore((s) => s.createCompany);
-  const updateCompany = useCompanyStore((s) => s.updateCompany);
   const user = useUserStore((s) => s.user);
 
-  const [showProjectForm, setShowProjectForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!user || user.role !== "company") {
-      router.replace("/dashboard");
-      return;
-    }
     fetchCompany();
   }, [user, status, fetchCompany, router]);
 
@@ -44,7 +36,6 @@ export default function CompanyPage() {
       </div>
     )
   }
-  if (!user || user.role !== "company") return <div className="p-8 text-red-500">Access denied</div>;
 
   return (
     <DashboardLayout session={session} title="Company">

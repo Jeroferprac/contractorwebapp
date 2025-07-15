@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getProducts, createProduct, updateProduct, deleteProduct, createSupplier } from "@/lib/inventory";
+import { getProducts, createProduct, updateProduct, deleteProduct, createSupplier, adjustInventory } from "@/lib/inventory";
 import { ProductTable, Product } from "./components/ProductTable";
 import { ProductSearchBar } from "./components/ProductSearchBar";
 import { AddProductButton } from "./components/AddProductButton";
@@ -247,6 +247,20 @@ export default function ProductsPage() {
               products={filteredProducts}
               onEdit={(product) => { setEditProduct(product); setEditDialogOpen(true); }}
               onDelete={(product) => setDeleteId(product.id)}
+              onAdjust={async (product, data) => {
+                try {
+                  await adjustInventory(product.id, data.quantity, data.notes, data.transaction_type);
+                  toast({ title: "Stock adjusted", description: `Stock for '${product.name}' adjusted by ${data.quantity}.`, variant: "success" });
+                  // Refresh products after adjustment
+                  setLoading(true);
+                  const updated = await getProducts();
+                  setProducts(updated);
+                } catch (err: any) {
+                  toast({ title: "Error", description: err.message || "Failed to adjust stock", variant: "error" });
+                } finally {
+                  setLoading(false);
+                }
+              }}
             />
           </div>
           {/* Sidebar: Quick Actions & Recent Activity */}
