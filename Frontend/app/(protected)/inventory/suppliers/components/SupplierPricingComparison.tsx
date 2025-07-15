@@ -67,7 +67,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
   if (loading) return <div className="p-4">Loading supplier prices...</div>;
   if (!data.length) return (
     <div className="p-4">
-      <Button className="mb-4" onClick={() => { setEditData(null); setFormOpen(true); }}>
+      <Button className="mb-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600" onClick={() => { setEditData(null); setFormOpen(true); }}>
         Add Supplier Price
       </Button>
       No supplier pricing data for this product.

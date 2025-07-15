@@ -101,6 +101,9 @@ export const createSale = async (data: any) => {
 // Sales Summary
 export const getSalesSummary = () => fetchWithError(`${API_BASE}/sales/summary`);
 
+// Monthly Sales Summary
+export const getSalesMonthlySummary = () => fetchWithError(`${API_BASE}/sales/summary/monthly`);
+
 // Get Sale by ID
 export const getSale = (id: string) => fetchWithError(`${API_BASE}/sales/${id}`);
 

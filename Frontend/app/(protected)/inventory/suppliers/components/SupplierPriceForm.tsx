@@ -75,7 +75,7 @@ export default function SupplierPriceForm({ open, onClose, productId, initialDat
           <Input name="notes" value={form.notes} onChange={handleChange} placeholder="Notes" />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-            <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
+            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </DialogContent>

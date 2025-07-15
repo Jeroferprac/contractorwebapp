@@ -10,7 +10,7 @@ import { SalesSearchBar } from "./components/SalesSearchBar";
 import { PlaceOrderButton } from "./components/PlaceOrderButton";
 import { Dialog as UIDialog, DialogContent as UIDialogContent, DialogHeader as UIDialogHeader, DialogTitle as UIDialogTitle } from "@/components/ui/dialog";
 import { AddProductForm } from "../products/components/AddProductForm";
-import { createProduct, getSales, getSalesSummary, createSale, updateSale, getSale } from "@/lib/inventory";
+import { createProduct, getSales, getSalesSummary, createSale, updateSale, getSale, getSalesMonthlySummary } from "@/lib/inventory";
 import { useToast } from "@/components/ui/use-toast";
 import { SaleForm, SaleFormData } from "./components/SaleForm";
 import { parseISO, format, isValid } from 'date-fns';
@@ -49,6 +49,10 @@ export default function SalesPage() {
   const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [addSupplierLoading, setAddSupplierLoading] = useState(false);
   const [addSupplierError, setAddSupplierError] = useState<string | null>(null);
+  const [chartView, setChartView] = useState<'daily' | 'monthly'>('daily');
+  const [monthlyChartData, setMonthlyChartData] = useState<ChartDatum[]>([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState<string | null>(null);
 
   // Professional: Memoized, robust chart data grouping by day
   const chartData: ChartDatum[] = useMemo(() => {
@@ -87,6 +91,33 @@ export default function SalesPage() {
       if (!chartData.length) setChartError('No sales data for chart');
     }, 100);
   }, [chartData]);
+
+  // Fetch monthly summary when toggled
+  useEffect(() => {
+    if (chartView === 'monthly') {
+      setMonthlyLoading(true);
+      setMonthlyError(null);
+      getSalesMonthlySummary()
+        .then((data) => {
+          // Transform API data to chart format
+          const monthNames = [
+            '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+          const chartData = Array.isArray(data)
+            ? data.map((item) => ({
+                name: `${monthNames[item.month]} ${item.year}`,
+                sales: item.total_sales,
+                orders: item.total_sales, // If you have a separate orders count, use it here
+                revenue: item.total_revenue,
+              }))
+            : [];
+          setMonthlyChartData(chartData);
+        })
+        .catch(() => setMonthlyError('Failed to load monthly summary'))
+        .finally(() => setMonthlyLoading(false));
+    }
+  }, [chartView]);
 
   // Apply filters
   useEffect(() => {
@@ -321,12 +352,38 @@ export default function SalesPage() {
               onFilter={() => setFilterOpen(true)}
               onExport={handleExport}
             />
-            {chartLoading ? (
-              <div className="p-8 text-center">Loading sales summary...</div>
-            ) : chartError ? (
-              <div className="p-8 text-center text-red-500">{chartError}</div>
-            ) : (
-            <SalesReportChart chartData={chartData} />
+            <div className="flex items-center gap-4 mb-4">
+              <span className="font-medium">Chart View:</span>
+              <button
+                className={`px-3 py-1 rounded ${chartView === 'daily' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-800 dark:bg-[#020817]'}`}
+                onClick={() => setChartView('daily')}
+              >
+                Daily
+              </button>
+              <button
+                className={`px-3 py-1 rounded ${chartView === 'monthly' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-200 dark:bg-[#020817]'}`}
+                onClick={() => setChartView('monthly')}
+              >
+                Monthly
+              </button>
+            </div>
+            {chartView === 'daily' && (
+              chartLoading ? (
+                <div className="p-8 text-center">Loading sales summary...</div>
+              ) : chartError ? (
+                <div className="p-8 text-center text-red-500">{chartError}</div>
+              ) : (
+                <SalesReportChart chartData={chartData} />
+              )
+            )}
+            {chartView === 'monthly' && (
+              monthlyLoading ? (
+                <div className="p-8 text-center">Loading monthly summary...</div>
+              ) : monthlyError ? (
+                <div className="p-8 text-center text-red-500">{monthlyError}</div>
+              ) : (
+                <SalesReportChart chartData={monthlyChartData} />
+              )
             )}
           </div>
           {/* Right Sidebar - Quick Actions and Recent Activity */}

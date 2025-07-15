@@ -73,6 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       { name: "Products", href: "/inventory/products" },
       { name: "Sales Orders", href: "/inventory/sales" },
       { name: "Suppliers", href: "/inventory/suppliers" },
+      { name: "purchasewha", href: "/inventory/purchase-orders" },
       { name: "Reports", href: "/inventory/reports" },
       { name: "Transactions", href: "/inventory/transactions" },
       
@@ -151,11 +152,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {item.name}
                       <ChevronRight className={clsx("ml-auto transition-transform", inventoryOpen && "rotate-90")} />
                     </Button>
-                    {/* Submenu */}
-                    {inventoryOpen && (
+                    {/* Submenu - now appears below, with animation */}
+                    <div
+                      className={clsx(
+                        "absolute left-0 w-full z-10",
+                        inventoryOpen ? "block" : "hidden"
+                      )}
+                    >
                       <ul
                         id="inventory-submenu"
-                        className="absolute left-full top-0 bg-white dark:bg-[#0b1437] shadow-lg rounded min-w-[200px] z-10 border border-gray-100 dark:border-zinc-800 py-2"
+                        className={clsx(
+                          "bg-white dark:bg-[#0b1437] shadow-lg rounded border border-gray-100 dark:border-zinc-800 py-2 mt-1 origin-top transition-all duration-300 transform",
+                          inventoryOpen
+                            ? "animate-inventory-dropdown"
+                            : "opacity-0 scale-y-95 pointer-events-none"
+                        )}
                         role="menu"
                         tabIndex={-1}
                       >
@@ -164,7 +175,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <Link
                               href={child.href}
                               className={clsx(
-                                "block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer whitespace-nowrap",
+                                "block px-4 py-2 text-sm transition-colors cursor-pointer whitespace-nowrap rounded hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-zinc-800 dark:hover:text-cyan-400",
                                 pathname === child.href && "font-semibold text-blue-600"
                               )}
                               tabIndex={0}
@@ -179,7 +190,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           </li>
                         ))}
                       </ul>
-                    )}
+                    </div>
                   </li>
                 );
               }
@@ -207,9 +218,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               );
             })}
           </ul>
-        </nav>
-
-        {/* Upgrade Card */}
+          {/* Upgrade Card */}
         <div className="p-4">
           <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white text-center">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -224,7 +233,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </Button>
           </div>
         </div>
+        </nav>
+
+        
       </div>
     </div>
   )
 }
+
+<style jsx global>{`
+  @layer utilities {
+    .animate-inventory-dropdown {
+      animation: inventory-dropdown-fade-slide 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes inventory-dropdown-fade-slide {
+      0% {
+        opacity: 0;
+        transform: scaleY(0.95) translateY(-8px);
+      }
+      100% {
+        opacity: 1;
+        transform: scaleY(1) translateY(0);
+      }
+    }
+  }
+`}</style>

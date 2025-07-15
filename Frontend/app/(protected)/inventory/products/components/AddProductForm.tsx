@@ -3,7 +3,19 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CreateProductData } from "@/lib/inventory";
+
+type CreateProductData = {
+  name: string;
+  sku: string;
+  category?: string;
+  brand?: string;
+  unit?: string;
+  current_stock?: number | string;
+  min_stock_level?: number | string;
+  cost_price?: number | string;
+  selling_price: number | string;
+  description?: string;
+};
 
 interface AddProductFormProps {
   onSubmit: (data: CreateProductData) => void;
@@ -72,10 +84,10 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       // Convert numeric fields to numbers before submitting
       const payload: CreateProductData = {
         ...form,
-        current_stock: form.current_stock ? Number(form.current_stock) : undefined,
-        min_stock_level: form.min_stock_level ? Number(form.min_stock_level) : undefined,
-        cost_price: form.cost_price ? Number(form.cost_price) : undefined,
-        selling_price: form.selling_price ? Number(form.selling_price) : undefined,
+        current_stock: form.current_stock ? Number(form.current_stock) : "",
+        min_stock_level: form.min_stock_level ? Number(form.min_stock_level) : "",
+        cost_price: form.cost_price ? Number(form.cost_price) : "",
+        selling_price: form.selling_price ? Number(form.selling_price) : "",
       };
       await onSubmit(payload);
     } finally {
@@ -237,7 +249,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
         <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button type="submit" disabled={submitting || isInvalid || loading} className="w-full sm:w-auto">
+        <Button type="submit" disabled={submitting || isInvalid || loading} className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600">
           {loading ? "Saving..." : submitting ? "Adding..." : initialData ? "Save Changes" : "Add Product"}
         </Button>
       </div>
