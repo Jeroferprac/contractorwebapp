@@ -132,6 +132,12 @@ class SaleOut(SaleBase):
     class Config:
         from_attributes = True
 
+class MonthlySalesSummary(BaseModel):
+    year: int
+    month: int
+    total_sales: int
+    total_revenue: float
+    
           #############    Purchase order Items    ##############
 class PurchaseOrderItemBase(BaseModel):
     product_id: UUID

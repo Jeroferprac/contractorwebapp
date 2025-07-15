@@ -2,14 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session,joinedload
 from typing import Optional,List,Literal,Annotated
 from uuid import UUID
-from sqlalchemy import func
-from datetime import date
+from sqlalchemy import func,extract
+from datetime import date,datetime
 from pydantic import BaseModel, Field, ConfigDict,condecimal
 from decimal import Decimal
+from collections import defaultdict
 
 from app.schemas.inventory import (ProductCreate, ProductOut, ProductUpdate, SupplierCreate, SupplierUpdate, SupplierOut,
                                    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,SaleBase,SaleCreate,SaleItemBase,SaleOut,
-                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,
+                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,MonthlySalesSummary,  
                                     PurchaseOrderItemCreate, PurchaseOrderItemOut,InventoryTransactionCreate, InventoryTransactionOut)
 from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder,InventoryTransaction
 from app.api.deps import get_db
@@ -205,6 +206,31 @@ def sales_summary(db: Session = Depends(get_db)):
         "total_revenue": float(total_revenue),
         "latest_sale": latest_sale.sale_date if latest_sale else None
     }
+
+####Sales Summary Monthly basis
+@router.get("/sales/summary/monthly", response_model=List[MonthlySalesSummary])
+def monthly_sales_summary(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            extract('year', Sale.sale_date).label('year'),
+            extract('month', Sale.sale_date).label('month'),
+            func.count(Sale.id).label('total_sales'),
+            func.sum(Sale.total_amount).label('total_revenue')
+        )
+        .group_by('year', 'month')
+        .order_by('year', 'month')
+        .all()
+    )
+
+    return [
+        MonthlySalesSummary(
+            year=int(row.year),
+            month=int(row.month),
+            total_sales=row.total_sales,
+            total_revenue=float(row.total_revenue or 0)
+        )
+        for row in results
+    ]
 
 ## Get Sale by ID
 @router.get("/sales/{id}", response_model=SaleOut)
