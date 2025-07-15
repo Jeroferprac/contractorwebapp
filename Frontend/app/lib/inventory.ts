@@ -1,5 +1,4 @@
 import { BASE_URL } from './api';
-
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
 
 async function fetchWithError(url: string) {

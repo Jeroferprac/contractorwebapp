@@ -26,7 +26,6 @@ export default function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
@@ -52,19 +51,16 @@ export default function ProductsPage() {
     { action: "Sold", item: "iPhone 14", time: "1d ago" },
   ];
 
-  async function handleAddProduct(form: any) {
-    setAdding(true);
-    setAddError(null);
+  async function handleAddProduct(form: CreateProductData) {
     try {
       const newProduct = await createProduct(form);
       setDialogOpen(false);
       setProducts(prev => [newProduct, ...prev]);
       toast({ title: "Product added", description: `Product '${form.name}' was added successfully.`, variant: "success" });
-    } catch (err: any) {
-      setAddError(err.message || "Failed to add product");
-      toast({ title: "Error", description: err.message || "Failed to add product", variant: "error" });
-    } finally {
-      setAdding(false);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to add product";
+      setAddError(errorMessage);
+      toast({ title: "Error", description: errorMessage, variant: "error" });
     }
   }
 
@@ -79,7 +75,7 @@ export default function ProductsPage() {
   }
 
   // Edit logic
-  async function handleEditProduct(form: any) {
+  async function handleEditProduct(form: CreateProductData) {
     if (!editProduct) return;
     setEditLoading(true);
     try {
@@ -88,8 +84,9 @@ export default function ProductsPage() {
       toast({ title: "Product updated", description: `Product '${form.name}' was updated successfully.`, variant: "success" });
       setEditProduct(null);
       setEditDialogOpen(false);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to update product", variant: "error" });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update product";
+      toast({ title: "Error", description: errorMessage, variant: "error" });
     } finally {
       setEditLoading(false);
     }

@@ -1,15 +1,15 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Form, FormField, FormLabel, FormControl, FormMessage, FormItem } from "@/components/ui/form";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { CreateProductData } from "@/lib/inventory";
 
 interface AddProductFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: CreateProductData) => void;
   onCancel: () => void;
-  initialData?: any; // Add this line
-  loading?: boolean; // Add this line
+  initialData?: CreateProductData;
+  loading?: boolean;
 }
 
 export function AddProductForm({ onSubmit, onCancel, initialData, loading }: AddProductFormProps) {
@@ -29,13 +29,12 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
   );
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const firstErrorRef = useRef<HTMLInputElement | null>(null);
 
   function validate(currentForm = form) {
     const newErrors: { [key: string]: string } = {};
     if (!currentForm.name.trim()) newErrors.name = "Name is required.";
     if (!currentForm.sku.trim()) newErrors.sku = "SKU is required.";
-    if (!currentForm.selling_price.trim()) newErrors.selling_price = "Selling price is required.";
+    if (!String(currentForm.selling_price).trim()) newErrors.selling_price = "Selling price is required.";
     if (currentForm.selling_price && isNaN(Number(currentForm.selling_price))) newErrors.selling_price = "Selling price must be a number.";
     if (currentForm.current_stock && isNaN(Number(currentForm.current_stock))) newErrors.current_stock = "Current stock must be a number.";
     if (currentForm.min_stock_level && isNaN(Number(currentForm.min_stock_level))) newErrors.min_stock_level = "Min stock level must be a number.";
@@ -71,7 +70,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
     setSubmitting(true);
     try {
       // Convert numeric fields to numbers before submitting
-      const payload = {
+      const payload: CreateProductData = {
         ...form,
         current_stock: form.current_stock ? Number(form.current_stock) : undefined,
         min_stock_level: form.min_stock_level ? Number(form.min_stock_level) : undefined,
@@ -94,7 +93,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       <div>
         <label className="block font-medium mb-1" htmlFor="name">
           Name <span className="text-red-500">*</span>
-          <span className="text-xs text-gray-400 ml-2">(Product name, e.g. "Macbook Pro")</span>
+          <span className="text-xs text-gray-400 ml-2">(Product name, e.g. &quot;Macbook Pro&quot;)</span>
         </label>
         <Input
           id="name"
@@ -109,7 +108,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       <div>
         <label className="block font-medium mb-1" htmlFor="sku">
           SKU <span className="text-red-500">*</span>
-          <span className="text-xs text-gray-400 ml-2">(Unique product code, e.g. "MBP-2023-16")</span>
+          <span className="text-xs text-gray-400 ml-2">(Unique product code, e.g. &quot;MBP-2023-16&quot;)</span>
         </label>
         <Input
           id="sku"
@@ -124,7 +123,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       <div>
         <label className="block font-medium mb-1" htmlFor="category">
           Category
-          <span className="text-xs text-gray-400 ml-2">(e.g. "Bricks")</span>
+          <span className="text-xs text-gray-400 ml-2">(e.g. &quot;Bricks&quot;)</span>
         </label>
         <Input
           id="category"
@@ -137,7 +136,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       <div>
         <label className="block font-medium mb-1" htmlFor="brand">
           Brand
-          <span className="text-xs text-gray-400 ml-2">(e.g. "Ultratech")</span>
+          <span className="text-xs text-gray-400 ml-2">(e.g. &quot;Ultratech&quot;)</span>
         </label>
         <Input
           id="brand"
@@ -150,7 +149,7 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
       <div>
         <label className="block font-medium mb-1" htmlFor="unit">
           Unit
-          <span className="text-xs text-gray-400 ml-2">(e.g. "pcs", "kg", "box")</span>
+          <span className="text-xs text-gray-400 ml-2">(e.g. &quot;pcs&quot;, &quot;kg&quot;, &quot;box&quot;)</span>
         </label>
         <Input
           id="unit"
