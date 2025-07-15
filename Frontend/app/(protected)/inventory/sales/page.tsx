@@ -20,13 +20,6 @@ import { Button } from "@/components/ui/button";
 import { SupplierModal, SupplierFormData } from "../suppliers/components/SupplierModal";
 import { createSupplier } from "@/lib/inventory";
 
-const activities: Activity[] = [
-  { action: "Ordered", item: "MacBook Pro", time: "2 min ago" },
-  { action: "Shipped", item: "iPhone 14", time: "5 min ago" },
-  { action: "Delivered", item: "iPad Pro", time: "10 min ago" },
-  { action: "Returned", item: "Apple Watch", time: "15 min ago" },
-];
-
 export default function SalesPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false); // For Add Product
@@ -49,6 +42,32 @@ export default function SalesPage() {
   const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [addSupplierLoading, setAddSupplierLoading] = useState(false);
   const [addSupplierError, setAddSupplierError] = useState<string | null>(null);
+
+  // Place the activities state here
+  const [activities, setActivities] = useState<Activity[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sales_activities');
+      if (stored) {
+        try {
+          // Ensure time is always a string for compatibility
+          return JSON.parse(stored).map((a: any) => ({
+            ...a,
+            time: typeof a.time === 'string' ? a.time : String(a.time),
+          }));
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
+
+  // Persist activities to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sales_activities', JSON.stringify(activities));
+    }
+  }, [activities]);
 
   // Professional: Memoized, robust chart data grouping by day
   const chartData: ChartDatum[] = useMemo(() => {
@@ -173,6 +192,11 @@ export default function SalesPage() {
       });
       setAddSaleOpen(false);
       toast({ title: "Sale added", description: `Sale for '${form.customer_name}' was added successfully.`, variant: "success" });
+      // Log activity for new sale
+      setActivities(prev => [
+        { action: "Ordered", item: form.items[0]?.product_id || form.customer_name || "Sale", time: "just now" },
+        ...prev,
+      ]);
       // Refresh sales
       setLoading(true);
       getSales()

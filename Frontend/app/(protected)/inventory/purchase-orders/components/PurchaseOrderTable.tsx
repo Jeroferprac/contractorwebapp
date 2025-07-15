@@ -9,11 +9,12 @@ import { PurchaseOrder } from "@/lib/inventory";
 
 interface PurchaseOrderTableProps {
   purchaseOrders: PurchaseOrder[]
+  supplierMap: Record<string, string>;
   onEdit?: (purchaseOrder: PurchaseOrder) => void;
   onDelete?: (purchaseOrder: PurchaseOrder) => void;
 }
 
-export function PurchaseOrderTable({ purchaseOrders, onEdit, onDelete }: PurchaseOrderTableProps) {
+export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDelete }: PurchaseOrderTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -61,7 +62,7 @@ export function PurchaseOrderTable({ purchaseOrders, onEdit, onDelete }: Purchas
               {purchaseOrders.map((order) => (
                 <tr key={order.id} className="border-b last:border-0">
                   <td className="py-3 px-4 font-medium">{order.po_number || 'N/A'}</td>
-                  <td className="py-3 px-4">{order.supplier?.name || 'Unknown Supplier'}</td>
+                  <td className="py-3 px-4">{order.supplier?.name || supplierMap[order.supplier_id || order.supplierId] || "Unknown Supplier"}</td>
                   <td className="py-3 px-4">{new Date(order.order_date).toLocaleDateString()}</td>
                   <td className="py-3 px-4 text-right font-medium">
                     {formatCurrency(order.total_amount)}
@@ -99,7 +100,7 @@ export function PurchaseOrderTable({ purchaseOrders, onEdit, onDelete }: Purchas
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{order.po_number || 'N/A'}</div>
                   <div className="text-sm text-gray-500">
-                    {order.supplier?.name || 'Unknown Supplier'}
+                    {order.supplier?.name || supplierMap[order.supplier_id || order.supplierId] || "Unknown Supplier"}
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="font-medium">{formatCurrency(order.total_amount)}</span>
