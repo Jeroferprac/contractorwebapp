@@ -369,11 +369,11 @@ export default function SalesPage() {
             </div>
             {chartView === 'daily' && (
               chartLoading ? (
-                <div className="p-8 text-center">Loading sales summary...</div>
-              ) : chartError ? (
-                <div className="p-8 text-center text-red-500">{chartError}</div>
-              ) : (
-                <SalesReportChart chartData={chartData} />
+              <div className="p-8 text-center">Loading sales summary...</div>
+            ) : chartError ? (
+              <div className="p-8 text-center text-red-500">{chartError}</div>
+            ) : (
+            <SalesReportChart chartData={chartData} />
               )
             )}
             {chartView === 'monthly' && (

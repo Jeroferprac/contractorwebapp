@@ -167,4 +167,16 @@ export const deleteProductSupplier = async (id: string) => {
 export const getInventorySummary = () =>
   fetchWithError(`${API_BASE}/reports`);
 
+// --- SALES SUMMARY BY CUSTOMER ---
+export const getSalesSummaryByCustomer = () => fetchWithError(`${API_BASE}/sales/summary/by-customer`);
+// --- SALES SUMMARY BY PRODUCT ---
+export const getSalesSummaryByProduct = () => fetchWithError(`${API_BASE}/sales/summary/by-product`);
+// --- PURCHASE SUMMARY BY SUPPLIER ---
+export const getPurchaseSummaryBySupplier = () => fetchWithError(`${API_BASE}/purchase/summary/by-supplier`);
+// --- PURCHASE SUMMARY BY PRODUCT ---
+export const getPurchaseSummaryByProduct = () => fetchWithError(`${API_BASE}/purchase/summary/by-product`);
+
+export const getSalesDetailsByPeriod = (startDate: string, endDate: string) =>
+  fetchWithError(`${API_BASE}/sales/details/by-period?start_date=${startDate}&end_date=${endDate}`);
+
 

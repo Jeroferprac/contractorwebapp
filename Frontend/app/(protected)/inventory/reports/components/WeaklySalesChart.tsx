@@ -88,34 +88,34 @@ export function WeeklySalesChart() {
         ) : error ? (
           <div className="text-center text-red-500 py-8">{error}</div>
         ) : (
-          <div className="overflow-x-auto">
-            {/* Days header */}
-            <div className="grid grid-cols-8 gap-1 mb-2 min-w-[600px]">
-              <div></div> {/* Empty cell for hour labels */}
-              {days.map((day, index) => (
-                <div key={index} className="text-xs text-gray-500 text-center font-medium">
-                  {day}
-                </div>
-              ))}
-            </div>
+        <div className="overflow-x-auto">
+          {/* Days header */}
+          <div className="grid grid-cols-8 gap-1 mb-2 min-w-[600px]">
+            <div></div> {/* Empty cell for hour labels */}
+            {days.map((day, index) => (
+              <div key={index} className="text-xs text-gray-500 text-center font-medium">
+                {day}
+              </div>
+            ))}
+          </div>
             {/* Calendar grid - Rectangular cells for each hour x day */}
-            {salesData.map((row, hourIdx) => (
-              <div key={hourIdx} className="grid grid-cols-8 gap-1 min-w-[600px]">
-                {/* Hour label */}
+          {salesData.map((row, hourIdx) => (
+            <div key={hourIdx} className="grid grid-cols-8 gap-1 min-w-[600px]">
+              {/* Hour label */}
                 <div className="text-xs text-gray-500 font-medium flex items-center w-14">{`${hours[hourIdx].toString().padStart(2, '0')}:00`}</div>
-                {/* Day cells */}
-                {row.map((intensity, dayIdx) => (
-                  <div
-                    key={dayIdx}
+              {/* Day cells */}
+              {row.map((intensity, dayIdx) => (
+                <div
+                  key={dayIdx}
                     className={`w-10 h-5 rounded flex items-center justify-center ${getIntensityColor(intensity)} hover:ring-2 hover:ring-cyan-300 cursor-pointer transition-all duration-200`}
                     title={`Sales: ${intensity}`}
                   >
                     {intensity > 0 ? <span className="text-xs text-gray-700">{intensity}</span> : null}
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ))}
+        </div>
         )}
         {/* Legend */}
         <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
