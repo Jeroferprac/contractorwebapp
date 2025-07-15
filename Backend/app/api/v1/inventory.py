@@ -439,30 +439,33 @@ def sales_by_customer(db: Session = Depends(get_db)):
 
     return customer_sales
 
-@router.get("/sales/summary/by-product", summary="Sales summary grouped by product")
-def sales_by_product(db: Session = Depends(get_db)):
+@router.get("/sales/summary/by-product", summary="Sales summary per product with customer")
+def sales_by_product_customer(db: Session = Depends(get_db)):
     results = (
         db.query(
-            Product.id,
-            Product.name,
-            func.sum(SaleItem.quantity).label("total_quantity_sold"),
-            func.sum(SaleItem.line_total).label("total_revenue")
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Sale.customer_name,
+            SaleItem.quantity,
+            SaleItem.line_total
         )
         .join(SaleItem, SaleItem.product_id == Product.id)
-        .group_by(Product.id, Product.name)
-        .order_by(func.sum(SaleItem.line_total).desc())
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .order_by(Product.name, Sale.customer_name)
         .all()
     )
 
     return [
         {
-            "product_id": str(row.id),
-            "product_name": row.name,
-            "total_quantity_sold": float(row.total_quantity_sold or 0),
-            "total_revenue": float(row.total_revenue or 0)
+            "product_id": str(row.product_id),
+            "product_name": row.product_name,
+            "customer_name": row.customer_name,
+            "quantity": float(row.quantity or 0),
+            "line_total": float(row.line_total or 0)
         }
         for row in results
     ]
+
 @router.get("/purchase/summary/by-supplier", summary="Purchase summary grouped by supplier")
 def purchase_by_supplier(db: Session = Depends(get_db)):
     results = (
