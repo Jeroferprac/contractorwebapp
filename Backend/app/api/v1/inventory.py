@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Query
 from sqlalchemy.orm import Session,joinedload
 from typing import Optional,List,Literal,Annotated
 from uuid import UUID
-from sqlalchemy import func
-from datetime import date
+from sqlalchemy import func,extract
+from datetime import date,datetime
 from pydantic import BaseModel, Field, ConfigDict,condecimal
 from decimal import Decimal
+from collections import defaultdict
 
 from app.schemas.inventory import (ProductCreate, ProductOut, ProductUpdate, SupplierCreate, SupplierUpdate, SupplierOut,
                                    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,SaleBase,SaleCreate,SaleItemBase,SaleOut,
-                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,
+                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,MonthlySalesSummary,  
                                     PurchaseOrderItemCreate, PurchaseOrderItemOut,InventoryTransactionCreate, InventoryTransactionOut)
 from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder,InventoryTransaction
 from app.api.deps import get_db
@@ -206,6 +207,31 @@ def sales_summary(db: Session = Depends(get_db)):
         "latest_sale": latest_sale.sale_date if latest_sale else None
     }
 
+####Sales Summary Monthly basis
+@router.get("/sales/summary/monthly", response_model=List[MonthlySalesSummary])
+def monthly_sales_summary(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            extract('year', Sale.sale_date).label('year'),
+            extract('month', Sale.sale_date).label('month'),
+            func.count(Sale.id).label('total_sales'),
+            func.sum(Sale.total_amount).label('total_revenue')
+        )
+        .group_by('year', 'month')
+        .order_by('year', 'month')
+        .all()
+    )
+
+    return [
+        MonthlySalesSummary(
+            year=int(row.year),
+            month=int(row.month),
+            total_sales=row.total_sales,
+            total_revenue=float(row.total_revenue or 0)
+        )
+        for row in results
+    ]
+
 ## Get Sale by ID
 @router.get("/sales/{id}", response_model=SaleOut)
 def get_sale(id: UUID, db: Session = Depends(get_db)):
@@ -360,6 +386,134 @@ def inventory_report(db: Session = Depends(get_db)):
         "total_outbound_transactions": total_outbound
     }
 
+
+
+####################### Inventory summary based on product suppliers ##################
+
+@router.get("/sales/summary/by-customer", summary="Sales summary grouped by customer")
+def sales_by_customer(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            Sale.customer_name,
+            func.count(Sale.id).label("total_sales"),
+            func.sum(Sale.total_amount).label("total_revenue")
+        )
+        .group_by(Sale.customer_name)
+        .order_by(func.sum(Sale.total_amount).desc())
+        .all()
+    )
+
+    return [
+        {
+            "customer_name": row.customer_name,
+            "total_sales": row.total_sales,
+            "total_revenue": float(row.total_revenue or 0)
+        }
+        for row in results
+    ]
+@router.get("/sales/summary/by-product", summary="Sales summary grouped by product")
+def sales_by_product(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            Product.id,
+            Product.name,
+            func.sum(SaleItem.quantity).label("total_quantity_sold"),
+            func.sum(SaleItem.line_total).label("total_revenue")
+        )
+        .join(SaleItem, SaleItem.product_id == Product.id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(SaleItem.line_total).desc())
+        .all()
+    )
+
+    return [
+        {
+            "product_id": str(row.id),
+            "product_name": row.name,
+            "total_quantity_sold": float(row.total_quantity_sold or 0),
+            "total_revenue": float(row.total_revenue or 0)
+        }
+        for row in results
+    ]
+@router.get("/purchase/summary/by-supplier", summary="Purchase summary grouped by supplier")
+def purchase_by_supplier(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            Supplier.name,
+            func.count(PurchaseOrder.id).label("total_pos"),
+            func.sum(PurchaseOrder.total_amount).label("total_amount")
+        )
+        .join(PurchaseOrder, PurchaseOrder.supplier_id == Supplier.id)
+        .group_by(Supplier.name)
+        .order_by(func.sum(PurchaseOrder.total_amount).desc())
+        .all()
+    )
+
+    return [
+        {
+            "supplier_name": row.name,
+            "total_po": row.total_pos,
+            "total_amount": float(row.total_amount or 0)
+        }
+        for row in results
+    ]
+@router.get("/purchase/summary/by-product", summary="Purchase summary grouped by product")
+def purchase_by_product(db: Session = Depends(get_db)):
+    results = (
+        db.query(
+            Product.id,
+            Product.name,
+            func.sum(PurchaseOrderItem.quantity).label("total_quantity"),
+            func.sum(PurchaseOrderItem.line_total).label("total_amount")
+        )
+        .join(PurchaseOrderItem, PurchaseOrderItem.product_id == Product.id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(PurchaseOrderItem.line_total).desc())
+        .all()
+    )
+
+    return [
+        {
+            "product_id": str(row.id),
+            "product_name": row.name,
+            "total_quantity_purchased": float(row.total_quantity or 0),
+            "total_amount": float(row.total_amount or 0)
+        }
+        for row in results
+    ]
+@router.get("/sales/details/by-period", summary="Sales details between two dates")
+def sales_details_by_period(
+    start_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="End date (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    sales = (
+        db.query(Sale)
+        .options(joinedload(Sale.items))
+        .filter(Sale.sale_date >= start_date, Sale.sale_date <= end_date)
+        .order_by(Sale.sale_date)
+        .all()
+    )
+
+    result = []
+    for sale in sales:
+        sale_data = {
+            "customer_name": sale.customer_name,
+            "sale_date": sale.sale_date,
+            "status": sale.status,
+            "total_amount": str(sale.total_amount),
+            "items": []
+        }
+        for item in sale.items:
+            sale_data["items"].append({
+                "product_id": str(item.product_id),
+                "quantity": str(item.quantity),
+                "unit_price": str(item.unit_price),
+                "line_total": str(item.line_total)
+            })
+        result.append(sale_data)
+
+    return result
 
 
 
