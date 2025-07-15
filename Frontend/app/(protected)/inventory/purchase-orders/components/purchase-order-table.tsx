@@ -1,25 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2 } from 'lucide-react';
-import { PurchaseOrder } from '@/lib/inventory';
+import { PurchaseOrder, getSuppliers, Supplier } from '@/lib/inventory';
 
 interface PurchaseOrderTableProps {
   purchaseOrders: PurchaseOrder[];
-  onView: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  onEdit: (purchaseOrder: PurchaseOrder) => void;
+  onDelete: (purchaseOrder: PurchaseOrder) => void;
 }
 
 export function PurchaseOrderTable({ 
   purchaseOrders, 
-  onView, 
   onEdit, 
   onDelete 
 }: PurchaseOrderTableProps) {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    getSuppliers().then(setSuppliers);
+  }, []);
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: { variant: 'secondary' as const, label: 'Pending' },
@@ -41,11 +44,12 @@ export function PurchaseOrderTable({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    const num = typeof amount === "string" ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(num);
   };
 
   return (
@@ -64,24 +68,25 @@ export function PurchaseOrderTable({
         {purchaseOrders.map((order, idx) => (
           <TableRow key={idx}>
             <TableCell className="font-medium">{order.po_number || 'N/A'}</TableCell>
-            <TableCell>{order.supplier?.name || 'N/A'}</TableCell>
+            <TableCell>
+              {suppliers.find(
+                s => String(s.id).trim().toLowerCase() === String(order.supplier_id).trim().toLowerCase()
+              )?.name || "Unknown Supplier"}
+            </TableCell>
             <TableCell>{formatDate(order.order_date)}</TableCell>
             <TableCell>{formatCurrency(order.total_amount || 0)}</TableCell>
             <TableCell>{getStatusBadge(order.status)}</TableCell>
             <TableCell>
               <div className="flex space-x-2">
-                <Button variant="ghost" size="sm" onClick={() => onView(order.id)}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => onEdit(order.id)}>
-                  <Edit className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={() => onEdit(order)}>
+                  Edit
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => onDelete(order.id)}
+                  onClick={() => onDelete(order)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  Delete
                 </Button>
               </div>
             </TableCell>

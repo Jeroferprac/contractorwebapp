@@ -15,6 +15,7 @@ import { toast, useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { SaleForm, SaleFormData } from "../sales/components/SaleForm";
 import { createSale } from "@/lib/inventory";
+import { RecentActivity } from "../products/components/RecentActivity";
 
 export default function SuppliersPage() {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -29,6 +30,28 @@ export default function SuppliersPage() {
     const [createOrderOpen, setCreateOrderOpen] = useState(false);
     const [orderLoading, setOrderLoading] = useState(false);
     const { toast } = useToast();
+    const [activities, setActivities] = useState(() => {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('suppliers_activities');
+        if (stored) {
+          try {
+            return JSON.parse(stored).map((a) => ({
+              ...a,
+              time: typeof a.time === 'string' ? a.time : String(a.time),
+            }));
+          } catch {
+            return [];
+          }
+        }
+      }
+      return [];
+    });
+
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('suppliers_activities', JSON.stringify(activities));
+      }
+    }, [activities]);
 
     useEffect(() => {
         getSuppliers()
@@ -52,6 +75,10 @@ export default function SuppliersPage() {
             setSuppliers((prev) => [newSupplier, ...prev]);
             toast({ title: "Supplier added", description: `${data.name} was added successfully.`, variant: "success" });
             setModalOpen(false);
+            setActivities(prev => [
+              { action: "Added Supplier", item: data.name, time: new Date().toLocaleTimeString() },
+              ...prev,
+            ]);
         } catch (err: any) {
             toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" });
         } finally {
@@ -80,6 +107,10 @@ export default function SuppliersPage() {
             toast({ title: "Supplier updated", description: `${data.name} was updated successfully.`, variant: "success" });
             setEditSupplier(null);
             setModalOpen(false);
+            setActivities(prev => [
+              { action: "Updated Supplier", item: data.name, time: new Date().toLocaleTimeString() },
+              ...prev,
+            ]);
         } catch (err: any) {
             toast({ title: "Error", description: err.message || "Failed to update supplier", variant: "error" });
         } finally {
@@ -93,10 +124,14 @@ export default function SuppliersPage() {
             await deleteSupplier(id);
             setSuppliers((prev) => prev.filter((s) => s.id !== id));
             toast({ title: "Supplier deleted", description: `Supplier was deleted successfully.`, variant: "success" });
+            setDeleteId(null);
+            setActivities(prev => [
+              { action: "Deleted Supplier", item: id, time: new Date().toLocaleTimeString() },
+              ...prev,
+            ]);
         } catch (err: any) {
             toast({ title: "Error", description: err.message || "Failed to delete supplier", variant: "error" });
         }
-        setDeleteId(null);
     };
 
     // Export to CSV for suppliers
@@ -166,6 +201,7 @@ export default function SuppliersPage() {
                                 onExport={handleExport}
                             />
                             <TopSuppliersChart />
+                            <RecentActivity activities={activities} />
                         </div>
                     </div>
                 )}
