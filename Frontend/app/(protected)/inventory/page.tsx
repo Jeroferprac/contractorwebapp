@@ -3,7 +3,6 @@
 import {DashboardLayout} from "@/components/layout/dashboard-layout";
 import SummaryCards from "./components/SummaryCards";
 import StockReportChart from "./components/StockReportChart";
-import SalesOrderTable from "./components/SalesOrderTable";
 import FastMovingItems from "./components/FastMovingItems";
 import QuickActions from "./components/QuickActions";
 import { useSession } from "next-auth/react"
@@ -99,14 +98,7 @@ export default function InventoryDashboard() {
         <div className="xl:col-span-8 space-y-6">
           <SummaryCards />
           <StockReportChart />
-          {/* Show loading, error, or real sales order data */}
-          {salesLoading ? (
-            <div className="p-8 text-center">Loading sales orders...</div>
-          ) : salesError ? (
-            <div className="p-8 text-center text-red-500">{salesError}</div>
-          ) : (
-            <SalesOrderTable salesOrders={salesOrders} />
-          )}
+          {/* Removed SalesOrderTable and related loading/error UI */}
         </div>
         <div className="xl:col-span-4 space-y-6">
           <QuickActions
