@@ -361,7 +361,7 @@ export default function SalesPage() {
                 Daily
               </button>
               <button
-                className={`px-3 py-1 rounded ${chartView === 'monthly' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-200 dark:bg-[#020817]'}`}
+                className={`px-3 py-1 rounded ${chartView === 'monthly' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-800 dark:bg-[#020817]'}`}
                 onClick={() => setChartView('monthly')}
               >
                 Monthly

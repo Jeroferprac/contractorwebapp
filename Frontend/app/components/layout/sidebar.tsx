@@ -73,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       { name: "Products", href: "/inventory/products" },
       { name: "Sales Orders", href: "/inventory/sales" },
       { name: "Suppliers", href: "/inventory/suppliers" },
-      { name: "purchasewha", href: "/inventory/purchase-orders" },
+      { name: "purchase", href: "/inventory/purchase-orders" },
       { name: "Reports", href: "/inventory/reports" },
       { name: "Transactions", href: "/inventory/transactions" },
       

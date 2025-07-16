@@ -63,10 +63,10 @@ export function WeeklySalesChart() {
   }, [allSales, weekStart]);
 
   const handlePrevWeek = () => {
-    setWeekStart((prev) => addWeeks(prev, -1));
+    setWeekStart((prev: Date) => addWeeks(prev, -1));
   };
   const handleNextWeek = () => {
-    setWeekStart((prev) => addWeeks(prev, 1));
+    setWeekStart((prev: Date) => addWeeks(prev, 1));
   };
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });

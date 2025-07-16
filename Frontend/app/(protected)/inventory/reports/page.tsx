@@ -16,6 +16,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import SalesByProductCustomerChart from "./components/SalesByProductCustomerChart";
 import PurchaseBySupplierChart from "./components/PurchaseBySupplierChart";
 import { getSalesDetailsByPeriod } from "@/lib/inventory";
+import SalesByCustomerChart from "./components/SalesByCustomerChart";
+import SalesByProductChart from "./components/SalesByProductChart";
+import {PurchaseByProductChart} from "./components/PurchaseByProductChart";
 
 export default function ReportsPage() {
   return (
@@ -42,18 +45,10 @@ export default function ReportsPage() {
         {/* New professional summary cards section */}
         <h1 className="text-2xl font-bold mb-2">Summary Reports</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Sales by Product & Customer Stacked Bar Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales by Product & Customer</CardTitle>
-              <CardDescription>
-                Distribution of sales revenue by product and customer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SalesByProductCustomerChart />
-            </CardContent>
-          </Card>
+          {/* Sales by Customer Card */}
+          <SalesByCustomerChart />
+          {/* Sales by Product Card */}
+          <SalesByProductChart />
           {/* Purchase by Supplier Chart */}
           <Card>
             <CardHeader>
@@ -64,16 +59,8 @@ export default function ReportsPage() {
               <PurchaseBySupplierChart />
             </CardContent>
           </Card>
-          {/* Purchase by Product (keep as table for now) */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Purchase by Product</CardTitle>
-              <CardDescription>Most purchased products and total spend.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PurchaseByProductReport />
-            </CardContent>
-          </Card>
+          {/* Purchase by Product Chart */}
+          <PurchaseByProductChart />
         </div>
         {/* You can add more sections/cards for Inventory Valuation, Profit/Loss, etc. */}
       </div>
