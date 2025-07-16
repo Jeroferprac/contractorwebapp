@@ -15,6 +15,7 @@ import { toast, useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { SaleForm, SaleFormData } from "../sales/components/SaleForm";
 import { createSale } from "@/lib/inventory";
+import { getSalesDetailsByPeriod } from "@/lib/inventory";
 import { RecentActivity } from "../products/components/RecentActivity";
 
 export default function SuppliersPage() {

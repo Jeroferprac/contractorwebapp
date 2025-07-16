@@ -102,42 +102,42 @@ export function SaleForm({ initialData, onSubmit, onCancel, loading }: SaleFormP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-lg mx-2 sm:mx-0 sm:w-[500px] max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b flex justify-between items-center">
-          <h2 className="text-xl font-semibold">{initialData ? "Edit Sale" : "Place Order"}</h2>
-          <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-2xl font-bold focus:outline-none">&times;</button>
+      <div className="bg-white dark:bg-[#020817] rounded-lg shadow-lg w-full max-w-lg mx-2 sm:mx-0 sm:w-[500px] max-h-[90vh] flex flex-col">
+        <div className="px-6 py-4 border-b dark:border-zinc-800 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{initialData ? "Edit Sale" : "Place Order"}</h2>
+          <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl font-bold focus:outline-none">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 space-y-4">
           {/* Customer Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Customer Name</label>
-            <Input name="customer_name" value={form.customer_name} onChange={handleChange} placeholder="Customer Name" required disabled={loading} className="w-full" />
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Customer Name</label>
+            <Input name="customer_name" value={form.customer_name} onChange={handleChange} placeholder="Customer Name" required disabled={loading} className="w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
           </div>
           {/* Sale Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Sale Date</label>
-            <Input name="sale_date" type="date" value={form.sale_date} onChange={handleChange} required disabled={loading} className="w-full" />
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Sale Date</label>
+            <Input name="sale_date" type="date" value={form.sale_date} onChange={handleChange} required disabled={loading} className="w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
           </div>
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium mb-1">Status</label>
-            <Input name="status" value={form.status} onChange={handleChange} placeholder="Status" required disabled={loading} className="w-full" />
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Status</label>
+            <Input name="status" value={form.status} onChange={handleChange} placeholder="Status" required disabled={loading} className="w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
           </div>
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
-            <Input name="notes" value={form.notes} onChange={handleChange} placeholder="Notes" disabled={loading} className="w-full" />
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Notes</label>
+            <Input name="notes" value={form.notes} onChange={handleChange} placeholder="Notes" disabled={loading} className="w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
           </div>
           {/* Items */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-medium">Items</span>
-              <Button type="button" variant="secondary" onClick={addItem} disabled={loading} className="sm:w-auto w-full sm:ml-2">Add Item</Button>
+              <span className="font-medium text-gray-900 dark:text-white">Items</span>
+              <Button type="button" variant="secondary" onClick={addItem} disabled={loading} className="sm:w-auto w-full sm:ml-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600">Add Item</Button>
             </div>
             {productsLoading ? (
-              <div className="text-gray-500">Loading products...</div>
+              <div className="text-gray-500 dark:text-gray-400">Loading products...</div>
             ) : productsError ? (
-              <div className="text-red-500">{productsError}</div>
+              <div className="text-red-500 dark:text-red-400">{productsError}</div>
             ) : (
               <div className="space-y-2">
                 {itemsWithTotals.map((item, idx) => (
@@ -148,23 +148,23 @@ export function SaleForm({ initialData, onSubmit, onCancel, loading }: SaleFormP
                       onChange={(e) => handleItemChange(idx, e)}
                       required
                       disabled={loading}
-                      className="col-span-4 border rounded px-2 py-1 min-w-[100px] text-center w-full"
+                      className="col-span-4 border rounded px-2 py-1 min-w-[100px] text-center w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700"
                     >
                       <option value="">Select Product</option>
                       {products.map((p) => (
-                        <option key={p.id} value={p.id}>
+                        <option key={p.id} value={p.id} className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-white">
                           {p.name} ({p.sku})
                         </option>
                       ))}
                     </select>
-                    <Input name="quantity" type="number" value={item.quantity || ""} onChange={(e) => handleItemChange(idx, e)} placeholder="Qty" required disabled={loading} className="col-span-2 w-full text-center" />
-                    <Input name="unit_price" type="number" value={item.unit_price || ""} onChange={(e) => handleItemChange(idx, e)} placeholder="Unit Price" required disabled={loading} className="col-span-2 w-full text-center" />
-                    <Input name="line_total" value={item.line_total} readOnly placeholder="Line Total" className="col-span-3 w-full text-center bg-gray-50" />
+                    <Input name="quantity" type="number" value={item.quantity || ""} onChange={(e) => handleItemChange(idx, e)} placeholder="Qty" required disabled={loading} className="col-span-2 w-full text-center bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
+                    <Input name="unit_price" type="number" value={item.unit_price || ""} onChange={(e) => handleItemChange(idx, e)} placeholder="Unit Price" required disabled={loading} className="col-span-2 w-full text-center bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-300 dark:border-zinc-700" />
+                    <Input name="line_total" value={item.line_total} readOnly placeholder="Line Total" className="col-span-3 w-full text-center bg-gray-50 dark:bg-zinc-700 text-gray-900 dark:text-white border-gray-200 dark:border-zinc-700" />
                     <button
                       type="button"
                       onClick={() => removeItem(idx)}
                       disabled={form.items.length === 1 || loading}
-                      className="col-span-1 flex items-center justify-center text-gray-400 hover:text-red-500 text-lg font-bold focus:outline-none disabled:opacity-50"
+                      className="col-span-1 flex items-center justify-center text-gray-400 hover:text-red-500 dark:hover:text-red-400 text-lg font-bold focus:outline-none disabled:opacity-50"
                       aria-label="Remove item"
                     >
                       &times;
@@ -175,14 +175,14 @@ export function SaleForm({ initialData, onSubmit, onCancel, loading }: SaleFormP
             )}
           </div>
           {/* Total Amount */}
-          <div className="pt-2 border-t">
-            <label className="block text-sm font-medium mb-1">Total Amount</label>
-            <Input name="total_amount" value={totalAmount} readOnly placeholder="Total Amount" className="w-full font-bold text-lg bg-gray-50" />
+          <div className="pt-2 border-t dark:border-zinc-800">
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200">Total Amount</label>
+            <Input name="total_amount" value={totalAmount} readOnly placeholder="Total Amount" className="w-full font-bold text-lg bg-gray-50 dark:bg-zinc-700 text-gray-900 dark:text-white border-gray-200 dark:border-zinc-700" />
           </div>
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t dark:border-zinc-800">
             <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>Cancel</Button>
-            <Button type="submit" disabled={submitting || loading} className="w-full sm:w-auto">
+            <Button type="submit" disabled={submitting || loading} className="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600">
               {loading ? "Saving..." : submitting ? "Saving..." : initialData ? "Save Changes" : "Add Sale"}
             </Button>
           </div>
