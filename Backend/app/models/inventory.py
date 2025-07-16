@@ -9,15 +9,25 @@ class Product(BaseModel):
 
     name = Column(String(255), nullable=False)
     sku = Column(String(50), nullable=False, unique=True)
+    barcode = Column(String(100), unique=True)
     category = Column(String(100))
     brand = Column(String(100))
     unit = Column(String(20))  # e.g., sqft, pieces, lbs
     current_stock = Column(DECIMAL(10, 2), default=0)
     min_stock_level = Column(DECIMAL(10, 2), default=0)
+    reorder_point = Column(DECIMAL(10, 2), default=0)
+    max_stock_level = Column(DECIMAL(10, 2))
     cost_price = Column(DECIMAL(10, 4))
     selling_price = Column(DECIMAL(10, 4))
     description = Column(Text)
+    weight = Column(DECIMAL(10, 2))
+    dimensions = Column(String(50))
+    is_active = Column(Boolean, default=True)
+    track_serial = Column(Boolean, default=False)
+    track_batch = Column(Boolean, default=False)
+    is_composite = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     transactions = relationship("InventoryTransaction", back_populates="product")
 
