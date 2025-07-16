@@ -1,4 +1,4 @@
-import { TrendingUp, DollarSign, ShoppingCart, Wallet, CheckSquare, Folder } from "lucide-react"
+import { TrendingUp, CheckSquare, Folder } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 

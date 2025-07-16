@@ -24,30 +24,25 @@ export function DashboardLayout({ children, session, title = "Main Dashboard" }:
   }, [fetchUserProfile])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0b1437] dark:text-white transition-colors duration-200">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#0b1437] dark:text-white transition-colors duration-200 overflow-x-hidden">
+      {/* Sidebar for desktop only */}
+      <aside className="w-64 hidden lg:block">
+        <Sidebar onClose={() => setSidebarOpen(false)} mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
+      </aside>
+      {/* Sidebar for mobile overlays content, only visible below lg */}
+      <div className="block lg:hidden">
+        <Sidebar onClose={() => setSidebarOpen(false)} mobileOpen={sidebarOpen} setMobileOpen={setSidebarOpen} />
+      </div>
 
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <div className="lg:ml-64">
+      {/* Main area: header and content */}
+      <div className="flex-1 flex flex-col min-h-[700px] overflow-x-hidden">
         {/* Header with hamburger for mobile */}
         <header className="top-0 z-30 flex flex-row items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white dark:bg-[#0b1437] border-b border-gray-200 dark:border-zinc-700 gap-3 sm:gap-4">
-          {/* Hamburger menu for mobile */}
-          <button
-            className="p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm lg:hidden flex-shrink-0"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
-          <HeaderBar session={session} userProfile={userProfile} title={title} />
+          <HeaderBar session={session} userProfile={userProfile} title={title} onHamburgerClick={() => setSidebarOpen(true)} />
         </header>
 
         {/* Main Content */}
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="p-4 sm:p-6 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   )

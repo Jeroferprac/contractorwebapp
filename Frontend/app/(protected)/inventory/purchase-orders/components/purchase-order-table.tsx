@@ -81,13 +81,6 @@ export function PurchaseOrderTable({
                 <Button variant="ghost" size="sm" onClick={() => onEdit(order)}>
                   Edit
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => onDelete(order)}
-                >
-                  Delete
-                </Button>
               </div>
             </TableCell>
           </TableRow>

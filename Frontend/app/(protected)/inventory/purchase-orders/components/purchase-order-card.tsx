@@ -81,13 +81,6 @@ export function PurchaseOrderCard({
           <Button variant="ghost" size="sm" onClick={() => onEdit(purchaseOrder.id)}>
             <Edit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => onDelete(purchaseOrder.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>

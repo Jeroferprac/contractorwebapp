@@ -15,9 +15,10 @@ interface HeaderBarProps {
   session?: Session | null
   userProfile?: any
   title?: string
+  onHamburgerClick?: () => void // Add this prop
 }
 
-export function HeaderBar({ session: propSession, userProfile, title }: HeaderBarProps) {
+export function HeaderBar({ session: propSession, userProfile, title, onHamburgerClick }: HeaderBarProps) {
   const { data: sessionData } = useSession()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -34,14 +35,29 @@ export function HeaderBar({ session: propSession, userProfile, title }: HeaderBa
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between w-full max-w-7xl mx-auto rounded-xl border px-4 py-3 shadow-sm bg-white dark:bg-[#020817] gap-2 sm:gap-4">
-      {/* Left: Title and Breadcrumb */}
-      <div className="flex flex-col items-start flex-1 min-w-0">
-        {title && (
-          <>
-            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Pages / {title}</div>
-            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{title}</h1>
-          </>
-        )}
+      <div className="flex flex-row items-center w-full">
+        {/* Hamburger for mobile only, far left */}
+        <button
+          className="sm:hidden mr-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800 focus:outline-none"
+          onClick={onHamburgerClick}
+          aria-label="Open sidebar"
+          type="button"
+        >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-gray-700 dark:text-gray-200">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        {/* Left: Title and Breadcrumb */}
+        <div className="flex flex-col items-start flex-1 min-w-0">
+          {title && (
+            <>
+              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Pages / {title}</div>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{title}</h1>
+            </>
+          )}
+        </div>
       </div>
       {/* Center: Search bar */}
       <div className="relative w-full sm:w-72  flex-shrink-0 mx-0 sm:mx-4">

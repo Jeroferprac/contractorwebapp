@@ -356,15 +356,15 @@ export default function SalesPage() {
 
   return (
     <DashboardLayout title="Sales Orders">
-      <div className="p-4 lg:p-6">
+      <div className="w-full max-w-full overflow-x-hidden">
         {/* Top bar: Search and Place Order */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <SalesSearchBar value={search} onChange={setSearch} />
           <PlaceOrderButton onClick={() => setAddSaleOpen(true)} />
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="flex flex-col xl:flex-row gap-6 w-full max-w-full overflow-x-hidden">
           {/* Main Content - Sales Orders and Chart */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="flex-1 flex flex-col gap-6 w-full max-w-full">
             <SalesOrdersTable
               salesData={filteredSales.filter(sale =>
                 sale.orderCode.toLowerCase().includes(search.toLowerCase()) ||

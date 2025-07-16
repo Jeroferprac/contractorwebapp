@@ -2,7 +2,7 @@
 
 "use client";
 import type { Session } from "next-auth";
-import { useEffect, useState, Suspense, useMemo, memo } from "react";
+import { useEffect, Suspense, useMemo, memo } from "react";
 import { MetricsCards } from "@/components/cards/metrics-cards";
 import { RevenueChart } from "@/components/dashboard/charts/revenue-chart";
 import { WeeklyRevenueChart } from "@/components/dashboard/charts/weekly-revenue-chart";
