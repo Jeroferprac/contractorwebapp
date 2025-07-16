@@ -180,15 +180,30 @@ def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
     db.flush()  # So we get sale.id
 
     # Add sale items
+    # Add sale items and adjust inventory
     for item in data.items:
-        sale_item = SaleItem(
-            sale_id=sale.id,
-            product_id=item.product_id,
-            quantity=item.quantity,
-            unit_price=item.unit_price,
-            line_total=item.line_total
+    # Fetch product
+        product = db.query(Product).filter(Product.id == item.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+
+    # Check stock availability
+    if product.current_stock < item.quantity:
+        raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.name}")
+
+    # Reduce stock
+    product.current_stock -= item.quantity
+
+    # Create SaleItem
+    sale_item = SaleItem(
+        sale_id=sale.id,
+        product_id=item.product_id,
+        quantity=item.quantity,
+        unit_price=item.unit_price,
+        line_total=item.line_total
         )
-        db.add(sale_item)
+    db.add(sale_item)
+
 
     db.commit()
     db.refresh(sale)
@@ -351,20 +366,23 @@ def adjust_inventory(
         if product.current_stock < data.quantity:
             raise HTTPException(status_code=400, detail="Insufficient stock")
         product.current_stock -= data.quantity
+    else:
+        raise HTTPException(status_code=400, detail="Invalid transaction type")
 
     txn = InventoryTransaction(
-        product_id=data.product_id,
+        product_id=product.id,
         transaction_type=data.transaction_type,
         quantity=data.quantity,
         reference_type="adjustment",
         reference_id=None,
-        notes=data.notes
+        notes=data.notes or f"Manual stock {data.transaction_type}"
     )
 
     db.add(txn)
     db.commit()
     db.refresh(txn)
     return txn
+
 
 # ✅ 3. GET /inventory/transactions - All Inventory Transactions
 @router.get("/transactions", response_model=List[InventoryTransactionOut], summary="Inventory transaction history")
@@ -392,49 +410,62 @@ def inventory_report(db: Session = Depends(get_db)):
 
 @router.get("/sales/summary/by-customer", summary="Sales summary grouped by customer")
 def sales_by_customer(db: Session = Depends(get_db)):
-    results = (
-        db.query(
-            Sale.customer_name,
-            func.count(Sale.id).label("total_sales"),
-            func.sum(Sale.total_amount).label("total_revenue")
-        )
-        .group_by(Sale.customer_name)
-        .order_by(func.sum(Sale.total_amount).desc())
+    sales = (
+        db.query(Sale)
+        .options(joinedload(Sale.items))
+        .order_by(Sale.sale_date.desc())
         .all()
     )
 
-    return [
-        {
-            "customer_name": row.customer_name,
-            "total_sales": row.total_sales,
-            "total_revenue": float(row.total_revenue or 0)
-        }
-        for row in results
-    ]
-@router.get("/sales/summary/by-product", summary="Sales summary grouped by product")
-def sales_by_product(db: Session = Depends(get_db)):
+    customer_sales = []
+
+    for sale in sales:
+        customer_sales.append({
+            "customer_name": sale.customer_name,
+            "sale_date": sale.sale_date,
+            "status": sale.status,
+            "total_amount": str(sale.total_amount),
+            "items": [
+                {
+                    "product_id": item.product_id,
+                    "quantity": str(item.quantity),
+                    "unit_price": str(item.unit_price),
+                    "line_total": str(item.line_total),
+                    "created_at": item.created_at.isoformat() if item.created_at else None
+                }
+                for item in sale.items
+            ]
+        })
+
+    return customer_sales
+
+@router.get("/sales/summary/by-product", summary="Sales summary per product with customer")
+def sales_by_product_customer(db: Session = Depends(get_db)):
     results = (
         db.query(
-            Product.id,
-            Product.name,
-            func.sum(SaleItem.quantity).label("total_quantity_sold"),
-            func.sum(SaleItem.line_total).label("total_revenue")
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Sale.customer_name,
+            SaleItem.quantity,
+            SaleItem.line_total
         )
         .join(SaleItem, SaleItem.product_id == Product.id)
-        .group_by(Product.id, Product.name)
-        .order_by(func.sum(SaleItem.line_total).desc())
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .order_by(Product.name, Sale.customer_name)
         .all()
     )
 
     return [
         {
-            "product_id": str(row.id),
-            "product_name": row.name,
-            "total_quantity_sold": float(row.total_quantity_sold or 0),
-            "total_revenue": float(row.total_revenue or 0)
+            "product_id": str(row.product_id),
+            "product_name": row.product_name,
+            "customer_name": row.customer_name,
+            "quantity": float(row.quantity or 0),
+            "line_total": float(row.line_total or 0)
         }
         for row in results
     ]
+
 @router.get("/purchase/summary/by-supplier", summary="Purchase summary grouped by supplier")
 def purchase_by_supplier(db: Session = Depends(get_db)):
     results = (
