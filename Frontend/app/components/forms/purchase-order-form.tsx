@@ -29,6 +29,12 @@ import {
 } from '@/lib/inventory';
 import { useToast } from '@/components/ui/use-toast';
 
+// Add this helper function at the top (after imports)
+function isValidUUID(uuid: string) {
+  // Accepts both 32-char (simple) and 36-char (with dashes) UUIDs
+  return /^[0-9a-fA-F]{32}$/.test(uuid) || /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+}
+
 // 1. Update PurchaseOrderFormProps to be generic and mode-specific
 type PurchaseOrderFormMode = 'create' | 'edit';
 
@@ -132,15 +138,17 @@ export function PurchaseOrderForm<M extends PurchaseOrderFormMode = 'create'>({
     field: keyof PurchaseOrderItem,
     value: string | number
   ) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    setItems(prevItems => {
+      const updatedItems = [...prevItems];
+      updatedItems[index] = { ...updatedItems[index], [field]: value };
 
-    if (field === 'quantity' || field === 'unit_price') {
-      updatedItems[index].line_total =
-        updatedItems[index].quantity * updatedItems[index].unit_price;
-    }
+      if (field === 'quantity' || field === 'unit_price') {
+        updatedItems[index].line_total =
+          Number(updatedItems[index].quantity) * Number(updatedItems[index].unit_price);
+      }
 
-    setItems(updatedItems);
+      return updatedItems;
+    });
   };
 
   const totalAmount = items.reduce((sum, item) => sum + item.line_total, 0);
@@ -152,6 +160,16 @@ export function PurchaseOrderForm<M extends PurchaseOrderFormMode = 'create'>({
       toast({
         title: 'Validation Error',
         description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // --- FIX: Check for valid UUID in product_id ---
+    if (items.some(item => !isValidUUID(item.product_id))) {
+      toast({
+        title: 'Validation Error',
+        description: 'All items must have a valid product selected.',
         variant: 'destructive',
       });
       return;
@@ -276,7 +294,7 @@ export function PurchaseOrderForm<M extends PurchaseOrderFormMode = 'create'>({
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Product" />
+                        <SelectValue placeholder="Select a product" />
                       </SelectTrigger>
                       <SelectContent>
                         {products.map((product) => (

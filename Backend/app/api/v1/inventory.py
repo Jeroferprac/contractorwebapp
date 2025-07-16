@@ -1,31 +1,74 @@
-from fastapi import APIRouter, Depends, HTTPException, status,Query
-from sqlalchemy.orm import Session,joinedload
-from typing import Optional,List,Literal,Annotated
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, extract, and_, or_
+from typing import Optional, List, Literal, Annotated
 from uuid import UUID
-from sqlalchemy import func,extract
-from datetime import date,datetime
-from pydantic import BaseModel, Field, ConfigDict,condecimal
+from datetime import date, datetime
+from pydantic import BaseModel, Field, ConfigDict, condecimal
 from decimal import Decimal
 from collections import defaultdict
 
-from app.schemas.inventory import (ProductCreate, ProductOut, ProductUpdate, SupplierCreate, SupplierUpdate, SupplierOut,
-                                   ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,SaleBase,SaleCreate,SaleItemBase,SaleOut,
-                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,MonthlySalesSummary,  
-                                    PurchaseOrderItemCreate, PurchaseOrderItemOut,InventoryTransactionCreate, InventoryTransactionOut)
-from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder,InventoryTransaction
+from app.schemas.inventory import (
+    ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
+    SupplierCreate, SupplierUpdate, SupplierOut,
+    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,
+    SaleBase, SaleCreate, SaleItemBase, SaleOut,
+    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate, MonthlySalesSummary,
+    PurchaseOrderItemCreate, PurchaseOrderItemOut,
+    InventoryTransactionCreate, InventoryTransactionOut
+)
+from app.models.inventory import (
+    Product, Supplier, ProductSupplier, Sale, SaleItem, 
+    PurchaseOrderItem, PurchaseOrder, InventoryTransaction
+)
 from app.api.deps import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
                       #############   Products API Calls  ########################
-# GET /api/products - List all products
+
+# GET /api/products - List all products with filters
 @router.get("/products", response_model=List[ProductOut])
-def list_products(db: Session = Depends(get_db)):
-    return db.query(Product).all()
+def list_products(
+    db: Session = Depends(get_db),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    brand: Optional[str] = Query(None, description="Filter by brand"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    search: Optional[str] = Query(None, description="Search in name, sku, or barcode"),
+    skip: int = Query(0, ge=0, description="Skip items for pagination"),
+    limit: int = Query(100, ge=1, le=1000, description="Limit items returned")
+):
+    query = db.query(Product)
+    
+    # Apply filters
+    if category:
+        query = query.filter(Product.category == category)
+    if brand:
+        query = query.filter(Product.brand == brand)
+    if is_active is not None:
+        query = query.filter(Product.is_active == is_active)
+    if search:
+        query = query.filter(
+            or_(
+                Product.name.ilike(f"%{search}%"),
+                Product.sku.ilike(f"%{search}%"),
+                Product.barcode.ilike(f"%{search}%")
+            )
+        )
+    
+    return query.offset(skip).limit(limit).all()
 
 # POST /api/products - Create a new product
 @router.post("/products", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
+    # Check if SKU already exists
+    if db.query(Product).filter(Product.sku == product_in.sku).first():
+        raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    # Check if barcode already exists (if provided)
+    if product_in.barcode and db.query(Product).filter(Product.barcode == product_in.barcode).first():
+        raise HTTPException(status_code=400, detail="Barcode already exists")
+    
     db_product = Product(**product_in.dict())
     db.add(db_product)
     db.commit()
@@ -35,7 +78,91 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
 # GET /api/products/low-stock - Get products below min stock
 @router.get("/products/low-stock", response_model=List[ProductOut])
 def low_stock_products(db: Session = Depends(get_db)):
-    return db.query(Product).filter(Product.current_stock < Product.min_stock_level).all()
+    return db.query(Product).filter(
+        and_(
+            Product.current_stock < Product.min_stock_level,
+            Product.is_active == True
+        )
+    ).all()
+
+# GET /api/products/barcode/{barcode} - Get product by barcode
+@router.get("/products/barcode/{barcode}", response_model=ProductOut)
+def get_product_by_barcode(barcode: str, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.barcode == barcode).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+
+# POST /api/products/bulk-update - Bulk update products
+@router.post("/products/bulk-update")
+def bulk_update_products(bulk_update: ProductBulkUpdate, db: Session = Depends(get_db)):
+    updated_products = []
+    errors = []
+    
+    for product_data in bulk_update.products:
+        try:
+            product_id = product_data.get("id")
+            if not product_id:
+                errors.append({"error": "Product ID is required", "data": product_data})
+                continue
+            
+            product = db.query(Product).filter(Product.id == product_id).first()
+            if not product:
+                errors.append({"error": f"Product with ID {product_id} not found", "data": product_data})
+                continue
+            
+            # Update fields
+            for key, value in product_data.items():
+                if key != "id" and hasattr(product, key):
+                    setattr(product, key, value)
+            
+            db.commit()
+            db.refresh(product)
+            updated_products.append(product)
+            
+        except Exception as e:
+            errors.append({"error": str(e), "data": product_data})
+            db.rollback()
+    
+    return {
+        "updated_count": len(updated_products),
+        "error_count": len(errors),
+        "errors": errors
+    }
+
+# GET /api/products/categories - Get all categories
+@router.get("/products/categories", response_model=List[CategoryOut])
+def get_categories(db: Session = Depends(get_db)):
+    categories = db.query(
+        Product.category,
+        func.count(Product.id).label('count')
+    ).filter(
+        and_(Product.category.isnot(None), Product.is_active == True)
+    ).group_by(Product.category).all()
+    
+    return [{"category": cat.category, "count": cat.count} for cat in categories]
+    
+# GET /api/products/{id}/stock - Stock across all warehouses
+@router.get("/products/{id}/stock")
+def get_product_stock(id: UUID, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # For now, returning current stock. In a multi-warehouse setup, 
+    # you would query warehouse-specific stock levels
+    return {
+        "product_id": id,
+        "total_stock": product.current_stock,
+        "warehouses": [
+            {
+                "warehouse_id": "default",
+                "warehouse_name": "Main Warehouse",
+                "stock": product.current_stock
+            }
+        ]
+    } 
 
 # GET /api/products/{id} - Get product by ID
 @router.get("/products/{id}", response_model=ProductOut)
@@ -51,6 +178,16 @@ def update_product(id: UUID, product_in: ProductUpdate, db: Session = Depends(ge
     product = db.query(Product).filter(Product.id == id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Check if SKU already exists for another product
+    if product_in.sku and product_in.sku != product.sku:
+        if db.query(Product).filter(and_(Product.sku == product_in.sku, Product.id != id)).first():
+            raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    # Check if barcode already exists for another product
+    if product_in.barcode and product_in.barcode != product.barcode:
+        if db.query(Product).filter(and_(Product.barcode == product_in.barcode, Product.id != id)).first():
+            raise HTTPException(status_code=400, detail="Barcode already exists")
 
     for key, value in product_in.dict(exclude_unset=True).items():
         setattr(product, key, value)
@@ -69,7 +206,6 @@ def delete_product(id: UUID, db: Session = Depends(get_db)):
     db.commit()
     return
 
-              
                   ##################   Supplier API Calls  ######################
 
 # --- List all suppliers ---
@@ -180,15 +316,30 @@ def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
     db.flush()  # So we get sale.id
 
     # Add sale items
+    # Add sale items and adjust inventory
     for item in data.items:
-        sale_item = SaleItem(
-            sale_id=sale.id,
-            product_id=item.product_id,
-            quantity=item.quantity,
-            unit_price=item.unit_price,
-            line_total=item.line_total
+    # Fetch product
+        product = db.query(Product).filter(Product.id == item.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+
+    # Check stock availability
+    if product.current_stock < item.quantity:
+        raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.name}")
+
+    # Reduce stock
+    product.current_stock -= item.quantity
+
+    # Create SaleItem
+    sale_item = SaleItem(
+        sale_id=sale.id,
+        product_id=item.product_id,
+        quantity=item.quantity,
+        unit_price=item.unit_price,
+        line_total=item.line_total
         )
-        db.add(sale_item)
+    db.add(sale_item)
+
 
     db.commit()
     db.refresh(sale)
@@ -351,20 +502,23 @@ def adjust_inventory(
         if product.current_stock < data.quantity:
             raise HTTPException(status_code=400, detail="Insufficient stock")
         product.current_stock -= data.quantity
+    else:
+        raise HTTPException(status_code=400, detail="Invalid transaction type")
 
     txn = InventoryTransaction(
-        product_id=data.product_id,
+        product_id=product.id,
         transaction_type=data.transaction_type,
         quantity=data.quantity,
         reference_type="adjustment",
         reference_id=None,
-        notes=data.notes
+        notes=data.notes or f"Manual stock {data.transaction_type}"
     )
 
     db.add(txn)
     db.commit()
     db.refresh(txn)
     return txn
+
 
 # ✅ 3. GET /inventory/transactions - All Inventory Transactions
 @router.get("/transactions", response_model=List[InventoryTransactionOut], summary="Inventory transaction history")
@@ -392,49 +546,62 @@ def inventory_report(db: Session = Depends(get_db)):
 
 @router.get("/sales/summary/by-customer", summary="Sales summary grouped by customer")
 def sales_by_customer(db: Session = Depends(get_db)):
-    results = (
-        db.query(
-            Sale.customer_name,
-            func.count(Sale.id).label("total_sales"),
-            func.sum(Sale.total_amount).label("total_revenue")
-        )
-        .group_by(Sale.customer_name)
-        .order_by(func.sum(Sale.total_amount).desc())
+    sales = (
+        db.query(Sale)
+        .options(joinedload(Sale.items))
+        .order_by(Sale.sale_date.desc())
         .all()
     )
 
-    return [
-        {
-            "customer_name": row.customer_name,
-            "total_sales": row.total_sales,
-            "total_revenue": float(row.total_revenue or 0)
-        }
-        for row in results
-    ]
-@router.get("/sales/summary/by-product", summary="Sales summary grouped by product")
-def sales_by_product(db: Session = Depends(get_db)):
+    customer_sales = []
+
+    for sale in sales:
+        customer_sales.append({
+            "customer_name": sale.customer_name,
+            "sale_date": sale.sale_date,
+            "status": sale.status,
+            "total_amount": str(sale.total_amount),
+            "items": [
+                {
+                    "product_id": item.product_id,
+                    "quantity": str(item.quantity),
+                    "unit_price": str(item.unit_price),
+                    "line_total": str(item.line_total),
+                    "created_at": item.created_at.isoformat() if item.created_at else None
+                }
+                for item in sale.items
+            ]
+        })
+
+    return customer_sales
+
+@router.get("/sales/summary/by-product", summary="Sales summary per product with customer")
+def sales_by_product_customer(db: Session = Depends(get_db)):
     results = (
         db.query(
-            Product.id,
-            Product.name,
-            func.sum(SaleItem.quantity).label("total_quantity_sold"),
-            func.sum(SaleItem.line_total).label("total_revenue")
+            Product.id.label("product_id"),
+            Product.name.label("product_name"),
+            Sale.customer_name,
+            SaleItem.quantity,
+            SaleItem.line_total
         )
         .join(SaleItem, SaleItem.product_id == Product.id)
-        .group_by(Product.id, Product.name)
-        .order_by(func.sum(SaleItem.line_total).desc())
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .order_by(Product.name, Sale.customer_name)
         .all()
     )
 
     return [
         {
-            "product_id": str(row.id),
-            "product_name": row.name,
-            "total_quantity_sold": float(row.total_quantity_sold or 0),
-            "total_revenue": float(row.total_revenue or 0)
+            "product_id": str(row.product_id),
+            "product_name": row.product_name,
+            "customer_name": row.customer_name,
+            "quantity": float(row.quantity or 0),
+            "line_total": float(row.line_total or 0)
         }
         for row in results
     ]
+
 @router.get("/purchase/summary/by-supplier", summary="Purchase summary grouped by supplier")
 def purchase_by_supplier(db: Session = Depends(get_db)):
     results = (

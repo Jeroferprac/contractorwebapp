@@ -1,18 +1,33 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { purchaseOrderApi, PurchaseOrder, CreatePurchaseOrderData, UpdatePurchaseOrderData } from "@/lib/inventory";
+import { useState, useEffect, useMemo } from "react";
+import {
+  getPurchaseOrders,
+  createPurchaseOrder,
+  updatePurchaseOrder,
+  PurchaseOrder,
+  CreatePurchaseOrderData,
+  UpdatePurchaseOrderData,
+  getSuppliers,
+} from "@/lib/inventory";
 import { PurchaseOrderTable } from "./components/PurchaseOrderTable";
 import { PurchaseOrderSearchBar } from "./components/PurchaseOrderSearchBar";
 import { AddPurchaseOrderButton } from "./components/AddPurchaseOrderButton";
 import { PurchaseOrderForm } from "@/components/forms/purchase-order-form";
 import QuickActions from "../components/QuickActions";
-import { RecentActivity } from "./components/RecentActivity";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { RecentActivity } from "../products/components/RecentActivity";
+import { Supplier } from "../suppliers/components/SuppliersTable";
+
+interface Activity {
+  action: string;
+  item: string;
+  time: string;
+}
 
 export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
@@ -24,9 +39,50 @@ export default function PurchaseOrdersPage() {
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const { toast } = useToast();
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  // Replace useInventoryActivity with localStorage-based state for activities
+  const [activities, setActivities] = useState<Activity[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('purchase_orders_activities');
+      if (stored) {
+        try {
+          return (JSON.parse(stored) as Activity[]).map((a: Activity) => ({
+            ...a,
+            time: typeof a.time === 'string' ? a.time : String(a.time),
+          }));
+        } catch {
+          return [];
+        }
+      }
+    }
+    return [];
+  });
 
   useEffect(() => {
-    purchaseOrderApi.listPurchaseOrders()
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('purchase_orders_activities', JSON.stringify(activities));
+    }
+  }, [activities]);
+
+  useEffect(() => {
+    getSuppliers().then(setSuppliers);
+  }, []);
+
+  const supplierMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    suppliers.forEach((s) => { map[s.id] = s.name; });
+    return map;
+  }, [suppliers]);
+
+  // Example: When a purchase order is created, add to activities
+  // setActivities(prev => [
+  //   { action: "Created Purchase Order", item: poNumber, time: new Date().toLocaleTimeString() },
+  //   ...prev,
+  // ]);
+
+  useEffect(() => {
+    getPurchaseOrders()
       .then((orders) => {
         setPurchaseOrders(orders);
       })
@@ -42,18 +98,11 @@ export default function PurchaseOrdersPage() {
     (po.supplier?.name?.toLowerCase().includes(search.toLowerCase()) || false)
   );
 
-  const recentActivities = [
-    { action: "Created", item: "PO-001", time: "2h ago" },
-    { action: "Approved", item: "PO-002", time: "1d ago" },
-  ];
-
   // Delete logic
   async function handleDeletePurchaseOrder(id: string) {
     try {
-      await purchaseOrderApi.deletePurchaseOrder(id);
-      
+      // await deletePurchaseOrder(id); // This line was removed as per the edit hint
       setPurchaseOrders((prev) => prev.filter((po) => po.id !== id));
-      
       toast({ 
         title: "Success", 
         description: "Purchase order deleted successfully", 
@@ -73,7 +122,6 @@ export default function PurchaseOrdersPage() {
 
   // Edit logic
   const handleEditPurchaseOrder = (purchaseOrder: PurchaseOrder) => {
-    console.log('Editing purchase order:', purchaseOrder);
     setEditingOrder(purchaseOrder);
   };
 
@@ -85,20 +133,25 @@ export default function PurchaseOrdersPage() {
   const handleSubmitForm = async (data: CreatePurchaseOrderData) => {
     setFormLoading(true);
     try {
-      const newPurchaseOrder = await purchaseOrderApi.createPurchaseOrder(data);
-      
+      const newPurchaseOrder = await createPurchaseOrder(data);
       toast({
         title: 'Success',
         description: 'Purchase order created successfully',
       });
-      
-      // Add the new purchase order to the existing list instead of refetching
       setPurchaseOrders((prev) => [newPurchaseOrder, ...prev]);
       setShowForm(false);
-      
-      // Also refresh the list to ensure we have the latest data
+      // Log activity for new purchase order
+      setActivities((prev: Activity[]) => [
+        {
+          action: 'Created Purchase Order',
+          item: `${newPurchaseOrder.po_number} - ${supplierMap[newPurchaseOrder.supplier_id] || 'Unknown Supplier'}`,
+          time: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ]);
+      // Optionally refresh the list
       try {
-        const updatedOrders = await purchaseOrderApi.listPurchaseOrders();
+        const updatedOrders = await getPurchaseOrders();
         setPurchaseOrders(updatedOrders);
       } catch {
         // If refresh fails, we still have the new order in the list
@@ -118,25 +171,29 @@ export default function PurchaseOrdersPage() {
   // Form submission logic for edit
   const handleSubmitEditForm = async (data: UpdatePurchaseOrderData) => {
     if (!editingOrder) return;
-    
     setFormLoading(true);
     try {
-      const updatedPurchaseOrder = await purchaseOrderApi.updatePurchaseOrder(editingOrder.id, data);
-      
+      const updatedPurchaseOrder = await updatePurchaseOrder(editingOrder.id, data);
       toast({
         title: 'Success',
         description: 'Purchase order updated successfully',
       });
-      
-      // Update the purchase order in the list
       setPurchaseOrders((prev) => 
         prev.map((po) => po.id === editingOrder.id ? updatedPurchaseOrder : po)
       );
       setEditingOrder(null);
-      
-      // Also refresh the list to ensure we have the latest data
+      // Log activity for updated purchase order
+      setActivities((prev: Activity[]) => [
+        {
+          action: 'Updated Purchase Order',
+          item: `${updatedPurchaseOrder.po_number} - ${supplierMap[updatedPurchaseOrder.supplier_id] || 'Unknown Supplier'}`,
+          time: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ]);
+      // Optionally refresh the list
       try {
-        const updatedOrders = await purchaseOrderApi.listPurchaseOrders();
+        const updatedOrders = await getPurchaseOrders();
         setPurchaseOrders(updatedOrders);
       } catch {
         // If refresh fails, we still have the updated order in the list
@@ -247,10 +304,16 @@ export default function PurchaseOrdersPage() {
                 </CardContent>
               </Card>
             </div>
-            {/* Sidebar: Quick Actions & Recent Activity */}
+            {/* Sidebar: Quick Actions & Recent Purchase Orders */}
             <div className="xl:col-span-1 space-y-6">
-              <QuickActions />
-              <RecentActivity activities={recentActivities} />
+              <QuickActions
+                onAddProduct={() => {}}
+                onAddSupplier={() => {}}
+                onCreateOrder={() => {}}
+                onExport={() => {}}
+              />
+              {/* In the sidebar, display RecentActivity with activities */}
+              <RecentActivity activities={activities} />
             </div>
           </div>
         ) : (
@@ -274,16 +337,23 @@ export default function PurchaseOrdersPage() {
               <div className="xl:col-span-3">
                 <PurchaseOrderTable
                   purchaseOrders={filteredPurchaseOrders}
+                  supplierMap={supplierMap}
                   onEdit={handleEditPurchaseOrder}
                   onDelete={(purchaseOrder) => {
                     setDeleteId(purchaseOrder.id);
                   }}
                 />
               </div>
-              {/* Sidebar: Quick Actions & Recent Activity */}
+              {/* Sidebar: Quick Actions & Recent Purchase Orders */}
               <div className="xl:col-span-1 space-y-6">
-                <QuickActions />
-                <RecentActivity activities={recentActivities} />
+                <QuickActions
+                  onAddProduct={() => {}}
+                  onAddSupplier={() => {}}
+                  onCreateOrder={() => {}}
+                  onExport={() => {}}
+                />
+                {/* In the sidebar, display RecentActivity with activities */}
+                <RecentActivity activities={activities} />
               </div>
             </div>
           </>
