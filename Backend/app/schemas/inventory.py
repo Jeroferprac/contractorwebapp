@@ -10,14 +10,23 @@ from datetime import datetime,date
 class ProductBase(BaseModel):
     name: str
     sku: str
+    barcode: Optional[str] = None
     category: Optional[str] = None
     brand: Optional[str] = None
     unit: Optional[str] = None  # sqft, pcs, etc.
     current_stock: Optional[Decimal] = 0
     min_stock_level: Optional[Decimal] = 0
+    reorder_point: Optional[Decimal] = 0
+    max_stock_level: Optional[Decimal] = None
     cost_price: Optional[Decimal] = None
     selling_price: Optional[Decimal] = None
     description: Optional[str] = None
+    weight: Optional[Decimal] = None
+    dimensions: Optional[str] = None
+    is_active: Optional[bool] = True
+    track_serial: Optional[bool] = False
+    track_batch: Optional[bool] = False
+    is_composite: Optional[bool] = False
 
 # --- Create schema ---
 class ProductCreate(ProductBase):
@@ -25,16 +34,26 @@ class ProductCreate(ProductBase):
 
 # --- Update schema ---
 class ProductUpdate(ProductBase):
-    pass
+    name: Optional[str] = None
+    sku: Optional[str] = None
 
 # --- Output schema ---
 class ProductOut(ProductBase):
     id: UUID
     created_at: datetime
+    updated_at: datetime
 
     class Config:
         model_config = ConfigDict(from_attributes=True)
 
+# --- Bulk update schema ---
+class ProductBulkUpdate(BaseModel):
+    products: List[dict]  # List of product updates with id and fields to update
+
+# --- Category response schema ---
+class CategoryOut(BaseModel):
+    category: str
+    count: int
                ###################     Supplier    #####################
 
 # --- Shared Base ---
@@ -137,7 +156,7 @@ class MonthlySalesSummary(BaseModel):
     month: int
     total_sales: int
     total_revenue: float
-    
+
           #############    Purchase order Items    ##############
 class PurchaseOrderItemBase(BaseModel):
     product_id: UUID
