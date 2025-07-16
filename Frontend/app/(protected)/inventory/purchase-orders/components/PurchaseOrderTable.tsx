@@ -62,7 +62,7 @@ export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDele
               {purchaseOrders.map((order) => (
                 <tr key={order.id} className="border-b last:border-0">
                   <td className="py-3 px-4 font-medium">{order.po_number || 'N/A'}</td>
-                  <td className="py-3 px-4">{order.supplier?.name || supplierMap[order.supplier_id || order.supplierId] || "Unknown Supplier"}</td>
+                  <td className="py-3 px-4">{order.supplier?.name || supplierMap[(order.supplier_id ?? "")] || "Unknown Supplier"}</td>
                   <td className="py-3 px-4">{new Date(order.order_date).toLocaleDateString()}</td>
                   <td className="py-3 px-4 text-right font-medium">
                     {formatCurrency(order.total_amount)}
@@ -79,7 +79,6 @@ export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDele
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEdit && onEdit(order)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete && onDelete(order)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -100,7 +99,7 @@ export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDele
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{order.po_number || 'N/A'}</div>
                   <div className="text-sm text-gray-500">
-                    {order.supplier?.name || supplierMap[order.supplier_id || order.supplierId] || "Unknown Supplier"}
+                    {order.supplier?.name || supplierMap[(order.supplier_id ?? "")] || "Unknown Supplier"}
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="font-medium">{formatCurrency(order.total_amount)}</span>
@@ -115,7 +114,6 @@ export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDele
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => onEdit && onEdit(order)}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onDelete && onDelete(order)}>Delete</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

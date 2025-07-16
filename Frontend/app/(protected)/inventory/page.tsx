@@ -14,7 +14,8 @@ import { SupplierModal } from "./suppliers/components/SupplierModal";
 import { createProduct, createSupplier } from "@/lib/inventory";
 import { useToast } from "@/components/ui/use-toast";
 import { SaleForm, SaleFormData } from "./sales/components/SaleForm";
-import { createSale } from "@/lib/inventory";
+import { createSale, getSales } from "@/lib/inventory";
+import { useEffect } from "react";
 
 export default function InventoryDashboard() {
     const { data: session } = useSession();
@@ -24,6 +25,21 @@ export default function InventoryDashboard() {
     const [orderLoading, setOrderLoading] = useState(false);
     const [orderDialogOpen, setOrderDialogOpen] = useState(false);
     const { toast } = useToast();
+    // Add state for sales orders
+    const [salesOrders, setSalesOrders] = useState<any[]>([]);
+    const [salesLoading, setSalesLoading] = useState(true);
+    const [salesError, setSalesError] = useState<string | null>(null);
+
+    useEffect(() => {
+      setSalesLoading(true);
+      getSales()
+        .then((data) => {
+          setSalesOrders(data);
+          setSalesError(null);
+        })
+        .catch(() => setSalesError("Failed to load sales orders"))
+        .finally(() => setSalesLoading(false));
+    }, []);
 
     async function handleAddProduct(form: any) {
       try {
@@ -83,7 +99,14 @@ export default function InventoryDashboard() {
         <div className="xl:col-span-8 space-y-6">
           <SummaryCards />
           <StockReportChart />
-          <SalesOrderTable />
+          {/* Show loading, error, or real sales order data */}
+          {salesLoading ? (
+            <div className="p-8 text-center">Loading sales orders...</div>
+          ) : salesError ? (
+            <div className="p-8 text-center text-red-500">{salesError}</div>
+          ) : (
+            <SalesOrderTable salesOrders={salesOrders} />
+          )}
         </div>
         <div className="xl:col-span-4 space-y-6">
           <QuickActions

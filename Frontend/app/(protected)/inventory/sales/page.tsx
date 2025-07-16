@@ -325,15 +325,15 @@ export default function SalesPage() {
 
   return (
     <DashboardLayout title="Sales Orders">
-      <div className="p-4 lg:p-6">
+      <div className="w-full max-w-full overflow-x-hidden">
         {/* Top bar: Search and Place Order */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <SalesSearchBar value={search} onChange={setSearch} />
           <PlaceOrderButton onClick={() => setAddSaleOpen(true)} />
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="flex flex-col xl:flex-row gap-6 w-full max-w-full overflow-x-hidden">
           {/* Main Content - Sales Orders and Chart */}
-          <div className="xl:col-span-2 space-y-6">
+          <div className="flex-1 flex flex-col gap-6 w-full max-w-full">
             <SalesOrdersTable
               salesData={filteredSales.filter(sale =>
                 sale.orderCode.toLowerCase().includes(search.toLowerCase()) ||
@@ -345,23 +345,39 @@ export default function SalesPage() {
               onFilter={() => setFilterOpen(true)}
               onExport={handleExport}
             />
-            {chartLoading ? (
-              <div className="p-8 text-center">Loading sales summary...</div>
-            ) : chartError ? (
-              <div className="p-8 text-center text-red-500">{chartError}</div>
-            ) : (
-              <SalesReportChart chartData={chartData} />
-            )}
+            <div className="flex flex-row gap-6 w-full max-w-full">
+              <div className="flex-1 bg-card rounded-2xl shadow-2xl w-full max-w-full">
+                {chartLoading ? (
+                  <div className="p-8 text-center">Loading sales summary...</div>
+                ) : chartError ? (
+                  <div className="p-8 text-center text-red-500">{chartError}</div>
+                ) : (
+                  <SalesReportChart chartData={chartData} />
+                )}
+              </div>
+            </div>
           </div>
-          {/* Right Sidebar - Quick Actions and Recent Activity */}
-          <div className="xl:col-span-1 space-y-6">
-            <QuickActions
-              onAddProduct={() => setDialogOpen(true)}
-              onAddSupplier={handleAddSupplier}
-              onCreateOrder={() => setAddSaleOpen(true)}
-              onExport={handleExport}
-            />
-            <RecentActivity activities={activities} />
+          {/* Right Sidebar - Recent Activity only */}
+          <div className="w-80 flex flex-col h-full max-w-full">
+            <div className="flex-1" />
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4 px-2">
+              <span className="text-xs text-muted-foreground">{sales.length} Sales Orders</span>
+              <div className="flex space-x-2">
+                <Button variant="ghost" size="icon" className="rounded-full bg-muted text-foreground hover:bg-primary shadow-sm">
+                  <span className="sr-only">Previous</span>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full bg-muted text-foreground hover:bg-primary shadow-sm">
+                  <span className="sr-only">Next</span>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </Button>
+              </div>
+            </div>
+            {/* Move RecentActivity here */}
+            <div className="mt-8">
+              <RecentActivity activities={activities} />
+            </div>
           </div>
         </div>
         {/* Add Product Dialog */}
