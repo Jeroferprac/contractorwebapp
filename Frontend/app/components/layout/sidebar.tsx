@@ -218,7 +218,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               );
             })}
           </ul>
-          {/* Upgrade Card */}
+        {/* Upgrade Card */}
         <div className="p-4">
           <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 text-white text-center">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">

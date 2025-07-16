@@ -82,15 +82,15 @@ export default function StockReportChart() {
           ) : error ? (
             <div className="flex items-center justify-center h-full text-red-500">{error}</div>
           ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Bar dataKey="stockIn" fill="#3B82F6" />
-                <Bar dataKey="stockOut" fill="#8B5CF6" />
-              </BarChart>
-            </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Bar dataKey="stockIn" fill="#3B82F6" />
+              <Bar dataKey="stockOut" fill="#8B5CF6" />
+            </BarChart>
+          </ResponsiveContainer>
           )}
         </div>
       </CardContent>
