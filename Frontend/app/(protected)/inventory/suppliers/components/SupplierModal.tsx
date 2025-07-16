@@ -70,7 +70,7 @@ export function SupplierModal({ open, onClose, onSubmit, initialData, loading }:
           {error && <div className="text-red-500 text-sm">{error}</div>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-            <Button type="submit" className="bg-blue-500 text-white" disabled={loading}>
+            <Button type="submit" className="bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600" disabled={loading}>
               {loading ? "Saving..." : initialData ? "Save Changes" : "Add Supplier"}
             </Button>
           </div>

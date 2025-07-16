@@ -217,3 +217,21 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
     </>
   );
 }
+
+<style jsx global>{`
+  @layer utilities {
+    .animate-inventory-dropdown {
+      animation: inventory-dropdown-fade-slide 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes inventory-dropdown-fade-slide {
+      0% {
+        opacity: 0;
+        transform: scaleY(0.95) translateY(-8px);
+      }
+      100% {
+        opacity: 1;
+        transform: scaleY(1) translateY(0);
+      }
+    }
+  }
+`}</style>

@@ -33,7 +33,7 @@ export function SuppliersTable({ suppliersData, onEdit, onDelete }: SuppliersTab
         <div className="hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
+              <thead className="bg-gray-50 border-b dark:bg-[#020817]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium bg-purple-600 text-white uppercase tracking-wider rounded-tl-lg">
                     Supplier Name
@@ -52,7 +52,7 @@ export function SuppliersTable({ suppliersData, onEdit, onDelete }: SuppliersTab
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-[#020817] divide-y divide-gray-100">
                 {suppliersData.map((supplier, index) => (
                   <tr key={supplier.id || index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">

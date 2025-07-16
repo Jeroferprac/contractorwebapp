@@ -2,17 +2,28 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ShoppingCart, Package, FileText, Users } from 'lucide-react'
-import { getProducts, getSuppliers, getLowStockProducts } from '@/lib/inventory'
+import { getProducts, getSuppliers, getLowStockProducts, getInventorySummary } from '@/lib/inventory'
+
+type InventorySummary = {
+  total_stock_value?: number;
+  stock_value?: number;
+  // add other fields if needed
+};
 
 export default function SalesSummaryCards() {
   const [products, setProducts] = useState<any[]>([])
   const [lowStock, setLowStock] = useState<any[]>([])
   const [suppliers, setSuppliers] = useState<any[]>([])
+  const [stockValue, setStockValue] = useState<number | null>(null)
 
   useEffect(() => {
     getProducts().then(setProducts)
     getLowStockProducts().then(setLowStock)
     getSuppliers().then(setSuppliers)
+    getInventorySummary().then((data: InventorySummary) => {
+      console.log("Inventory summary response:", data);
+      setStockValue(data.total_stock_value || data.stock_value || null)
+    })
   }, [])
 
   return (
@@ -62,7 +73,9 @@ export default function SalesSummaryCards() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-gray-600">Stock Value</p>
-              <p className="text-1xl font-bold">$42,000</p>
+              <p className="text-1xl font-bold">
+                {stockValue === null ? "Loading..." : `₹${Number(stockValue).toLocaleString()}`}
+              </p>
             </div>
             <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mt-1">
               <FileText className="h-6 w-6 text-pink-600" />

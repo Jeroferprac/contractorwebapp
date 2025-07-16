@@ -10,7 +10,7 @@ import { SalesSearchBar } from "./components/SalesSearchBar";
 import { PlaceOrderButton } from "./components/PlaceOrderButton";
 import { Dialog as UIDialog, DialogContent as UIDialogContent, DialogHeader as UIDialogHeader, DialogTitle as UIDialogTitle } from "@/components/ui/dialog";
 import { AddProductForm } from "../products/components/AddProductForm";
-import { createProduct, getSales, getSalesSummary, createSale, updateSale, getSale } from "@/lib/inventory";
+import { createProduct, getSales, getSalesSummary, createSale, updateSale, getSale, getSalesMonthlySummary } from "@/lib/inventory";
 import { useToast } from "@/components/ui/use-toast";
 import { SaleForm, SaleFormData } from "./components/SaleForm";
 import { parseISO, format, isValid } from 'date-fns';
@@ -42,6 +42,10 @@ export default function SalesPage() {
   const [addSupplierOpen, setAddSupplierOpen] = useState(false);
   const [addSupplierLoading, setAddSupplierLoading] = useState(false);
   const [addSupplierError, setAddSupplierError] = useState<string | null>(null);
+  const [chartView, setChartView] = useState<'daily' | 'monthly'>('daily');
+  const [monthlyChartData, setMonthlyChartData] = useState<ChartDatum[]>([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [monthlyError, setMonthlyError] = useState<string | null>(null);
 
   // Place the activities state here
   const [activities, setActivities] = useState<Activity[]>(() => {
@@ -106,6 +110,33 @@ export default function SalesPage() {
       if (!chartData.length) setChartError('No sales data for chart');
     }, 100);
   }, [chartData]);
+
+  // Fetch monthly summary when toggled
+  useEffect(() => {
+    if (chartView === 'monthly') {
+      setMonthlyLoading(true);
+      setMonthlyError(null);
+      getSalesMonthlySummary()
+        .then((data) => {
+          // Transform API data to chart format
+          const monthNames = [
+            '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+          ];
+          const chartData = Array.isArray(data)
+            ? data.map((item) => ({
+                name: `${monthNames[item.month]} ${item.year}`,
+                sales: item.total_sales,
+                orders: item.total_sales, // If you have a separate orders count, use it here
+                revenue: item.total_revenue,
+              }))
+            : [];
+          setMonthlyChartData(chartData);
+        })
+        .catch(() => setMonthlyError('Failed to load monthly summary'))
+        .finally(() => setMonthlyLoading(false));
+    }
+  }, [chartView]);
 
   // Apply filters
   useEffect(() => {
