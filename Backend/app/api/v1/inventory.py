@@ -1,31 +1,74 @@
-from fastapi import APIRouter, Depends, HTTPException, status,Query
-from sqlalchemy.orm import Session,joinedload
-from typing import Optional,List,Literal,Annotated
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, extract, and_, or_
+from typing import Optional, List, Literal, Annotated
 from uuid import UUID
-from sqlalchemy import func,extract
-from datetime import date,datetime
-from pydantic import BaseModel, Field, ConfigDict,condecimal
+from datetime import date, datetime
+from pydantic import BaseModel, Field, ConfigDict, condecimal
 from decimal import Decimal
 from collections import defaultdict
 
-from app.schemas.inventory import (ProductCreate, ProductOut, ProductUpdate, SupplierCreate, SupplierUpdate, SupplierOut,
-                                   ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,SaleBase,SaleCreate,SaleItemBase,SaleOut,
-                                    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate,MonthlySalesSummary,  
-                                    PurchaseOrderItemCreate, PurchaseOrderItemOut,InventoryTransactionCreate, InventoryTransactionOut)
-from app.models.inventory import Product, Supplier, ProductSupplier,Sale,SaleItem,PurchaseOrderItem,PurchaseOrder,InventoryTransaction
+from app.schemas.inventory import (
+    ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
+    SupplierCreate, SupplierUpdate, SupplierOut,
+    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,
+    SaleBase, SaleCreate, SaleItemBase, SaleOut,
+    PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate, MonthlySalesSummary,
+    PurchaseOrderItemCreate, PurchaseOrderItemOut,
+    InventoryTransactionCreate, InventoryTransactionOut
+)
+from app.models.inventory import (
+    Product, Supplier, ProductSupplier, Sale, SaleItem, 
+    PurchaseOrderItem, PurchaseOrder, InventoryTransaction
+)
 from app.api.deps import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 
                       #############   Products API Calls  ########################
-# GET /api/products - List all products
+
+# GET /api/products - List all products with filters
 @router.get("/products", response_model=List[ProductOut])
-def list_products(db: Session = Depends(get_db)):
-    return db.query(Product).all()
+def list_products(
+    db: Session = Depends(get_db),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    brand: Optional[str] = Query(None, description="Filter by brand"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    search: Optional[str] = Query(None, description="Search in name, sku, or barcode"),
+    skip: int = Query(0, ge=0, description="Skip items for pagination"),
+    limit: int = Query(100, ge=1, le=1000, description="Limit items returned")
+):
+    query = db.query(Product)
+    
+    # Apply filters
+    if category:
+        query = query.filter(Product.category == category)
+    if brand:
+        query = query.filter(Product.brand == brand)
+    if is_active is not None:
+        query = query.filter(Product.is_active == is_active)
+    if search:
+        query = query.filter(
+            or_(
+                Product.name.ilike(f"%{search}%"),
+                Product.sku.ilike(f"%{search}%"),
+                Product.barcode.ilike(f"%{search}%")
+            )
+        )
+    
+    return query.offset(skip).limit(limit).all()
 
 # POST /api/products - Create a new product
 @router.post("/products", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
+    # Check if SKU already exists
+    if db.query(Product).filter(Product.sku == product_in.sku).first():
+        raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    # Check if barcode already exists (if provided)
+    if product_in.barcode and db.query(Product).filter(Product.barcode == product_in.barcode).first():
+        raise HTTPException(status_code=400, detail="Barcode already exists")
+    
     db_product = Product(**product_in.dict())
     db.add(db_product)
     db.commit()
@@ -35,7 +78,91 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
 # GET /api/products/low-stock - Get products below min stock
 @router.get("/products/low-stock", response_model=List[ProductOut])
 def low_stock_products(db: Session = Depends(get_db)):
-    return db.query(Product).filter(Product.current_stock < Product.min_stock_level).all()
+    return db.query(Product).filter(
+        and_(
+            Product.current_stock < Product.min_stock_level,
+            Product.is_active == True
+        )
+    ).all()
+
+# GET /api/products/barcode/{barcode} - Get product by barcode
+@router.get("/products/barcode/{barcode}", response_model=ProductOut)
+def get_product_by_barcode(barcode: str, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.barcode == barcode).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+
+# POST /api/products/bulk-update - Bulk update products
+@router.post("/products/bulk-update")
+def bulk_update_products(bulk_update: ProductBulkUpdate, db: Session = Depends(get_db)):
+    updated_products = []
+    errors = []
+    
+    for product_data in bulk_update.products:
+        try:
+            product_id = product_data.get("id")
+            if not product_id:
+                errors.append({"error": "Product ID is required", "data": product_data})
+                continue
+            
+            product = db.query(Product).filter(Product.id == product_id).first()
+            if not product:
+                errors.append({"error": f"Product with ID {product_id} not found", "data": product_data})
+                continue
+            
+            # Update fields
+            for key, value in product_data.items():
+                if key != "id" and hasattr(product, key):
+                    setattr(product, key, value)
+            
+            db.commit()
+            db.refresh(product)
+            updated_products.append(product)
+            
+        except Exception as e:
+            errors.append({"error": str(e), "data": product_data})
+            db.rollback()
+    
+    return {
+        "updated_count": len(updated_products),
+        "error_count": len(errors),
+        "errors": errors
+    }
+
+# GET /api/products/categories - Get all categories
+@router.get("/products/categories", response_model=List[CategoryOut])
+def get_categories(db: Session = Depends(get_db)):
+    categories = db.query(
+        Product.category,
+        func.count(Product.id).label('count')
+    ).filter(
+        and_(Product.category.isnot(None), Product.is_active == True)
+    ).group_by(Product.category).all()
+    
+    return [{"category": cat.category, "count": cat.count} for cat in categories]
+    
+# GET /api/products/{id}/stock - Stock across all warehouses
+@router.get("/products/{id}/stock")
+def get_product_stock(id: UUID, db: Session = Depends(get_db)):
+    product = db.query(Product).filter(Product.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # For now, returning current stock. In a multi-warehouse setup, 
+    # you would query warehouse-specific stock levels
+    return {
+        "product_id": id,
+        "total_stock": product.current_stock,
+        "warehouses": [
+            {
+                "warehouse_id": "default",
+                "warehouse_name": "Main Warehouse",
+                "stock": product.current_stock
+            }
+        ]
+    } 
 
 # GET /api/products/{id} - Get product by ID
 @router.get("/products/{id}", response_model=ProductOut)
@@ -51,6 +178,16 @@ def update_product(id: UUID, product_in: ProductUpdate, db: Session = Depends(ge
     product = db.query(Product).filter(Product.id == id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+
+    # Check if SKU already exists for another product
+    if product_in.sku and product_in.sku != product.sku:
+        if db.query(Product).filter(and_(Product.sku == product_in.sku, Product.id != id)).first():
+            raise HTTPException(status_code=400, detail="SKU already exists")
+    
+    # Check if barcode already exists for another product
+    if product_in.barcode and product_in.barcode != product.barcode:
+        if db.query(Product).filter(and_(Product.barcode == product_in.barcode, Product.id != id)).first():
+            raise HTTPException(status_code=400, detail="Barcode already exists")
 
     for key, value in product_in.dict(exclude_unset=True).items():
         setattr(product, key, value)
@@ -69,7 +206,6 @@ def delete_product(id: UUID, db: Session = Depends(get_db)):
     db.commit()
     return
 
-              
                   ##################   Supplier API Calls  ######################
 
 # --- List all suppliers ---

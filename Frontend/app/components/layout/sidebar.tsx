@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
+
 import { useState, useRef, useEffect } from "react"
 import React from "react";
 
@@ -42,11 +43,13 @@ const navItems = [
   
 ]
 
+
 interface SidebarProps {
   onClose: () => void;
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
 }
+
 
 export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
@@ -62,11 +65,53 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
     }
   }, [inventoryOpen]);
 
+
   const handleNavClick = () => {
     setInventoryOpen(false);
     setMobileOpen(false); // close sidebar on mobile nav
     onClose();
   };
+
+  // Build nav items based on user role
+  let navItems: NavItem[] = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Quotes", href: "/quotes", icon: FileText },
+    { name: "Profile", href: "/profile", icon: User },
+  ];
+
+  if (user?.role === "company") {
+    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
+    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
+  } else if (user?.role === "contractor") {
+    navItems.splice(1, 0, { name: "Contractor", href: "/contractor", icon: User });
+    navItems.splice(2, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
+  } else if (user?.role === "admin") {
+    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
+    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
+    navItems.splice(3, 0, { name: "Contractor", href: "/contractor", icon: User });
+    navItems.splice(4, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
+    navItems.splice(5, 0, { name: "Clients", href: "/clients", icon: Users });
+  }
+
+  // Inventory is available to all roles
+  navItems.splice(-1, 0, {
+    name: "Inventory",
+    href: "/inventory",
+    icon: Boxes,
+    children: [
+      { name: "Dashboard", href: "/inventory" },
+      { name: "Products", href: "/inventory/products" },
+      { name: "Sales Orders", href: "/inventory/sales" },
+      { name: "Suppliers", href: "/inventory/suppliers" },
+      { name: "purchase", href: "/inventory/purchase-orders" },
+      { name: "Reports", href: "/inventory/reports" },
+      { name: "Transactions", href: "/inventory/transactions" },
+      
+      
+    ],
+  });
+
+  navItems.push({ name: "Sign In", href: "/login", icon: LogIn });
 
   return (
     <>
@@ -101,6 +146,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
               <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
             </div>
           </div>
+
           {/* Navigation (no independent scroll) */}
           <div>
             <nav className="px-4">
@@ -210,6 +256,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
               <Button className="w-full bg-white text-purple-600 hover:bg-gray-100 font-medium" size="sm">
                 Get Started
               </Button>
+
             </div>
           </div>
         </div>
@@ -217,3 +264,4 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
     </>
   );
 }
+
