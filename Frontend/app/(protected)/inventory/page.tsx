@@ -94,13 +94,16 @@ export default function InventoryDashboard() {
     
   return (
     <DashboardLayout session={session} title="Inventory Dashboard">
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-8 space-y-6">
-          <SummaryCards />
-          <StockReportChart />
-          {/* Removed SalesOrderTable and related loading/error UI */}
+      <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6">
+        {/* Main content (Summary + Stock Report) */}
+        <div className="xl:col-span-8 flex flex-col space-y-6 w-full">
+          <SummaryCards className="mb-6 w-full" />
+          <div className="mt-6 xl:mt-40 w-full">{/* mt-6 for mobile, mt-40 for xl */}
+            <StockReportChart />
+          </div>
         </div>
-        <div className="xl:col-span-4 space-y-6">
+        {/* Sidebar (Quick Actions + Fast Moving Items) */}
+        <div className="xl:col-span-4 flex flex-col space-y-6 w-full">
           <QuickActions
             onAddProduct={() => setAddProductOpen(true)}
             onAddSupplier={() => setAddSupplierOpen(true)}
