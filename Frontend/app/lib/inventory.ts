@@ -58,6 +58,7 @@ export const updateSupplier = async (id: string, data: any) => {
 export const deleteSupplier = async (id: string) => {
   return fetchWithError(`${API_BASE}/suppliers/${id}`, {
     method: "DELETE",
+
   });
 };
 

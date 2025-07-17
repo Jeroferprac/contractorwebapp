@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChevronDown } from "lucide-react";
-import { Package, DollarSign, Pencil, Trash2, Sliders, BarChart2, Settings, MoreHorizontal } from "lucide-react";
+import { Package, DollarSign, Pencil, Trash2, Sliders, BarChart2, MoreHorizontal } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductTableHandlers } from "./columns";
@@ -102,9 +102,9 @@ export function DataTable({ columns, data, handlers }: DataTableProps) {
         <div className="dark:bg-[#020817] font-sans rounded-xl p-4">
           <Table>
             <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup: import("@tanstack/react-table").HeaderGroup<Product>) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
+                  {headerGroup.headers.map((header: import("@tanstack/react-table").Header<Product, unknown>) => (
                     <TableHead key={header.id}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
@@ -114,13 +114,13 @@ export function DataTable({ columns, data, handlers }: DataTableProps) {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+                table.getRowModel().rows.map((row: import("@tanstack/react-table").Row<Product>) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-gray-100 dark:hover:bg-[#232b3e] transition-colors hover:scale-[0.9] hover:shadow-lg transition-transform transition-shadow duration-200"
+                    className="hover:bg-gray-100 dark:hover:bg-[#232b3e] transition-shadow hover:shadow-lg duration-200"
                   >
-                    {row.getVisibleCells().map((cell) => (
+                    {row.getVisibleCells().map((cell: import("@tanstack/react-table").Cell<Product, unknown>) => (
                       <TableCell key={cell.id} className="text-gray-900 dark:text-gray-100">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
@@ -170,7 +170,7 @@ export function DataTable({ columns, data, handlers }: DataTableProps) {
                         className={`w-5 h-5  transition-transform duration-200 ${isExpanded ? "rotate-180" : "rotate-0"}`}
                       />
                       {/* Product image/icon placeholder */}
-                      <span className="inline-block w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                      <span className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                         {/* If you have product.image, use <img src={product.image} ... /> */}
                         <Package className="w-5 h-5 text-blue-400" />
                       </span>

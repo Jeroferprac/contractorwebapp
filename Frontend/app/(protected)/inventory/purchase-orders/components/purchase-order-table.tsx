@@ -14,8 +14,7 @@ interface PurchaseOrderTableProps {
 
 export function PurchaseOrderTable({ 
   purchaseOrders, 
-  onEdit, 
-  onDelete 
+  onEdit
 }: PurchaseOrderTableProps) {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 

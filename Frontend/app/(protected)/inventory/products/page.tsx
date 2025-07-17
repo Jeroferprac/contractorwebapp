@@ -65,6 +65,10 @@ export default function ProductsPage() {
     { action: "Sold", item: "iPhone 14", time: "1d ago" },
   ];
 
+
+  // Replace addActivity with setActivities
+
+
   async function handleAddProduct(form: CreateProductData) {
     try {
       const newProduct = await createProduct(form);
@@ -189,7 +193,7 @@ export default function ProductsPage() {
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-7xl mx-auto mb-6">
           {/* Recent Activity (responsive) */}
           <div className="flex-1 min-w-0" style={{ flexBasis: "70%" }}>
-            <RecentActivitySlideshow />
+            <RecentActivitySlideshow activities={activities} />
           </div>
           {/* Quick Actions (responsive, hidden on mobile) */}
           <div className="w-full md:w-[30%] flex-shrink-0 hidden md:block">
