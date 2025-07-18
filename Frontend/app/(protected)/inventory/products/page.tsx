@@ -70,6 +70,10 @@ export default function ProductsPage() {
     time: product.created_at ? formatDistanceToNow(new Date(product.created_at), { addSuffix: true }) : "recently",
   }))
 
+
+  // Replace addActivity with setActivities
+
+
   async function handleAddProduct(form: CreateProductData) {
     try {
       const newProduct = await createProduct(form)
@@ -224,6 +228,7 @@ export default function ProductsPage() {
   return (
     <DashboardLayout title="Products">
       <div className="p-4 lg:p-6 relative">
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -233,6 +238,7 @@ export default function ProductsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Product</h1>
             <p className="text-gray-600">Manage your product inventory</p>
+
           </div>
 
           <div className="flex items-center gap-3">

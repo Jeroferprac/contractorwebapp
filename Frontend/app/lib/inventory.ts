@@ -48,8 +48,14 @@ export const updateSupplier = (id: string, data: any) =>
     body: JSON.stringify(data),
   });
 
-export const deleteSupplier = (id: string) =>
-  fetchWithError(`${API_BASE}/suppliers/${id}`, { method: 'DELETE' });
+
+export const deleteSupplier = async (id: string) => {
+  return fetchWithError(`${API_BASE}/suppliers/${id}`, {
+    method: "DELETE",
+
+  });
+};
+
 
 // --- ProductSupplier APIs ---
 export const getProductSuppliers = () => fetchWithError(`${API_BASE}/product-suppliers`);

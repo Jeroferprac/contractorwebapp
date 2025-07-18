@@ -14,7 +14,7 @@ interface PurchaseOrderTableProps {
   onDelete?: (purchaseOrder: PurchaseOrder) => void;
 }
 
-export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit, onDelete }: PurchaseOrderTableProps) {
+export function PurchaseOrderTable({ purchaseOrders, supplierMap, onEdit}: PurchaseOrderTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

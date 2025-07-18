@@ -146,6 +146,7 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
   // This prevents a visible "jump" when the marquee resets.
   const duplicatedActivities = [...displayActivities, ...displayActivities]
 
+
   return (
     <div className="w-full">
       {/* Recent Activity Title */}
@@ -209,6 +210,7 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
                 <span className="font-semibold text-blue-600">{activity.count}</span>{" "}
                 <span className="text-gray-500">{activity.product}</span>{" "}
                 <span className="text-gray-400 ml-1">{activity.time}</span>
+
                       </div>
             </motion.div>
           ))}
@@ -219,5 +221,7 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
   )
 }
 
+
 // Default export for compatibility with existing imports
 export default RecentActivity
+
