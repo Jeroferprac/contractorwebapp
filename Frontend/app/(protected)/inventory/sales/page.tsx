@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import SalesOrdersTable, { SalesOrder } from "./components/SalesOrdersTable";
 import SalesReportChart, { ChartDatum } from "./components/SalesReportChart";
 import QuickActions from "../components/QuickActions";
-import { RecentActivity, Activity } from "../products/components/RecentActivity";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { SalesSearchBar } from "./components/SalesSearchBar";
 import { PlaceOrderButton } from "./components/PlaceOrderButton";
@@ -13,12 +12,26 @@ import { AddProductForm } from "../products/components/AddProductForm";
 import { createProduct, getSales, getSalesSummary, createSale, updateSale, getSale, getSalesMonthlySummary } from "@/lib/inventory";
 import { useToast } from "@/components/ui/use-toast";
 import { SaleForm, SaleFormData } from "./components/SaleForm";
-import { parseISO, format, isValid } from 'date-fns';
+import { parseISO, format, isValid, formatDistanceToNow } from 'date-fns';
 import { useMemo } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SupplierModal, SupplierFormData } from "../suppliers/components/SupplierModal";
 import { createSupplier } from "@/lib/inventory";
+import { RecentActivity } from "../products/components/RecentActivity";
+
+// Activity type for recent activity tracking
+// This should match the structure used in products/components/RecentActivity.tsx
+// If you want to share this type, consider moving it to a shared types file.
+type Activity = {
+  action: string;
+  count: number;
+  product: string;
+  name: string;
+  surname: string;
+  avatar: string;
+  time: string;
+};
 
 export default function SalesPage() {
   const [search, setSearch] = useState("");
@@ -225,7 +238,15 @@ export default function SalesPage() {
       toast({ title: "Sale added", description: `Sale for '${form.customer_name}' was added successfully.`, variant: "success" });
       // Log activity for new sale
       setActivities(prev => [
-        { action: "Ordered", item: form.items[0]?.product_id || form.customer_name || "Sale", time: "just now" },
+        {
+          action: "Ordered",
+          count: Number(form.items[0]?.quantity) || 1,
+          product: form.items[0]?.product_id || "Sale",
+          name: form.customer_name?.split(" ")[0] || "Customer",
+          surname: form.customer_name?.split(" ")[1] || "",
+          avatar: "",
+          time: "just now"
+        },
         ...prev,
       ]);
       // Refresh sales
@@ -338,6 +359,17 @@ export default function SalesPage() {
     }
   }
 
+  // Map latest sales to Activity type for RecentActivity
+  const recentActivities = rawSales.slice(0, 5).map(sale => ({
+    action: "Ordered",
+    count: Number(sale.items?.[0]?.quantity) || 1,
+    product: sale.items?.[0]?.product_id || "Sale",
+    name: sale.customer_name?.split(" ")[0] || "Customer",
+    surname: sale.customer_name?.split(" ")[1] || "",
+    avatar: "",
+    time: sale.created_at ? formatDistanceToNow(new Date(sale.created_at), { addSuffix: true }) : "recently"
+  }));
+
   if (loading) {
     return (
       <DashboardLayout title="Sales Orders">
@@ -418,7 +450,7 @@ export default function SalesPage() {
               onCreateOrder={() => setAddSaleOpen(true)}
               onExport={handleExport}
             />
-            <RecentActivity activities={activities} />
+            <RecentActivity activities={recentActivities} />
           </div>
         </div>
         {/* Add Product Dialog */}

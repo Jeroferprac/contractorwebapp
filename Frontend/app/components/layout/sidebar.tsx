@@ -12,36 +12,22 @@ import {
   Building2,
   Boxes,
   ChevronRight,
+  Users // <-- Import Users icon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
 
 import { useState, useRef, useEffect } from "react"
 import React from "react";
+import { useUserStore } from "@/store/userStore";
 
-const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Quotes", href: "/quotes", icon: FileText },
-  { name: "Contractor", href: "/contractor", icon: User },
-  { name: "Projects", href: "/contractor/projects", icon: FolderKanban },
-  { name: "Company", href: "/company", icon: Building2 },
-  {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Boxes,
-    children: [
-      { name: "Dashboard", href: "/inventory" },
-      { name: "Products", href: "/inventory/products" },
-      { name: "Purchase Orders", href: "/inventory/purchase-orders" },
-      { name: "Sales Orders", href: "/inventory/sales" },
-      { name: "Suppliers", href: "/inventory/suppliers" },
-      { name: "Reports", href: "/inventory/reports" },
-    ],
-  },
-  { name: "Profile", href: "/profile", icon: User },
-  { name: "Sign In", href: "/login", icon: LogIn },
-  
-]
+// Define NavItem type
+type NavItem = {
+  name: string;
+  href: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  children?: { name: string; href: string }[];
+};
 
 
 interface SidebarProps {
@@ -55,6 +41,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const isInventoryActive = pathname.startsWith("/inventory");
   const [inventoryOpen, setInventoryOpen] = useState(isInventoryActive);
+  const user = useUserStore((state) => state.user);
 
   // Ref for Inventory button
   const inventoryRef = useRef<HTMLButtonElement | null>(null);
@@ -179,7 +166,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                             }}
                             ref={inventoryRef}
                           >
-                            <item.icon className="w-5 h-5 mr-3" />
+                            {item.icon && <item.icon className="w-5 h-5 mr-3" />}
                             {item.name}
                             <ChevronRight className={clsx("ml-auto transition-transform", inventoryOpen && "rotate-90")}/>
                           </Button>
@@ -193,7 +180,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                             )}
                             style={{ transitionProperty: 'max-height, opacity, padding', transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
                           >
-                            {item.children.map((child) => (
+                            {item.children.map((child: { name: string; href: string }) => (
                               <li key={child.name} className="relative">
                                 {/* Colored bar for active subpage */}
                                 {pathname === child.href && (
@@ -233,7 +220,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                         onClick={handleNavClick}
                       >
                         <Link href={item.href}>
-                          <item.icon className="w-5 h-5 mr-3" />
+                          {item.icon && <item.icon className="w-5 h-5 mr-3" />}
                           {item.name}
                         </Link>
                       </Button>
