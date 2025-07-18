@@ -33,7 +33,6 @@ export function SuppliersTable({ suppliersData, onEdit, onDelete }: SuppliersTab
         <div className="hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full">
-
               <thead className="bg-gray-50 border-b dark:bg-[#020817]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium bg-purple-600 text-white uppercase tracking-wider rounded-tl-lg">

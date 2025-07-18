@@ -408,39 +408,17 @@ export default function SalesPage() {
               onFilter={() => setFilterOpen(true)}
               onExport={handleExport}
             />
-            <div className="flex items-center gap-4 mb-4">
-              <span className="font-medium">Chart View:</span>
-              <button
-                className={`px-3 py-1 rounded ${chartView === 'daily' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-800 dark:bg-[#020817]'}`}
-                onClick={() => setChartView('daily')}
-              >
-                Daily
-              </button>
-              <button
-                className={`px-3 py-1 rounded ${chartView === 'monthly' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600' : 'bg-gray-800 dark:bg-[#020817]'}`}
-                onClick={() => setChartView('monthly')}
-              >
-                Monthly
-              </button>
+            <div className="flex flex-row gap-6 w-full max-w-full">
+              <div className="flex-1 bg-card rounded-2xl shadow-2xl w-full max-w-full">
+                {chartLoading ? (
+                  <div className="p-8 text-center">Loading sales summary...</div>
+                ) : chartError ? (
+                  <div className="p-8 text-center text-red-500">{chartError}</div>
+                ) : (
+                  <SalesReportChart chartData={chartData} />
+                )}
+              </div>
             </div>
-            {chartView === 'daily' && (
-              chartLoading ? (
-              <div className="p-8 text-center">Loading sales summary...</div>
-            ) : chartError ? (
-              <div className="p-8 text-center text-red-500">{chartError}</div>
-            ) : (
-            <SalesReportChart chartData={chartData} />
-              )
-            )}
-            {chartView === 'monthly' && (
-              monthlyLoading ? (
-                <div className="p-8 text-center">Loading monthly summary...</div>
-              ) : monthlyError ? (
-                <div className="p-8 text-center text-red-500">{monthlyError}</div>
-              ) : (
-                <SalesReportChart chartData={monthlyChartData} />
-              )
-            )}
           </div>
           {/* Right Sidebar - Quick Actions and Recent Activity */}
           <div className="xl:col-span-1 space-y-6">

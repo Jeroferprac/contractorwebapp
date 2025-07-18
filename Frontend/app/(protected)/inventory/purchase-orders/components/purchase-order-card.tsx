@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit } from 'lucide-react';
 import { PurchaseOrder } from '@/lib/inventory';
 
 interface PurchaseOrderCardProps {
@@ -20,7 +20,7 @@ export function PurchaseOrderCard({
   purchaseOrder, 
   onView, 
   onEdit, 
-  onDelete 
+  
 }: PurchaseOrderCardProps) {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: BadgeVariant; label: string }> = {

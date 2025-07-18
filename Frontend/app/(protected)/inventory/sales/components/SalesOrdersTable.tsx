@@ -66,7 +66,7 @@ export default function SalesOrdersTable({ salesData, onEdit, onView, onFilter, 
             <TableHead className="text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium">Sale Date</span></TableHead>
             <TableHead className="text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium">Status</span></TableHead>
             <TableHead className="text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium">Total Amount</span></TableHead>
-            <TableHead className="text-center text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium"># of Items</span></TableHead>
+            <TableHead className="text-center text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium">No of Items</span></TableHead>
             <TableHead className="text-white font-bold text-xs tracking-wide uppercase py-4"><span className="text-xs font-medium">Actions</span></TableHead>
           </TableRow>
         </TableHeader>

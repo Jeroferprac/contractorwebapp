@@ -16,7 +16,6 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
-
 import { useState, useRef, useEffect } from "react"
 import React from "react";
 import { useUserStore } from "@/store/userStore";
@@ -36,7 +35,6 @@ interface SidebarProps {
   setMobileOpen: (open: boolean) => void;
 }
 
-
 export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const isInventoryActive = pathname.startsWith("/inventory");
@@ -52,53 +50,11 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
     }
   }, [inventoryOpen]);
 
-
   const handleNavClick = () => {
     setInventoryOpen(false);
     setMobileOpen(false); // close sidebar on mobile nav
     onClose();
   };
-
-  // Build nav items based on user role
-  let navItems: NavItem[] = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Quotes", href: "/quotes", icon: FileText },
-    { name: "Profile", href: "/profile", icon: User },
-  ];
-
-  if (user?.role === "company") {
-    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
-    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
-  } else if (user?.role === "contractor") {
-    navItems.splice(1, 0, { name: "Contractor", href: "/contractor", icon: User });
-    navItems.splice(2, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
-  } else if (user?.role === "admin") {
-    navItems.splice(1, 0, { name: "Company", href: "/company", icon: Building2 });
-    navItems.splice(2, 0, { name: "Projects", href: "/company/projects", icon: FolderKanban });
-    navItems.splice(3, 0, { name: "Contractor", href: "/contractor", icon: User });
-    navItems.splice(4, 0, { name: "Projects", href: "/contractor/projects", icon: FolderKanban });
-    navItems.splice(5, 0, { name: "Clients", href: "/clients", icon: Users });
-  }
-
-  // Inventory is available to all roles
-  navItems.splice(-1, 0, {
-    name: "Inventory",
-    href: "/inventory",
-    icon: Boxes,
-    children: [
-      { name: "Dashboard", href: "/inventory" },
-      { name: "Products", href: "/inventory/products" },
-      { name: "Sales Orders", href: "/inventory/sales" },
-      { name: "Suppliers", href: "/inventory/suppliers" },
-      { name: "purchase", href: "/inventory/purchase-orders" },
-      { name: "Reports", href: "/inventory/reports" },
-      { name: "Transactions", href: "/inventory/transactions" },
-      
-      
-    ],
-  });
-
-  navItems.push({ name: "Sign In", href: "/login", icon: LogIn });
 
   return (
     <>
@@ -115,11 +71,11 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
           "fixed z-50 top-0 left-0 h-full w-64 transition-transform duration-300 bg-white dark:bg-[#0b1437] shadow-xl lg:shadow-none lg:static lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           "lg:block"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Mobile close button */}
-          <button
+      )}
+    >
+      <div className="flex flex-col h-full">
+        {/* Mobile close button */}
+        <button
             onClick={() => setMobileOpen(false)}
             className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 lg:hidden"
           >
@@ -177,7 +133,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                             className={clsx(
                               "pl-8 space-y-1 overflow-hidden transition-all duration-500",
                               inventoryOpen ? "max-h-[999px] opacity-100 delay-100" : "max-h-0 opacity-0 delay-0"
-                            )}
+                          )}
                             style={{ transitionProperty: 'max-height, opacity, padding', transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
                           >
                             {item.children.map((child: { name: string; href: string }) => (
@@ -252,3 +208,20 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   );
 }
 
+<style jsx global>{`
+  @layer utilities {
+    .animate-inventory-dropdown {
+      animation: inventory-dropdown-fade-slide 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes inventory-dropdown-fade-slide {
+      0% {
+        opacity: 0;
+        transform: scaleY(0.95) translateY(-8px);
+      }
+      100% {
+        opacity: 1;
+        transform: scaleY(1) translateY(0);
+      }
+    }
+  }
+`}</style>
