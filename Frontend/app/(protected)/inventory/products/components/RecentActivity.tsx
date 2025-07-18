@@ -1,123 +1,227 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-} from "@/components/ui/carousel";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react"
+import { motion, useMotionValue, type PanInfo } from "framer-motion"
 
-export type Activity = {
-  action: string;
-  count?: number;
-  product?: string;
-  name?: string;
-  surname?: string;
-  avatar?: string;
-  time: string;
-  item?: string;
-};
-
-interface RecentActivityProps {
-  activities?: Activity[];
+// Define the structure for an activity item
+type Activity = {
+  action: string // e.g., "Added", "Sold"
+  count: number // e.g., 2200
+  product: string // e.g., "products" (used for pluralization)
+  name: string // e.g., "System"
+  surname: string // e.g., "Doe" (not used in this simplified UI)
+  avatar: string // URL for the avatar image
+  time: string // e.g., "6 days ago"
 }
 
-export function RecentActivitySlideshow({ activities: activitiesProp }: RecentActivityProps) {
-  const defaultActivities = [
-    { action: "Ordered", count: 11, product: "Macbook Pro", name: "Grace", surname: "Moreta", avatar: "", time: "1 m ago" },
-    { action: "Ordered", count: 11, product: "iPhone 14 pro", name: "Allison", surname: "Siphon", avatar: "", time: "12m ago" },
-    { action: "Ordered", count: 11, product: "Zoom75", name: "Makenna", surname: "Doman", avatar: "", time: "23 m ago" },
-    { action: "Ordered", count: 11, product: "Galaxy Fold", name: "John", surname: "Doe", avatar: "", time: "1 h ago" },
-  ];
-  const activities = activitiesProp && activitiesProp.length > 0 ? activitiesProp : defaultActivities;
-  const [current, setCurrent] = useState(0);
-  const apiRef = useRef<CarouselApi | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+interface RecentActivitySlideshowProps {
+  activities?: Activity[] // Optional array of activity data
+}
 
-  // Auto-advance every 2 seconds
+export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps) {
+  // State to control if the auto-scrolling is paused (e.g., on hover or drag)
+  const [isPaused, setIsPaused] = useState(false)
+  // State to store the calculated drag constraints for Framer Motion
+  const [dragConstraints, setDragConstraints] = useState({ left: 0, right: 0 })
+
+  // Refs to get DOM elements for width calculations
+  const containerRef = useRef<HTMLDivElement>(null) // Outer container for overflow and fades
+  const contentRef = useRef<HTMLDivElement>(null) // Inner content that scrolls
+
+  // MotionValue for controlling the horizontal position of the content
+  const x = useMotionValue(0)
+
+  // --- Default Activities (for preview/no data) ---
+  // This provides some mock data if no activities are passed via props.
+  // It helps in previewing the component even without real data.
+  const defaultActivities: Activity[] = [
+    {
+      action: "Added",
+      count: 2200,
+      product: "products",
+      name: "System",
+      surname: "Admin",
+      avatar: "/placeholder.svg?height=32&width=32",
+      time: "6 days ago",
+    },
+    {
+      action: "Sold",
+      count: 50,
+      product: "products",
+      name: "User",
+      surname: "One",
+      avatar: "/placeholder.svg?height=32&width=32",
+      time: "1 day ago",
+    },
+    {
+      action: "Updated",
+      count: 100,
+      product: "products",
+      name: "System",
+      surname: "Admin",
+      avatar: "/placeholder.svg?height=32&width=32",
+      time: "3 hours ago",
+    },
+    {
+      action: "Added",
+      count: 120,
+      product: "products",
+      name: "User",
+      surname: "Two",
+      avatar: "/placeholder.svg?height=32&width=32",
+      time: "5 hours ago",
+    },
+    {
+      action: "Sold",
+      count: 15,
+      product: "products",
+      name: "System",
+      surname: "Admin",
+      avatar: "/placeholder.svg?height=32&width=32",
+      time: "1 week ago",
+    },
+  ]
+
+  // Use provided activities or default ones
+  const displayActivities = activities.length > 0 ? activities : defaultActivities
+
+  // --- Calculate Drag Constraints ---
+  // This effect runs when activities or component dimensions change.
+  // It calculates the maximum scroll distance for manual dragging.
   useEffect(() => {
-    if (!apiRef.current) return;
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      if (!apiRef.current) return;
-      const next = (apiRef.current.selectedScrollSnap() + 1) % activities.length;
-      apiRef.current.scrollTo(next);
-    }, 2000);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [activities.length]);
+    if (containerRef.current && contentRef.current) {
+      const containerWidth = containerRef.current.offsetWidth
+      const contentWidth = contentRef.current.scrollWidth
+      // The `maxDrag` is the total width of content minus the visible container width.
+      // We use Math.max(0, ...) to ensure it's not negative if content is smaller than container.
+      const maxDrag = Math.max(0, contentWidth - containerWidth)
+      setDragConstraints({ left: -maxDrag, right: 0 })
+    }
+  }, [displayActivities]) // Recalculate if activities change
+
+  // --- Auto-scroll Animation Logic ---
+  // This effect handles the continuous auto-scrolling.
+  useEffect(() => {
+    // If paused or refs are not ready, do nothing.
+    if (isPaused || !containerRef.current || !contentRef.current) return
+
+    const containerWidth = containerRef.current.offsetWidth
+    const contentWidth = contentRef.current.scrollWidth
+    const scrollDistance = contentWidth - containerWidth
+
+    // If content is smaller than container, no need to scroll.
+    if (scrollDistance <= 0) return
+
+    // Set up an interval for smooth, frame-based scrolling.
+    // The speed is controlled by the interval duration (50ms here).
+    const interval = setInterval(() => {
+      const currentX = x.get() // Get current X position
+      const nextX = currentX - 1 // Move one pixel to the left
+
+      // If we've scrolled past the end, reset to the beginning for a loop effect.
+      if (Math.abs(nextX) >= scrollDistance) {
+        x.set(0)
+      } else {
+        x.set(nextX)
+      }
+    }, 40) // ~20 frames per second, adjust for desired speed
+
+    // Cleanup function to clear the interval when component unmounts or dependencies change.
+    return () => clearInterval(interval)
+  }, [isPaused, x, displayActivities]) // Dependencies: pause state, motion value, activities
+
+  // --- Event Handlers for Dragging/Hovering ---
+  // Pauses auto-scroll when dragging starts.
+  const handleDragStart = () => {
+    setIsPaused(true)
+  }
+
+  // Resumes auto-scroll when dragging ends.
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    setIsPaused(false)
+  }
+
+  // --- Seamless Loop Duplication ---
+  // Duplicate the activities array to create a seamless looping effect.
+  // This prevents a visible "jump" when the marquee resets.
+  const duplicatedActivities = [...displayActivities, ...displayActivities]
+
 
   return (
-    <div className="w-full flex flex-col items-center">
-      <h2 className="font-semibold text-lg mb-4 w-full text-left">Recent Activity</h2>
-      <Carousel
-        opts={{ align: "center", loop: true }}
-        className="w-full max-w-[700px] overflow-hidden"
-        setApi={api => {
-          apiRef.current = api;
-          if (!api) return;
-          api.on("select", () => setCurrent(api.selectedScrollSnap()));
-        }}
+    <div className="w-full">
+      {/* Recent Activity Title */}
+      {/* Marquee Container */}
+      {/* This div acts as the viewport for the marquee. It hides overflowing content. */}
+      {/* It also handles hover events to pause/resume auto-scrolling. */}
+      <div
+        ref={containerRef}
+        className="relative overflow-hidden rounded-xl h-[40px] flex items-center"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
       >
-        <CarouselContent className="-ml-4 cursor-grab">
-          {activities.map((activity, i) => {
-            const style = {
-              opacity: current === i ? 1 : 0.5,
-              transform: current === i ? "scale(1)" : "scale(0.92)",
-              transition: "all 0.3s cubic-bezier(.4,1,.4,1)",
-            };
-            return (
-              <CarouselItem
-                key={i}
-                className="pl-4 basis-full h-[140px] md:basis-1/2 md:h-[120px] lg:basis-1/3 lg:h-[110px]"
-                style={style}
-                tabIndex={0}
-                aria-label={`Recent activity card ${i + 1}`}
-              >
-                <Card className="h-full flex flex-col justify-between">
-                  <CardContent className="p-5 flex flex-col h-full w-full justify-between">
-                    <div className="font-semibold text-base mb-2">
-                      {activity.action} {activity.count && <span className="text-blue-500 font-bold">{activity.count}</span>} {activity.product || activity.item ? (activity.product || activity.item) : "Products"}
-                    </div>
-                    <div className="flex items-center mt-2">
+        {/* Left Fade Overlay */}
+        {/* Creates a fading effect on the left edge, making content appear/disappear smoothly. */}
+        <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white dark:from-[#0b1437] z-10 pointer-events-none" />
+
+        {/* Right Fade Overlay */}
+        {/* Creates a fading effect on the right edge. */}
+        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white dark:from-[#0b1437] to-transparent z-10 pointer-events-none" />
+
+        {/* Marquee Content (Draggable) */}
+        {/* This is the actual content that scrolls. It uses Framer Motion for dragging. */}
+        <motion.div
+          ref={contentRef}
+          className="flex items-center py-0 cursor-grab active:cursor-grabbing h-full"
+          style={{ x }} // Bind the x MotionValue for animation
+          drag="x" // Enable horizontal dragging
+          dragConstraints={dragConstraints} // Apply calculated drag limits
+          dragElastic={0.1} // Controls "bounciness" when dragging past limits
+          onDragStart={handleDragStart} // Pause on drag start
+          onDragEnd={handleDragEnd} // Resume on drag end
+          whileDrag={{ cursor: "grabbing" }} // Change cursor while dragging
+        >
+          {/* Individual Activity Items */}
+          {duplicatedActivities.map((activity, index) => (
+            <motion.div
+              key={`${activity.name}-${activity.time}-${index}`} // Unique key for each item
+              className="flex items-center gap-2 px-3 py-1 mx-1 min-w-fit whitespace-nowrap" // Compact styling, no background/border
+              whileHover={{ scale: 1.02, y: -2 }} // Subtle hover animation
+              transition={{ type: "spring", stiffness: 400, damping: 25 }} // Smooth spring transition
+            >
+              {/* Avatar */}
+              {/* Displays user avatar or a fallback initial */}
                       {activity.avatar ? (
-                        <img src={activity.avatar} className="w-9 h-9 rounded-full mr-3 object-cover border border-gray-200" alt={activity.name} />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full mr-3 bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg border border-gray-200">
-                          {(activity.product || activity.item)?.charAt(0).toUpperCase() || "?"}
+                <img
+                  src={activity.avatar || "/placeholder.svg"}
+                  className="w-7 h-7 rounded-full object-cover border border-gray-200"
+                  alt={activity.name}
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                  {activity.name?.charAt(0).toUpperCase() || "?"}
                         </div>
                       )}
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-800 leading-tight text-sm">{activity.name || ""}</span>
-                        <span className="text-xs text-gray-500 leading-tight">{activity.surname || ""}</span>
+
+              {/* Combined Activity Text */}
+              {/* Displays a concise summary of the activity */}
+              <div className="text-sm text-gray-700">
+                <span className="font-medium">{activity.name}</span>{" "}
+                <span className="text-gray-500">{activity.action.toLowerCase()}</span>{" "}
+                <span className="font-semibold text-blue-600">{activity.count}</span>{" "}
+                <span className="text-gray-500">{activity.product}</span>{" "}
+                <span className="text-gray-400 ml-1">{activity.time}</span>
+
                       </div>
-                      <span className="ml-auto text-xs text-blue-400 font-medium">{activity.time}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-            );
-          })}
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
-      <div className="flex justify-center mt-4 gap-2">
-        {activities.map((_, i) => (
-          <span
-            key={i}
-            className={`rounded-full transition-all duration-200 ${i === current ? "bg-blue-500 scale-110" : "bg-gray-300"} w-4 h-4 md:w-3 md:h-3`}
-          />
-        ))}
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
+
     </div>
-  );
+  )
 }
 
-export const RecentActivity = RecentActivitySlideshow;
-export default RecentActivitySlideshow;
+
+// Default export for compatibility with existing imports
+export default RecentActivity
+
