@@ -2,7 +2,9 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getPurchaseOrder, PurchaseOrder } from '@/lib/inventory';
+import type { PurchaseOrder } from '@/types/inventory';
+import type { PurchaseOrderItem } from '@/types/inventory';
+import { getPurchaseOrder } from '@/lib/inventory';
 
 export default function PurchaseOrderDetailPage() {
   const { id } = useParams();
@@ -26,7 +28,7 @@ export default function PurchaseOrderDetailPage() {
       <div><strong>Total Amount:</strong> {order.total_amount}</div>
       <h2 className="text-xl font-semibold mt-6 mb-2">Items</h2>
       <ul>
-        {order.items.map(item => (
+        {order.items.map((item: PurchaseOrderItem) => (
           <li key={item.id}>
             Product: {item.product_id}, Quantity: {item.quantity}, Unit Price: {item.unit_price}, Line Total: {item.line_total}
           </li>

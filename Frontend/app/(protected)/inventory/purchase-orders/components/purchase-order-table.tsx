@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PurchaseOrder, getSuppliers, Supplier } from '@/lib/inventory';
+import type { PurchaseOrder, Supplier } from '@/types/inventory';
+import { getSuppliers } from '@/lib/inventory';
 
 interface PurchaseOrderTableProps {
   purchaseOrders: PurchaseOrder[];

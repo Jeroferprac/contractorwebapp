@@ -1,4 +1,21 @@
 import { BASE_URL } from './api';
+import type {
+  Product,
+  Supplier,
+  ProductSupplier,
+  Sale,
+  PurchaseOrder,
+  CreateProductData,
+  UpdateProductData,
+  CreateSupplierData,
+  UpdateSupplierData,
+  CreateProductSupplierData,
+  UpdateProductSupplierData,
+  CreateSaleData,
+  UpdateSaleData,
+  CreatePurchaseOrderData,
+  UpdatePurchaseOrderData,
+} from "@/types/inventory";
 
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
 

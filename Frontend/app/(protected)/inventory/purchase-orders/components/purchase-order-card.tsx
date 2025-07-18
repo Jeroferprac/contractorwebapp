@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Eye, Edit } from 'lucide-react';
-import { PurchaseOrder } from '@/lib/inventory';
+import type { PurchaseOrder } from '@/types/inventory';
 
 interface PurchaseOrderCardProps {
   purchaseOrder: PurchaseOrder;

@@ -1,15 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
-import {
-  getPurchaseOrders,
-  createPurchaseOrder,
-  updatePurchaseOrder,
-  PurchaseOrder,
-  CreatePurchaseOrderData,
-  UpdatePurchaseOrderData,
-  getSuppliers,
-} from "@/lib/inventory";
+import type { PurchaseOrder, CreatePurchaseOrderData, UpdatePurchaseOrderData, Supplier } from "@/types/inventory";
+import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrder, getSuppliers } from "@/lib/inventory";
 import { PurchaseOrderTable } from "./components/PurchaseOrderTable";
 import { PurchaseOrderSearchBar } from "./components/PurchaseOrderSearchBar";
 import { AddPurchaseOrderButton } from "./components/AddPurchaseOrderButton";
@@ -21,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { RecentActivity } from "../products/components/RecentActivity";
-import type { Supplier } from "@/lib/inventory";
 
 interface Activity {
   action: string;
@@ -78,8 +70,10 @@ export default function PurchaseOrdersPage() {
 
   useEffect(() => {
     getPurchaseOrders()
-      .then((orders) => setPurchaseOrders(orders))
-      .catch((err) => {
+      .then((orders: PurchaseOrder[]) => {
+        setPurchaseOrders(orders);
+      })
+      .catch((err: unknown) => {
         console.error(err);
         setError("Failed to load purchase orders");
       })
