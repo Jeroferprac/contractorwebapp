@@ -12,11 +12,14 @@ import {
   Building2,
   Boxes,
   ChevronRight,
+  Users // <-- Import Users icon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
 import { useState, useRef, useEffect } from "react"
 import React from "react";
+import { useUserStore } from "@/store/userStore";
+
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -43,6 +46,7 @@ const navItems = [
   
 ]
 
+
 interface SidebarProps {
   onClose: () => void;
   mobileOpen: boolean;
@@ -53,6 +57,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const isInventoryActive = pathname.startsWith("/inventory");
   const [inventoryOpen, setInventoryOpen] = useState(isInventoryActive);
+  const user = useUserStore((state) => state.user);
 
   // Ref for Inventory button
   const inventoryRef = useRef<HTMLButtonElement | null>(null);
@@ -101,6 +106,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
             <span className="text-xl font-bold text-gray-900 dark:text-white">HORIZON</span>
             <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
           </div>
+
         </div>
         {/* Navigation (no independent scroll) */}
         <div>
@@ -147,6 +153,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                               inventoryOpen ? "max-h-[999px] opacity-100 delay-100" : "max-h-0 opacity-0 delay-0"
                           )}
                             style={{ transitionProperty: 'max-height, opacity, padding', transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+
                         >
                           {item.children.map((child) => (
                             <li key={child.name} className="relative">
@@ -172,6 +179,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                         </ul>
                       )}
                     </React.Fragment>
+
                   );
                 }
                 return (
