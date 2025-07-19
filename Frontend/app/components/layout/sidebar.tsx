@@ -147,6 +147,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                               inventoryOpen ? "max-h-[999px] opacity-100 delay-100" : "max-h-0 opacity-0 delay-0"
                           )}
                             style={{ transitionProperty: 'max-height, opacity, padding', transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+
                         >
                           {item.children.map((child) => (
                             <li key={child.name} className="relative">
@@ -172,6 +173,7 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
                         </ul>
                       )}
                     </React.Fragment>
+
                   );
                 }
                 return (
