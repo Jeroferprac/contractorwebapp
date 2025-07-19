@@ -21,10 +21,10 @@ import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
 import { createSale } from "@/lib/inventory"
 import type { CreateProductData } from "./components/AddProductForm"
 import { motion } from "framer-motion"
-import { Download, Zap } from "lucide-react" // Import Zap icon for Quick Actions
+import { Download } from "lucide-react" // Import Zap icon for Quick Actions
 import { formatDistanceToNow } from "date-fns"
 import { useUser } from "@/lib/hooks/useUser"
-import  QuickActions  from "../components/QuickActions"
+import QuickActions from "../components/QuickActions"
 
 type User = { name?: string } // Add more fields if your user object has them
 
@@ -44,6 +44,7 @@ export default function ProductsPage() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
   const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false) // State for Quick Actions dialog
+
   const { toast } = useToast()
 
   // Get token from your auth system (example: localStorage)
@@ -234,7 +235,6 @@ export default function ProductsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Product</h1>
             <p className="text-gray-600">Manage your product inventory</p>
           </div>
-
           <div className="flex items-center gap-3">
             <QuickActions
               onAddProduct={() => setDialogOpen(true)}
@@ -255,7 +255,6 @@ export default function ProductsPage() {
           <div className="flex-1 min-w-0" style={{ flexBasis: "70%" }}>
             <RecentActivity activities={recentActivities} />
           </div>
-          
         </div>
 
         {/* Premium Product Table - This replaces the old table and pagination */}
@@ -296,9 +295,6 @@ export default function ProductsPage() {
             {addError && <div className="text-red-500 text-sm mt-2">{addError}</div>}
           </DialogContent>
         </Dialog>
-
-        {/* Quick Actions Dialog */}
-        {/* Removed Quick Actions Dialog, now handled inline in header */}
 
         {/* Add Supplier Dialog */}
         <SupplierModal

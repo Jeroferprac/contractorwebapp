@@ -7,14 +7,23 @@ import { Button } from "@/components/ui/button";
 export type CreateProductData = {
   name: string;
   sku: string;
+  barcode?: string;
   category?: string;
   brand?: string;
   unit?: string;
   current_stock?: number | string;
   min_stock_level?: number | string;
+  reorder_point?: number | string;
+  max_stock_level?: number | string;
   cost_price?: number | string;
   selling_price: number | string;
   description?: string;
+  weight?: number | string;
+  dimensions?: string;
+  is_active?: boolean;
+  track_serial?: boolean;
+  track_batch?: boolean;
+  is_composite?: boolean;
 };
 
 interface AddProductFormProps {
@@ -133,6 +142,19 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
         {errors.sku && <div className="text-red-500 text-sm mt-1">{errors.sku}</div>}
       </div>
       <div>
+        <label className="block font-medium mb-1" htmlFor="barcode">
+          Barcode
+          <span className="text-xs text-gray-400 ml-2">(Optional)</span>
+        </label>
+        <Input
+          id="barcode"
+          name="barcode"
+          value={form.barcode}
+          onChange={handleChange}
+          placeholder="Barcode"
+        />
+      </div>
+      <div>
         <label className="block font-medium mb-1" htmlFor="category">
           Category
           <span className="text-xs text-gray-400 ml-2">(e.g. &quot;Bricks&quot;)</span>
@@ -202,6 +224,61 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
         {errors.min_stock_level && <div className="text-red-500 text-sm mt-1">{errors.min_stock_level}</div>}
       </div>
       <div>
+        <label className="block font-medium mb-1" htmlFor="reorder_point">
+          Reorder Point
+          <span className="text-xs text-gray-400 ml-2">(Alert when stock reaches this level)</span>
+        </label>
+        <Input
+          id="reorder_point"
+          name="reorder_point"
+          type="number"
+          value={form.reorder_point}
+          onChange={handleChange}
+          placeholder="Reorder Point"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="max_stock_level">
+          Max Stock Level
+          <span className="text-xs text-gray-400 ml-2">(Maximum stock allowed)</span>
+        </label>
+        <Input
+          id="max_stock_level"
+          name="max_stock_level"
+          type="number"
+          value={form.max_stock_level}
+          onChange={handleChange}
+          placeholder="Max Stock Level"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="weight">
+          Weight (kg)
+          <span className="text-xs text-gray-400 ml-2">(Optional)</span>
+        </label>
+        <Input
+          id="weight"
+          name="weight"
+          type="number"
+          value={form.weight}
+          onChange={handleChange}
+          placeholder="Weight"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="dimensions">
+          Dimensions (e.g., 10x5x2)
+          <span className="text-xs text-gray-400 ml-2">(Optional)</span>
+        </label>
+        <Input
+          id="dimensions"
+          name="dimensions"
+          value={form.dimensions}
+          onChange={handleChange}
+          placeholder="Dimensions"
+        />
+      </div>
+      <div>
         <label className="block font-medium mb-1" htmlFor="cost_price">
           Cost Price
           <span className="text-xs text-gray-400 ml-2">(What you pay per unit)</span>
@@ -243,6 +320,62 @@ export function AddProductForm({ onSubmit, onCancel, initialData, loading }: Add
           value={form.description}
           onChange={handleChange}
           placeholder="Description"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="is_active">
+          Active
+          <span className="text-xs text-gray-400 ml-2">(Product is available for sale)</span>
+        </label>
+        <input
+          type="checkbox"
+          id="is_active"
+          name="is_active"
+          checked={form.is_active}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="track_serial">
+          Track Serial Number
+          <span className="text-xs text-gray-400 ml-2">(Track individual serial numbers)</span>
+        </label>
+        <input
+          type="checkbox"
+          id="track_serial"
+          name="track_serial"
+          checked={form.track_serial}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="track_batch">
+          Track Batch Number
+          <span className="text-xs text-gray-400 ml-2">(Track individual batch numbers)</span>
+        </label>
+        <input
+          type="checkbox"
+          id="track_batch"
+          name="track_batch"
+          checked={form.track_batch}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+      </div>
+      <div>
+        <label className="block font-medium mb-1" htmlFor="is_composite">
+          Composite Product
+          <span className="text-xs text-gray-400 ml-2">(Product made up of multiple components)</span>
+        </label>
+        <input
+          type="checkbox"
+          id="is_composite"
+          name="is_composite"
+          checked={form.is_composite}
+          onChange={handleChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
       </div>
       <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
