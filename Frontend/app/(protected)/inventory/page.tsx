@@ -75,26 +75,17 @@ export default function InventoryDashboard() {
   async function handleCreateOrder(form: SaleFormData) {
     setOrderLoading(true);
     try {
-      await createSale({
-        ...form,
-        total_amount: Number(form.total_amount) || 0,
-        items: form.items.map((item) => ({
-          ...item,
-          quantity: Number(item.quantity) || 0,
-          unit_price: Number(item.unit_price) || 0,
-          line_total: item.line_total !== undefined ? Number(item.line_total) : 0,
-        })),
-      });
+      await createSale(form);
       setOrderDialogOpen(false);
       toast({
         title: 'Order placed',
         description: `Order for '${form.customer_name}' was created successfully.`,
         variant: 'success',
       });
-    } catch (err: unknown) {
+    } catch (err: any) {
       toast({
         title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to create order',
+        description: err.message || 'Failed to create order',
         variant: 'error',
       });
     } finally {

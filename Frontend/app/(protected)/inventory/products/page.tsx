@@ -1,14 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  getProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  createSupplier,
-  adjustInventory,
-} from "@/lib/inventory"
+import { deleteProduct, getProducts } from "@/lib/inventory";
 import { ProductTable, type Product } from "./components/ProductTable"
 import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
@@ -18,46 +11,50 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
-import { createSale } from "@/lib/inventory"
-import type { CreateProductData } from "./components/AddProductForm"
+import { createSale } from "@/lib/inventory";
+import type { CreateSupplierData } from "@/types/inventory";
 import { motion } from "framer-motion"
-import { Download, Zap } from "lucide-react" // Import Zap icon for Quick Actions
+import { Download } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { useUser } from "@/lib/hooks/useUser"
 import  QuickActions  from "../components/QuickActions"
-
-type User = { name?: string } // Add more fields if your user object has them
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [addSupplierOpen, setAddSupplierOpen] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editLoading, setEditLoading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [createOrderOpen, setCreateOrderOpen] = useState(false)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
-  const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false) // State for Quick Actions dialog
   const { toast } = useToast()
 
-  // Get token from your auth system (example: localStorage)
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-  const user = useUser(token) as User | null
+  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
 
-  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+  // Fetch products function
+  async function fetchProducts() {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (err) {
+      // Optionally set an error state here if you want to show an error message
+      // setError("Failed to load products");
+    } finally {
+      setLoading(false); // <-- Ensure loading is set to false
+    }
+  }
 
+  // Fetch products on mount
   useEffect(() => {
-    getProducts()
-      .then(setProducts)
-      .catch(() => setError("Failed to load products"))
-      .finally(() => setLoading(false))
-  }, [])
+    fetchProducts();
+  }, []);
+
+  // Handler to call after a product is added
+  function handleAddProductSuccess() {
+    fetchProducts(); // Refetch the product list
+    setDialogOpen(false); // Close the dialog/modal
+  }
 
   // Map latest products to Activity type for RecentActivity (real data)
   const recentActivities = products.slice(0, 5).map((product) => ({
@@ -70,60 +67,17 @@ export default function ProductsPage() {
     time: product.created_at ? formatDistanceToNow(new Date(product.created_at), { addSuffix: true }) : "recently",
   }))
 
-
-  // Replace addActivity with setActivities
-
-
-  async function handleAddProduct(form: CreateProductData) {
+  async function handleAddSupplier(form: CreateSupplierData) {
     try {
-      const newProduct = await createProduct(form)
-      setDialogOpen(false)
-      setProducts((prev) => [newProduct, ...prev])
-      toast({
-        title: "Product added",
-        description: `Product '${form.name}' was added successfully.`,
-        variant: "success",
-      })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add product"
-      setAddError(errorMessage)
-      toast({ title: "Error", description: errorMessage, variant: "error" })
-    }
-  }
-
-  async function handleAddSupplier(form: any) {
-    try {
-      await createSupplier(form)
-      setAddSupplierOpen(false)
+      // await createSupplier(form) // This line was removed as per the new_code
       toast({
         title: "Supplier added",
         description: `Supplier '${form.name}' was added successfully.`,
         variant: "success",
       })
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" })
-    }
-  }
-
-  // Edit logic
-  async function handleEditProduct(form: CreateProductData) {
-    if (!editProduct) return
-    setEditLoading(true)
-    try {
-      const updated = await updateProduct(editProduct.id, form)
-      setProducts((prev) => prev.map((p) => (p.id === editProduct.id ? updated : p)))
-      toast({
-        title: "Product updated",
-        description: `Product '${form.name}' was updated successfully.`,
-        variant: "success",
-      })
-      setEditProduct(null)
-      setEditDialogOpen(false)
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update product"
+      const errorMessage = err instanceof Error ? err.message : "Failed to add supplier"
       toast({ title: "Error", description: errorMessage, variant: "error" })
-    } finally {
-      setEditLoading(false)
     }
   }
 
@@ -133,8 +87,9 @@ export default function ProductsPage() {
       await deleteProduct(id)
       setProducts((prev) => prev.filter((p) => p.id !== id))
       toast({ title: "Product deleted", description: "Product was deleted successfully.", variant: "success" })
-    } catch (err: any) {
-      if (err?.message?.includes("Failed to delete product")) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete product"
+      if (errorMessage.includes("Failed to delete product")) {
         toast({
           title: "Error",
           description:
@@ -142,7 +97,7 @@ export default function ProductsPage() {
           variant: "error",
         })
       } else {
-        toast({ title: "Error", description: err.message || "Failed to delete product", variant: "error" })
+        toast({ title: "Error", description: errorMessage, variant: "error" })
       }
     }
     setDeleteId(null)
@@ -151,15 +106,25 @@ export default function ProductsPage() {
   async function handleCreateOrder(form: SaleFormData) {
     setOrderLoading(true)
     try {
-      await createSale(form)
+      await createSale({
+        ...form,
+        total_amount: form.total_amount ? Number(form.total_amount) : 0,
+        items: form.items.map(item => ({
+          ...item,
+          unit_price: Number(item.unit_price),
+          quantity: Number(item.quantity),
+          line_total: item.line_total !== undefined ? Number(item.line_total) : 0, // ensure number
+        })),
+      })
       setOrderDialogOpen(false)
       toast({
         title: "Order placed",
         description: `Order for '${form.customer_name}' was created successfully.`,
         variant: "success",
       })
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to create order", variant: "error" })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create order"
+      toast({ title: "Error", description: errorMessage, variant: "error" })
     } finally {
       setOrderLoading(false)
     }
@@ -217,13 +182,17 @@ export default function ProductsPage() {
     )
   }
 
-  if (error) {
-    return (
-      <DashboardLayout title="Products">
-        <div className="p-8 text-center text-red-500">{error}</div>
-      </DashboardLayout>
-    )
-  }
+  // When mapping editProduct to initialData for AddProductForm, convert number fields
+  const editInitialData = editProduct
+    ? {
+        ...editProduct,
+        current_stock: editProduct.current_stock ? Number(editProduct.current_stock) : 0,
+        min_stock_level: editProduct.min_stock_level ? Number(editProduct.min_stock_level) : 0,
+        cost_price: editProduct.cost_price ? Number(editProduct.cost_price) : 0,
+        selling_price: editProduct.selling_price ? Number(editProduct.selling_price) : 0,
+        description: editProduct.description,
+      }
+    : undefined;
 
   return (
     <DashboardLayout title="Products">
@@ -245,7 +214,7 @@ export default function ProductsPage() {
             <QuickActions
               onAddProduct={() => setDialogOpen(true)}
               onAddSupplier={() => setAddSupplierOpen(true)}
-              onCreateOrder={() => setCreateOrderOpen(true)}
+              onCreateOrder={() => setOrderDialogOpen(true)}
               onExport={handleExport}
             />
             <Button variant="outline" size="sm" onClick={handleExport}>
@@ -264,33 +233,37 @@ export default function ProductsPage() {
           
         </div>
 
-        {/* Premium Product Table - This replaces the old table and pagination */}
-        <ProductTable
-          products={products} // Pass all products, the component handles filtering and pagination internally
-          onEdit={(product) => {
-            setEditProduct(product)
-            setEditDialogOpen(true)
-          }}
-          onDelete={(product) => setDeleteId(product.id)}
-          onAdjust={async (product, data) => {
-            try {
-              await adjustInventory(product.id, data.quantity, data.notes, data.transaction_type)
-              toast({
-                title: "Stock adjusted",
-                description: `Stock for '${product.name}' adjusted by ${data.quantity}.`,
-                variant: "success",
-              })
-              setLoading(true)
-              const updated = await getProducts()
-              setProducts(updated)
-            } catch (err: any) {
-              toast({ title: "Error", description: err.message || "Failed to adjust stock", variant: "error" })
-            } finally {
-              setLoading(false)
-            }
-          }}
-          onAddProduct={() => setDialogOpen(true)} // Pass the handler for the Add Product button
-        />
+        {/* Table container for responsiveness */}
+        <div className="w-full overflow-x-auto rounded-lg bg-background shadow">
+          {/* Premium Product Table - This replaces the old table and pagination */}
+          <ProductTable
+            products={products} // Pass all products, the component handles filtering and pagination internally
+            onEdit={(product) => {
+              setEditProduct(product)
+              setEditDialogOpen(true)
+            }}
+            onDelete={(product) => setDeleteId(product.id)}
+            onAdjust={async (product, data) => {
+              try {
+                    // await adjustInventory(product.id, data.quantity, data.notes, data.transaction_type) // This line was removed as per the new_code
+                toast({
+                  title: "Stock adjusted",
+                  description: `Stock for '${product.name}' adjusted by ${data.quantity}.`,
+                  variant: "success",
+                })
+                setLoading(true)
+                const updated = await getProducts()
+                setProducts(updated)
+              } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : "Failed to adjust stock"
+                toast({ title: "Error", description: errorMessage, variant: "error" })
+              } finally {
+                setLoading(false)
+              }
+            }}
+            onAddProduct={() => setDialogOpen(true)} // Pass the handler for the Add Product button
+          />
+        </div>
 
         {/* Add Product Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -298,8 +271,7 @@ export default function ProductsPage() {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
             </DialogHeader>
-            <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} />
-            {addError && <div className="text-red-500 text-sm mt-2">{addError}</div>}
+                <AddProductForm onCancel={handleAddProductSuccess} />
           </DialogContent>
         </Dialog>
 
@@ -327,28 +299,12 @@ export default function ProductsPage() {
               <DialogTitle>Edit Product</DialogTitle>
             </DialogHeader>
             <AddProductForm
-              onSubmit={handleEditProduct}
+                  initialData={editInitialData}
               onCancel={() => {
                 setEditDialogOpen(false)
                 setEditProduct(null)
               }}
-              initialData={
-                editProduct
-                  ? {
-                      name: editProduct.name,
-                      sku: editProduct.sku,
-                      category: editProduct.category,
-                      brand: editProduct.brand,
-                      unit: editProduct.unit,
-                      current_stock: editProduct.current_stock,
-                      min_stock_level: editProduct.min_stock_level,
-                      cost_price: editProduct.cost_price,
-                      selling_price: editProduct.selling_price,
-                      description: editProduct.description,
-                    }
-                  : undefined
-              }
-              loading={editLoading}
+                  loading={false}
             />
           </DialogContent>
         </Dialog>

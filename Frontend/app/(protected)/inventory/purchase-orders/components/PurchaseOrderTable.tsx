@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { PurchaseOrder } from "@/lib/inventory";
+import { PurchaseOrder } from "@/types/inventory";
 
 interface PurchaseOrderTableProps {
   purchaseOrders: PurchaseOrder[]
