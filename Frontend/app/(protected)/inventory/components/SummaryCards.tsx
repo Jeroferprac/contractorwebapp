@@ -11,7 +11,11 @@ type InventorySummary = {
   // add other fields if needed
 };
 
-export default function SalesSummaryCards() {
+type SummaryCardsProps = {
+  className?: string;
+};
+
+export default function SummaryCards({ className }: SummaryCardsProps) {
   const [products, setProducts] = useState<unknown[]>([])
   const [lowStock, setLowStock] = useState<unknown[]>([])
   const [suppliers, setSuppliers] = useState<unknown[]>([])

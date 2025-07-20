@@ -68,9 +68,10 @@ export default function NewQuotationPage() {
       }
 
       router.push("/quotes");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error submitting quotation:", err);
-      setError(err.message || "Submission failed. Try again.");
+      const errorMessage = err instanceof Error ? err.message : "Submission failed. Try again.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

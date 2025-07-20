@@ -5,7 +5,6 @@ import type { Session } from "next-auth"
 import { Sidebar } from "./sidebar"
 import { HeaderBar } from "@/components/dashboard/header/Header"
 import { useState, useEffect } from "react"
-import { Menu } from "lucide-react"
 import { useUserProfileStore } from "@/store/userProfileStore"
 
 interface DashboardLayoutProps {

@@ -12,7 +12,6 @@ import {
   Building2,
   Boxes,
   ChevronRight,
-  Users // <-- Import Users icon
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"

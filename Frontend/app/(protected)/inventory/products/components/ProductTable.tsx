@@ -57,7 +57,7 @@ interface ProductTableProps {
     data: { quantity: number; notes: string; transaction_type: "inbound" | "outbound" },
   ) => void
   onAddProduct?: () => void // Added onAddProduct prop
-  headerRight?: React.ReactNode // Kept for potential future use, though not used in current header
+  // headerRight?: React.ReactNode // Removed unused prop
 }
 
 const columns = [
@@ -92,7 +92,7 @@ const getStockBars = (currentStock: string, minStock: string) => {
   return 5
 }
 
-export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct, headerRight }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
   // Your existing state management
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
   const [adjustQty, setAdjustQty] = useState(0)
@@ -100,7 +100,6 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
   const [adjustType, setAdjustType] = useState<"inbound" | "outbound">("inbound")
   const [adjustLoading, setAdjustLoading] = useState(false)
   const [compareProductId, setCompareProductId] = useState<string | null>(null)
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null)
   const [openActionsRow, setOpenActionsRow] = useState<string | null>(null)
   const actionsMenuRef = useRef<HTMLDivElement | null>(null)
 
@@ -158,11 +157,13 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
   }
 
   function handleAdjust() {
-    if (!adjustProduct) return
-    setAdjustLoading(true)
-    onAdjust && onAdjust(adjustProduct, { quantity: adjustQty, notes: adjustNotes, transaction_type: adjustType })
-    setAdjustLoading(false)
-    setAdjustProduct(null)
+    if (!adjustProduct) return;
+    setAdjustLoading(true);
+    if (onAdjust) {
+      onAdjust(adjustProduct, { quantity: adjustQty, notes: adjustNotes, transaction_type: adjustType });
+    }
+    setAdjustLoading(false);
+    setAdjustProduct(null);
   }
 
   const formatCurrency = (value: string | number) =>
@@ -302,7 +303,11 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={isActive}
-                      className="data-[state=checked]:bg-gradient-to-r from-green-400 to-green-600 data-[state=unchecked]:bg-gradient-to-r from-red-400 to-red-600"
+                      className={
+                        isActive
+                          ? "bg-gradient-to-r from-green-400 to-green-600"
+                          : "bg-gradient-to-r from-red-400 to-red-600"
+                      }
                     />
                   </div>
 
@@ -729,7 +734,11 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                               {/* Switch with gradient styling */}
                               <Switch
                                 checked={isActive}
-                                className="data-[state=checked]:bg-gradient-to-r from-green-400 to-green-600 data-[state=unchecked]:bg-gradient-to-r from-red-400 to-red-600"
+                                className={
+                                  isActive
+                                    ? "bg-gradient-to-r from-green-400 to-green-600"
+                                    : "bg-gradient-to-r from-red-400 to-red-600"
+                                }
                               />
                         </div>
                       </TableCell>
