@@ -50,10 +50,12 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  // Handler to call after a product is added
-  function handleAddProductSuccess() {
+  // Handler to call after a product is added or edited
+  function handleProductFormSuccess() {
     fetchProducts(); // Refetch the product list
-    setDialogOpen(false); // Close the dialog/modal
+    setDialogOpen(false); // Close the add dialog
+    setEditDialogOpen(false); // Close the edit dialog
+    setEditProduct(null); // Reset edit state
   }
 
   // Map latest products to Activity type for RecentActivity (real data)
@@ -267,11 +269,11 @@ export default function ProductsPage() {
 
         {/* Add Product Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
             </DialogHeader>
-                <AddProductForm onCancel={handleAddProductSuccess} />
+            <AddProductForm onCancel={() => setDialogOpen(false)} onSuccess={handleProductFormSuccess} />
           </DialogContent>
         </Dialog>
 
@@ -294,17 +296,18 @@ export default function ProductsPage() {
             if (!open) setEditProduct(null)
           }}
         >
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Edit Product</DialogTitle>
             </DialogHeader>
             <AddProductForm
-                  initialData={editInitialData}
+              initialData={editInitialData}
               onCancel={() => {
                 setEditDialogOpen(false)
                 setEditProduct(null)
               }}
-                  loading={false}
+              onSuccess={handleProductFormSuccess}
+              loading={false}
             />
           </DialogContent>
         </Dialog>
