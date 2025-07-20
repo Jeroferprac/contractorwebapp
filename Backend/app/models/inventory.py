@@ -32,6 +32,39 @@ class Product(BaseModel):
 
     transactions = relationship("InventoryTransaction", back_populates="product")
 
+class Supplier(BaseModel):
+    __tablename__ = "suppliers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    name = Column(String(255), nullable=False)
+    contact_person = Column(String(100))
+    email = Column(String(255))
+    phone = Column(String(20))
+
+    street = Column(String(255), nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    pincode = Column(String(20), nullable=True)
+
+    payment_terms = Column(Integer, default=30)  # days
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+class ProductSupplier(BaseModel):
+    __tablename__ = "product_suppliers"
+
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=False)
+
+    supplier_price = Column(DECIMAL(10, 4))
+    lead_time_days = Column(Integer)
+    min_order_qty = Column(DECIMAL(10, 2))
+    is_preferred = Column(Boolean, default=False)
+    # created_at = Column(TIMESTAMP, server_default=func.now())
+
+    # Optional relationships
+    product = relationship("Product", backref="supplier_links")
+    supplier = relationship("Supplier", backref="product_links")
+
 
 class Warehouse(BaseModel):
     __tablename__ = "warehouses"
@@ -125,14 +158,14 @@ class SaleItem(BaseModel):
 class PurchaseOrder(BaseModel):
     __tablename__ = "purchase_orders"
 
-    Warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"),nullable=False) 
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"),nullable=False) 
     po_number = Column(String(50), unique=True)
     order_date = Column(Date, server_default=func.current_date())
     total_amount = Column(DECIMAL(12, 2), nullable=True)
     status = Column(String(20), default="pending")
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    #Warehouse  = relationship("Warehouse", backref="purchase_orders")
+    supplier = relationship("Supplier", backref="purchase_orders")
     items = relationship("PurchaseOrderItem", back_populates="purchase_order", cascade="all, delete")
 
 class PurchaseOrderItem(BaseModel):

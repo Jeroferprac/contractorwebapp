@@ -10,6 +10,8 @@ from collections import defaultdict
 
 from app.schemas.inventory import (
     ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
+    SupplierCreate, SupplierUpdate, SupplierOut,
+    ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,
     WarehouseBase,WarehouseCreate,WarehouseOut,WarehouseTransferCreate,WarehouseStockCreate,WarehouseStockOut,
     WarehouseTransferItemOut,WarehouseTransferOut,WarehouseTransferItemCreate,WarehouseUpdate,TransferStatus,
     SaleBase, SaleCreate, SaleItemBase, SaleOut,
@@ -18,9 +20,9 @@ from app.schemas.inventory import (
     InventoryTransactionCreate, InventoryTransactionOut
 )
 from app.models.inventory import (
-    Product, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
-    PurchaseOrderItem, PurchaseOrder, InventoryTransaction
-)
+    Product,Supplier, ProductSupplier, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
+    PurchaseOrderItem, PurchaseOrder, InventoryTransaction)
+
 from app.CRUD.inventory import (create_warehouse_stock,get_all_warehouse_stocks,delete_warehouse_stock,update_warehouse_stock,
                                 get_warehouse_stock)
 from app.api.deps import get_db
@@ -207,6 +209,115 @@ def delete_product(id: UUID, db: Session = Depends(get_db)):
     db.delete(product)
     db.commit()
     return
+
+                 ##################   Supplier API Calls  ######################
+# --- List suppliers with filters ---
+@router.get("/suppliers", response_model=List[SupplierOut])
+def list_suppliers(
+    name: Optional[str] = Query(None, description="Filter by supplier name"),
+    city: Optional[str] = Query(None, description="Filter by city"),
+    state: Optional[str] = Query(None, description="Filter by state"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Supplier)
+    if name:
+        query = query.filter(Supplier.name.ilike(f"%{name}%"))
+    if city:
+        query = query.filter(Supplier.city.ilike(f"%{city}%"))
+    if state:
+        query = query.filter(Supplier.state.ilike(f"%{state}%"))
+    return query.all()
+
+# --- Create supplier ---
+@router.post("/suppliers", response_model=SupplierOut, status_code=201)
+def create_supplier(supplier_in: SupplierCreate, db: Session = Depends(get_db)):
+    supplier = Supplier(**supplier_in.dict())
+    db.add(supplier)
+    db.commit()
+    db.refresh(supplier)
+    return supplier
+
+# --- Get supplier by ID ---
+@router.get("/suppliers/{id}", response_model=SupplierOut)
+def get_supplier(id: UUID, db: Session = Depends(get_db)):
+    supplier = db.query(Supplier).filter(Supplier.id == id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return supplier
+
+# --- Update supplier ---
+@router.put("/suppliers/{id}", response_model=SupplierOut)
+def update_supplier(id: UUID, supplier_in: SupplierUpdate, db: Session = Depends(get_db)):
+    supplier = db.query(Supplier).filter(Supplier.id == id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    for key, value in supplier_in.dict(exclude_unset=True).items():
+        setattr(supplier, key, value)
+    db.commit()
+    db.refresh(supplier)
+    return supplier
+
+# --- Delete supplier ---
+@router.delete("/suppliers/{id}", status_code=204)
+def delete_supplier(id: UUID, db: Session = Depends(get_db)):
+    supplier = db.query(Supplier).filter(Supplier.id == id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    db.delete(supplier)
+    db.commit()
+
+         ##################   Product-Supplier API Calls  ######################
+# --- List product-suppliers with filters ---
+@router.get("/product-suppliers", response_model=List[ProductSupplierOut])
+def list_product_suppliers(
+    product_id: Optional[UUID] = Query(None),
+    supplier_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(ProductSupplier)
+    if product_id:
+        query = query.filter(ProductSupplier.product_id == product_id)
+    if supplier_id:
+        query = query.filter(ProductSupplier.supplier_id == supplier_id)
+    return query.all()
+
+# --- Create product-supplier ---
+@router.post("/product-suppliers", response_model=ProductSupplierOut, status_code=201)
+def create_product_supplier(data: ProductSupplierCreate, db: Session = Depends(get_db)):
+    entry = ProductSupplier(**data.model_dump())
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+# --- Get product-supplier by ID ---
+@router.get("/product-suppliers/{id}", response_model=ProductSupplierOut)
+def get_product_supplier(id: UUID, db: Session = Depends(get_db)):
+    entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="ProductSupplier not found")
+    return entry
+
+# --- Update product-supplier ---
+@router.put("/product-suppliers/{id}", response_model=ProductSupplierOut)
+def update_product_supplier(id: UUID, data: ProductSupplierUpdate, db: Session = Depends(get_db)):
+    entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="ProductSupplier not found")
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(entry, key, value)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+# --- Delete product-supplier ---
+@router.delete("/product-suppliers/{id}", status_code=204)
+def delete_product_supplier(id: UUID, db: Session = Depends(get_db)):
+    entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="ProductSupplier not found")
+    db.delete(entry)
+    db.commit()
 
 # -------------------- Warehouse --------------------
 @router.get("/warehouses/transfer-status-options")

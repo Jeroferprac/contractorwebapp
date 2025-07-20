@@ -55,6 +55,68 @@ class ProductBulkUpdate(BaseModel):
 class CategoryOut(BaseModel):
     category: str
     count: int
+
+               ###################     Supplier    #####################
+# --- Shared Base ---
+class SupplierBase(BaseModel):
+    name: str
+    contact_person: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+    street: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+
+    payment_terms: Optional[int] = 30
+
+# --- Create Schema ---
+class SupplierCreate(SupplierBase):
+    pass
+
+# --- Update Schema ---
+class SupplierUpdate(SupplierBase):
+    pass
+
+# --- Output Schema ---
+class SupplierOut(SupplierBase):
+    id: UUID
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+    
+#######################################  product-supplier   ############################################
+
+# --- Base Schema ---
+class ProductSupplierBase(BaseModel):
+    product_id: UUID
+    supplier_id: UUID
+    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
+    lead_time_days: Optional[int] = None
+    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
+    is_preferred: Optional[bool] = False
+
+# --- Create ---
+class ProductSupplierCreate(ProductSupplierBase):
+    pass
+
+# --- Update ---
+class ProductSupplierUpdate(BaseModel):
+    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
+    lead_time_days: Optional[int] = None
+    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
+    is_preferred: Optional[bool] = None
+
+# --- Output ---
+class ProductSupplierOut(ProductSupplierBase):
+    id: UUID
+    created_at: datetime
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+
+
  ################### Warehouse ###################
 
 class WarehouseBase(BaseModel):
