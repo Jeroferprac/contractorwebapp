@@ -1,8 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict,condecimal
+from pydantic import BaseModel, Field, ConfigDict,condecimal,UUID4
 from typing import Optional,List,Literal,Annotated
 from uuid import UUID
 from decimal import Decimal
 from datetime import datetime,date
+from enum import Enum
 
                 ###################      Products   #####################
 
@@ -54,27 +55,30 @@ class ProductBulkUpdate(BaseModel):
 class CategoryOut(BaseModel):
     category: str
     count: int
-               ###################     Supplier    #####################
+ ################### Warehouse ###################
 
-# --- Shared Base ---
-class SupplierBase(BaseModel):
+class WarehouseBase(BaseModel):
     name: str
-    contact_person: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    code: str
     address: Optional[str] = None
-    payment_terms: Optional[int] = 30
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = True
 
-# --- Create Schema ---
-class SupplierCreate(SupplierBase):
+class WarehouseCreate(WarehouseBase):
     pass
 
-# --- Update Schema ---
-class SupplierUpdate(SupplierBase):
-    pass
+class WarehouseUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    address: Optional[str] = None
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[bool] = None
 
-# --- Output Schema ---
-class SupplierOut(SupplierBase):
+class WarehouseOut(WarehouseBase):
     id: UUID
     created_at: datetime
 
@@ -82,35 +86,76 @@ class SupplierOut(SupplierBase):
         model_config = ConfigDict(from_attributes=True)
 
 
-#######################################  product-supplier   ############################################
+################### Warehouse Transfer ###################
 
-# --- Base Schema ---
-class ProductSupplierBase(BaseModel):
+class TransferStatus(str, Enum):
+    pending = "pending"
+    in_transit = "in_transit"
+    completed = "completed"
+
+class WarehouseTransferItemCreate(BaseModel):
     product_id: UUID
-    supplier_id: UUID
-    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
-    lead_time_days: Optional[int] = None
-    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
-    is_preferred: Optional[bool] = False
+    quantity: Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
 
-# --- Create ---
-class ProductSupplierCreate(ProductSupplierBase):
-    pass
-
-# --- Update ---
-class ProductSupplierUpdate(BaseModel):
-    supplier_price: Optional[Decimal] = Field(default=None, decimal_places=4, ge=0)
-    lead_time_days: Optional[int] = None
-    min_order_qty: Optional[Decimal] = Field(default=None, decimal_places=2, ge=0)
-    is_preferred: Optional[bool] = None
-
-# --- Output ---
-class ProductSupplierOut(ProductSupplierBase):
+class WarehouseTransferItemOut(WarehouseTransferItemCreate):
     id: UUID
+    received_quantity: Decimal
     created_at: datetime
 
     class Config:
         model_config = ConfigDict(from_attributes=True)
+
+class WarehouseTransferCreate(BaseModel):
+    transfer_number: str
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    transfer_date: Optional[date] = None
+    status: Optional[TransferStatus] = TransferStatus.pending
+    notes: Optional[str] = None
+    created_by: UUID
+    items: List[WarehouseTransferItemCreate]
+
+class WarehouseTransferOut(BaseModel):
+    id: UUID
+    transfer_number: str
+    from_warehouse_id: UUID
+    to_warehouse_id: UUID
+    transfer_date: date
+    status: TransferStatus
+    notes: Optional[str]
+    created_by: UUID
+    created_at: datetime
+    items: List[WarehouseTransferItemOut]
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+############### Warehouse Stock ########################
+class WarehouseStockBase(BaseModel):
+    product_id: UUID
+    warehouse_id: UUID
+    quantity: Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
+    reserved_quantity: Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
+    available_quantity: Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
+    bin_location: Optional[str] = None
+
+class WarehouseStockCreate(WarehouseStockBase):
+    pass
+
+class WarehouseStockUpdate(WarehouseStockBase):
+    product_id: Optional[UUID] = None
+    warehouse_id: Optional[UUID] = None
+    quantity: Optional[Decimal] = None
+    reserved_quantity: Optional[Decimal] = None
+    available_quantity: Optional[Decimal] = None  # Usually computed
+    bin_location: Optional[str] = None
+
+class WarehouseStockOut(WarehouseStockBase):
+    id: UUID
+    available_quantity: Annotated[Decimal, Field(max_digits=10, decimal_places=2)]
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 #############     sale Items     ##############
 
