@@ -5,6 +5,7 @@ import { getSession } from "next-auth/react";
 interface UserProfile {
   avatar?: string;
   name?: string;
+  role?: string; // <-- Add this line
   // Add other fields as needed
 }
 

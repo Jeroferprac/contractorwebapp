@@ -7,6 +7,8 @@ from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict, condecimal
 from decimal import Decimal
 from collections import defaultdict
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy.exc import IntegrityError
 
 from app.schemas.inventory import (
     ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
@@ -607,14 +609,32 @@ def get_po(id: UUID, db: Session = Depends(get_db)):
 ## Update PO status
 @router.put("/purchase-orders/{id}", response_model=PurchaseOrderOut)
 def update_po(id: UUID, data: PurchaseOrderUpdate, db: Session = Depends(get_db)):
-    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == id).first()
+    po = db.query(PurchaseOrder).filter_by(id=id).first()
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order not found")
 
-    for key, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    
+    # Handle items list if provided
+    items_data = update_data.pop("items", None)
+    if items_data is not None:
+        # Clear existing items
+        po.items.clear()
+        db.flush()
+        # Add new items
+        for item in items_data:
+            po.items.append(PurchaseOrderItem(**item.model_dump()))
+
+    # Update other attributes
+    for key, value in update_data.items():
         setattr(po, key, value)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
     db.refresh(po)
     return po
 

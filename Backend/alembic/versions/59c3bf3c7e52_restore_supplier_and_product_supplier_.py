@@ -70,4 +70,5 @@ def downgrade() -> None:
     op.drop_table('suppliers')
     op.drop_constraint("fk_purchase_orders_supplier", "purchase_orders", type_="foreignkey")
     op.drop_column("purchase_orders", "supplier_id")
+    op.drop_column('purchase_orders', 'warehouse_id')
     # ### end Alembic commands ###
