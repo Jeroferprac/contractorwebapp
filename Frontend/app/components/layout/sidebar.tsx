@@ -17,8 +17,6 @@ import { Button } from "@/components/ui/button"
 import clsx from "clsx"
 import { useState, useRef, useEffect } from "react"
 import React from "react";
-import { useUserStore } from "@/store/userStore";
-
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -45,7 +43,6 @@ const navItems = [
   
 ]
 
-
 interface SidebarProps {
   onClose: () => void;
   mobileOpen: boolean;
@@ -56,7 +53,6 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
   const pathname = usePathname();
   const isInventoryActive = pathname.startsWith("/inventory");
   const [inventoryOpen, setInventoryOpen] = useState(isInventoryActive);
-  const user = useUserStore((state) => state.user);
 
   // Ref for Inventory button
   const inventoryRef = useRef<HTMLButtonElement | null>(null);
@@ -105,7 +101,6 @@ export function Sidebar({ onClose, mobileOpen, setMobileOpen }: SidebarProps) {
             <span className="text-xl font-bold text-gray-900 dark:text-white">HORIZON</span>
             <span className="text-sm text-gray-500 dark:text-gray-400">FREE</span>
           </div>
-
         </div>
         {/* Navigation (no independent scroll) */}
         <div>

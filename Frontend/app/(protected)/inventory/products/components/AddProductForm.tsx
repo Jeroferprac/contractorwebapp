@@ -8,6 +8,7 @@ import type { CreateProductData } from "@/types/inventory";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
+
 interface AddProductFormProps {
   onCancel: () => void;
   initialData?: Partial<CreateProductData>;
@@ -154,6 +155,7 @@ export function AddProductForm({ onCancel, initialData, loading }: Omit<AddProdu
   const isInvalid = Object.keys(errors).length > 0;
 
   return (
+
     <div className="max-h-[70vh] overflow-y-auto">
       <form onSubmit={handleSubmit} id="product-form" className="space-y-8">
         {/* Section: Basic Info */}
