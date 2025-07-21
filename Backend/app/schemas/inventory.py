@@ -85,7 +85,7 @@ class SupplierOut(SupplierBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    
+
 #######################################  product-supplier   ############################################
 
 # --- Base Schema ---
@@ -295,8 +295,14 @@ class PurchaseOrderCreate(PurchaseOrderBase):
     total_amount: Decimal = Field(..., decimal_places=2, ge=0)
     items: List[PurchaseOrderItemCreate]
 
-class PurchaseOrderUpdate(PurchaseOrderBase):
+class PurchaseOrderUpdate(BaseModel):
+    supplier_id: Optional[UUID] = None
+    po_number: Optional[str] = None
+    order_date: Optional[date] = None
     status: Optional[str] = None
+    total_amount: Optional[Decimal] = None
+    items: Optional[List[PurchaseOrderItemCreate]] = None
+
 
 class PurchaseOrderOut(PurchaseOrderBase):
     id: UUID
