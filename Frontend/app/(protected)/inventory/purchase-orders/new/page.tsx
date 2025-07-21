@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { purchaseOrderApi, CreatePurchaseOrderData } from '@/lib/inventory';
+import { createPurchaseOrder } from "@/lib/inventory";
+import type { CreatePurchaseOrderData } from "@/types/inventory";
 import { PurchaseOrderForm } from '@/components/forms/purchase-order-form';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -17,7 +18,7 @@ export default function CreatePurchaseOrderPage() {
   const handleSubmit = async (data: CreatePurchaseOrderData) => {
     setLoading(true);
     try {
-      await purchaseOrderApi.createPurchaseOrder(data);
+      await createPurchaseOrder(data);
       toast({
         title: 'Success',
         description: 'Purchase order created successfully',

@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Text, DECIMAL, TIMESTAMP, func, UniqueConstraint, Integer, ForeignKey, Boolean, Date
+from uuid import uuid4
+from sqlalchemy import Column, String, Text, DECIMAL, TIMESTAMP, func, UniqueConstraint, Integer, ForeignKey, Boolean, Date,DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import BaseModel
 from sqlalchemy.orm import relationship
@@ -31,15 +32,20 @@ class Product(BaseModel):
 
     transactions = relationship("InventoryTransaction", back_populates="product")
 
-
 class Supplier(BaseModel):
     __tablename__ = "suppliers"
 
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     name = Column(String(255), nullable=False)
     contact_person = Column(String(100))
     email = Column(String(255))
     phone = Column(String(20))
-    address = Column(Text)
+
+    street = Column(String(255), nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    pincode = Column(String(20), nullable=True)
+
     payment_terms = Column(Integer, default=30)  # days
     created_at = Column(TIMESTAMP, server_default=func.now())
 
@@ -53,12 +59,76 @@ class ProductSupplier(BaseModel):
     lead_time_days = Column(Integer)
     min_order_qty = Column(DECIMAL(10, 2))
     is_preferred = Column(Boolean, default=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    # created_at = Column(TIMESTAMP, server_default=func.now())
 
     # Optional relationships
     product = relationship("Product", backref="supplier_links")
     supplier = relationship("Supplier", backref="product_links")
 
+
+class Warehouse(BaseModel):
+    __tablename__ = "warehouses"
+
+    name = Column(String(255), nullable=False)
+    code = Column(String(20), unique=True, nullable=False)
+    address = Column(Text)
+    contact_person = Column(String(100))
+    phone = Column(String(20))
+    email = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    transfers_from = relationship("WarehouseTransfer", back_populates="from_warehouse", foreign_keys="WarehouseTransfer.from_warehouse_id")
+    transfers_to = relationship("WarehouseTransfer", back_populates="to_warehouse", foreign_keys="WarehouseTransfer.to_warehouse_id")
+
+
+class WarehouseTransfer(BaseModel):
+    __tablename__ = "warehouse_transfers"
+
+    transfer_number = Column(String(50), unique=True, nullable=False)
+    from_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"))
+    to_warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"))
+    transfer_date = Column(Date, server_default=func.current_date())
+    status = Column(String(20), default="pending")  # pending, in_transit, completed
+    notes = Column(Text)
+    created_by = Column(UUID(as_uuid=True))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    from_warehouse = relationship("Warehouse", foreign_keys=[from_warehouse_id], back_populates="transfers_from")
+    to_warehouse = relationship("Warehouse", foreign_keys=[to_warehouse_id], back_populates="transfers_to")
+    items = relationship("WarehouseTransferItem", back_populates="transfer")
+
+
+class WarehouseTransferItem(BaseModel):
+    __tablename__ = "warehouse_transfer_items"
+
+    transfer_id = Column(UUID(as_uuid=True), ForeignKey("warehouse_transfers.id"))
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"))
+    quantity = Column(DECIMAL(10, 2))
+    received_quantity = Column(DECIMAL(10, 2), default=0)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    transfer = relationship("WarehouseTransfer", back_populates="items")
+    product = relationship("Product")
+
+class WarehouseStock(BaseModel):
+    __tablename__ = "warehouse_stock"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    quantity = Column(DECIMAL(10, 2), nullable=False, default=0)
+    reserved_quantity = Column(DECIMAL(10, 2), nullable=False, default=0)
+    available_quantity = Column(DECIMAL(10, 2), nullable=False)  # Set by trigger
+    bin_location = Column(String(50), nullable=True)
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("product_id", "warehouse_id", name="uix_product_warehouse"),
+    )
+    product = relationship("Product", backref="warehouse_stocks")
+    warehouse = relationship("Warehouse", backref="stocks")
+ 
 class Sale(BaseModel):
     __tablename__ = "sales"
 
@@ -88,7 +158,7 @@ class SaleItem(BaseModel):
 class PurchaseOrder(BaseModel):
     __tablename__ = "purchase_orders"
 
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"), nullable=False)
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id"),nullable=False) 
     po_number = Column(String(50), unique=True)
     order_date = Column(Date, server_default=func.current_date())
     total_amount = Column(DECIMAL(12, 2), nullable=True)

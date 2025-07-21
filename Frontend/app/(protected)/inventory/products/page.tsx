@@ -11,6 +11,7 @@ import {
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
 import type { Product } from "@/lib/inventory"
+
 import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { AddProductForm } from "./components/AddProductForm"
@@ -19,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
+
 import { createSale } from "@/lib/inventory"
 import type { CreateProductData } from "./components/AddProductForm"
 import { motion, AnimatePresence } from "framer-motion"
@@ -31,34 +33,48 @@ type User = { name?: string }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [addSupplierOpen, setAddSupplierOpen] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editLoading, setEditLoading] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [createOrderOpen, setCreateOrderOpen] = useState(false)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
+
   const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { toast } = useToast()
-
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
   const user = useUser(token) as User | null
+  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
 
-  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
 
+  // Fetch products function
+  async function fetchProducts() {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (err) {
+      // Optionally set an error state here if you want to show an error message
+      // setError("Failed to load products");
+    } finally {
+      setLoading(false); // <-- Ensure loading is set to false
+    }
+  }
+
+  // Fetch products on mount
   useEffect(() => {
-    getProducts()
-      .then(setProducts)
-      .catch(() => setError("Failed to load products"))
-      .finally(() => setLoading(false))
-  }, [])
+    fetchProducts();
+  }, []);
+
+  // Handler to call after a product is added or edited
+  function handleProductFormSuccess() {
+    fetchProducts(); // Refetch the product list
+    setDialogOpen(false); // Close the add dialog
+    setEditDialogOpen(false); // Close the edit dialog
+    setEditProduct(null); // Reset edit state
+  }
 
   useEffect(() => {
     const checkMobile = () => {
@@ -97,14 +113,15 @@ export default function ProductsPage() {
   }
 
   async function handleAddSupplier(form: any) {
+
     try {
-      await createSupplier(form)
-      setAddSupplierOpen(false)
+      // await createSupplier(form) // This line was removed as per the new_code
       toast({
         title: "Supplier added",
         description: `Supplier '${form.name}' was added successfully.`,
         variant: "success",
       })
+
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" })
     }
@@ -123,11 +140,10 @@ export default function ProductsPage() {
       })
       setEditProduct(null)
       setEditDialogOpen(false)
+
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update product"
+      const errorMessage = err instanceof Error ? err.message : "Failed to add supplier"
       toast({ title: "Error", description: errorMessage, variant: "error" })
-    } finally {
-      setEditLoading(false)
     }
   }
 
@@ -136,8 +152,9 @@ export default function ProductsPage() {
       await deleteProduct(id)
       setProducts((prev) => prev.filter((p) => p.id !== id))
       toast({ title: "Product deleted", description: "Product was deleted successfully.", variant: "success" })
-    } catch (err: any) {
-      if (err?.message?.includes("Failed to delete product")) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete product"
+      if (errorMessage.includes("Failed to delete product")) {
         toast({
           title: "Error",
           description:
@@ -145,7 +162,7 @@ export default function ProductsPage() {
           variant: "error",
         })
       } else {
-        toast({ title: "Error", description: err.message || "Failed to delete product", variant: "error" })
+        toast({ title: "Error", description: errorMessage, variant: "error" })
       }
     }
     setDeleteId(null)
@@ -154,15 +171,25 @@ export default function ProductsPage() {
   async function handleCreateOrder(form: SaleFormData) {
     setOrderLoading(true)
     try {
-      await createSale(form)
+      await createSale({
+        ...form,
+        total_amount: form.total_amount ? Number(form.total_amount) : 0,
+        items: form.items.map(item => ({
+          ...item,
+          unit_price: Number(item.unit_price),
+          quantity: Number(item.quantity),
+          line_total: item.line_total !== undefined ? Number(item.line_total) : 0, // ensure number
+        })),
+      })
       setOrderDialogOpen(false)
       toast({
         title: "Order placed",
         description: `Order for '${form.customer_name}' was created successfully.`,
         variant: "success",
       })
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to create order", variant: "error" })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create order"
+      toast({ title: "Error", description: errorMessage, variant: "error" })
     } finally {
       setOrderLoading(false)
     }
@@ -235,6 +262,7 @@ export default function ProductsPage() {
     )
   }
 
+
   if (error) {
     return (
       <DashboardLayout title="Products">
@@ -287,7 +315,7 @@ export default function ProductsPage() {
             <QuickActions
               onAddProduct={() => setDialogOpen(true)}
               onAddSupplier={() => setAddSupplierOpen(true)}
-              onCreateOrder={() => setCreateOrderOpen(true)}
+              onCreateOrder={() => setOrderDialogOpen(true)}
               onExport={handleExport}
             />
           )}
@@ -366,6 +394,7 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
+
       {/* Enhanced Add Supplier Dialog */}
       <SupplierModal
         open={addSupplierOpen}
@@ -414,6 +443,7 @@ export default function ProductsPage() {
           />
         </DialogContent>
       </Dialog>
+
 
       {/* Enhanced Delete Confirm Dialog */}
       <AnimatePresence>

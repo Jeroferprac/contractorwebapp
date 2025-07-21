@@ -40,8 +40,10 @@ interface ProductTableProps {
     product: Product,
     data: { quantity: number; notes: string; transaction_type: "inbound" | "outbound" },
   ) => void
-  onAddProduct?: () => void
-  headerRight?: React.ReactNode
+
+  onAddProduct?: () => void // Added onAddProduct prop
+  // headerRight?: React.ReactNode // Removed unused prop
+
 }
 
 // Updated columns structure - removed SKU as separate column, added description
@@ -88,20 +90,22 @@ const getStockBars = (currentStock: string | number, minStock: string | number) 
   return 5
 }
 
+
 export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct, headerRight }: ProductTableProps) {
   // State management
+
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
   const [compareProductId, setCompareProductId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<Record<string, string>>({})
+  const [filters, setFilters] = useState<Record<string, string>>({})           
   const [visibleColumns, setVisibleColumns] = useState(columns)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(8)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [expandedRows, setExpandedRows] = useState<string[]>([])
   const [isMobile, setIsMobile] = useState(false)
-
-  // Check if mobile
+  
+  // Your existing click outside logic
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -111,7 +115,6 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  // Helper functions
   const formatCurrency = (value: string | number) =>
     Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -194,8 +197,8 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
     return filteredProducts.slice(startIndex, startIndex + itemsPerPage)
   }, [filteredProducts, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
   // Get unique values for filter options with null safety
   const filterOptions = useMemo(
     () => ({
@@ -281,6 +284,7 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                 visibleColumnsCount={visibleColumns.filter((col) => col.visible).length}
               />
             </div>
+
           ) : (
             <div className="bg-background border border-border rounded-xl lg:rounded-2xl shadow-2xl">
               <div className="overflow-x-auto">
@@ -298,6 +302,7 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                   formatDate={formatDate}
                   getStockStatus={getStockStatus}
                   getStockBars={getStockBars}
+
                 />
               </div>
               {/* Desktop Pagination */}

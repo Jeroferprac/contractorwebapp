@@ -12,15 +12,19 @@ from app.schemas.inventory import (
     ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
     SupplierCreate, SupplierUpdate, SupplierOut,
     ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,
+    WarehouseBase,WarehouseCreate,WarehouseOut,WarehouseTransferCreate,WarehouseStockCreate,WarehouseStockOut,
+    WarehouseTransferItemOut,WarehouseTransferOut,WarehouseTransferItemCreate,WarehouseUpdate,TransferStatus,
     SaleBase, SaleCreate, SaleItemBase, SaleOut,
     PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate, MonthlySalesSummary,
-    PurchaseOrderItemCreate, PurchaseOrderItemOut,
+    PurchaseOrderItemCreate, PurchaseOrderItemOut,WarehouseStockUpdate,
     InventoryTransactionCreate, InventoryTransactionOut
 )
 from app.models.inventory import (
-    Product, Supplier, ProductSupplier, Sale, SaleItem, 
-    PurchaseOrderItem, PurchaseOrder, InventoryTransaction
-)
+    Product,Supplier, ProductSupplier, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
+    PurchaseOrderItem, PurchaseOrder, InventoryTransaction)
+
+from app.CRUD.inventory import (create_warehouse_stock,get_all_warehouse_stocks,delete_warehouse_stock,update_warehouse_stock,
+                                get_warehouse_stock)
 from app.api.deps import get_db
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
@@ -142,7 +146,7 @@ def get_categories(db: Session = Depends(get_db)):
     ).group_by(Product.category).all()
     
     return [{"category": cat.category, "count": cat.count} for cat in categories]
-    
+
 # GET /api/products/{id}/stock - Stock across all warehouses
 @router.get("/products/{id}/stock")
 def get_product_stock(id: UUID, db: Session = Depends(get_db)):
@@ -206,12 +210,23 @@ def delete_product(id: UUID, db: Session = Depends(get_db)):
     db.commit()
     return
 
-                  ##################   Supplier API Calls  ######################
-
-# --- List all suppliers ---
+                 ##################   Supplier API Calls  ######################
+# --- List suppliers with filters ---
 @router.get("/suppliers", response_model=List[SupplierOut])
-def list_suppliers(db: Session = Depends(get_db)):
-    return db.query(Supplier).all()
+def list_suppliers(
+    name: Optional[str] = Query(None, description="Filter by supplier name"),
+    city: Optional[str] = Query(None, description="Filter by city"),
+    state: Optional[str] = Query(None, description="Filter by state"),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Supplier)
+    if name:
+        query = query.filter(Supplier.name.ilike(f"%{name}%"))
+    if city:
+        query = query.filter(Supplier.city.ilike(f"%{city}%"))
+    if state:
+        query = query.filter(Supplier.state.ilike(f"%{state}%"))
+    return query.all()
 
 # --- Create supplier ---
 @router.post("/suppliers", response_model=SupplierOut, status_code=201)
@@ -236,10 +251,8 @@ def update_supplier(id: UUID, supplier_in: SupplierUpdate, db: Session = Depends
     supplier = db.query(Supplier).filter(Supplier.id == id).first()
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
-    
     for key, value in supplier_in.dict(exclude_unset=True).items():
         setattr(supplier, key, value)
-    
     db.commit()
     db.refresh(supplier)
     return supplier
@@ -252,10 +265,23 @@ def delete_supplier(id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Supplier not found")
     db.delete(supplier)
     db.commit()
-    return
 
-                 ##################   Product-Supplier API Calls  ######################
-##Create ProductSupplier
+         ##################   Product-Supplier API Calls  ######################
+# --- List product-suppliers with filters ---
+@router.get("/product-suppliers", response_model=List[ProductSupplierOut])
+def list_product_suppliers(
+    product_id: Optional[UUID] = Query(None),
+    supplier_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(ProductSupplier)
+    if product_id:
+        query = query.filter(ProductSupplier.product_id == product_id)
+    if supplier_id:
+        query = query.filter(ProductSupplier.supplier_id == supplier_id)
+    return query.all()
+
+# --- Create product-supplier ---
 @router.post("/product-suppliers", response_model=ProductSupplierOut, status_code=201)
 def create_product_supplier(data: ProductSupplierCreate, db: Session = Depends(get_db)):
     entry = ProductSupplier(**data.model_dump())
@@ -263,31 +289,28 @@ def create_product_supplier(data: ProductSupplierCreate, db: Session = Depends(g
     db.commit()
     db.refresh(entry)
     return entry
-##List All ProductSuppliers
-@router.get("/product-suppliers", response_model=List[ProductSupplierOut])
-def list_product_suppliers(db: Session = Depends(get_db)):
-    return db.query(ProductSupplier).all()
-##Get One by ID
+
+# --- Get product-supplier by ID ---
 @router.get("/product-suppliers/{id}", response_model=ProductSupplierOut)
 def get_product_supplier(id: UUID, db: Session = Depends(get_db)):
     entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="ProductSupplier not found")
     return entry
-##Update by ID
+
+# --- Update product-supplier ---
 @router.put("/product-suppliers/{id}", response_model=ProductSupplierOut)
 def update_product_supplier(id: UUID, data: ProductSupplierUpdate, db: Session = Depends(get_db)):
     entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="ProductSupplier not found")
-
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(entry, key, value)
-
     db.commit()
     db.refresh(entry)
     return entry
-##Delete by ID
+
+# --- Delete product-supplier ---
 @router.delete("/product-suppliers/{id}", status_code=204)
 def delete_product_supplier(id: UUID, db: Session = Depends(get_db)):
     entry = db.query(ProductSupplier).filter(ProductSupplier.id == id).first()
@@ -295,6 +318,136 @@ def delete_product_supplier(id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="ProductSupplier not found")
     db.delete(entry)
     db.commit()
+
+# -------------------- Warehouse --------------------
+@router.get("/warehouses/transfer-status-options")
+def get_transfer_status_options():
+    return [status.value for status in TransferStatus]
+#-----------------------------------------------------------
+# -------------------- Warehouse Transfers --------------------
+@router.get("/warehouses/transfers", response_model=List[WarehouseTransferOut])
+def list_transfers(
+    status: Optional[str] = Query(None),
+    from_warehouse_id: Optional[UUID] = Query(None),
+    to_warehouse_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(WarehouseTransfer).options(joinedload(WarehouseTransfer.items))
+    if status:
+        query = query.filter(WarehouseTransfer.status == status)
+    if from_warehouse_id:
+        query = query.filter(WarehouseTransfer.from_warehouse_id == from_warehouse_id)
+    if to_warehouse_id:
+        query = query.filter(WarehouseTransfer.to_warehouse_id == to_warehouse_id)
+    return query.all()
+
+
+@router.post("/warehouses/transfer", response_model=WarehouseTransferOut, status_code=201)
+def create_transfer(transfer: WarehouseTransferCreate, db: Session = Depends(get_db)):
+    tr = WarehouseTransfer(
+        transfer_number=transfer.transfer_number,
+        from_warehouse_id=transfer.from_warehouse_id,
+        to_warehouse_id=transfer.to_warehouse_id,
+        transfer_date=transfer.transfer_date or date.today(),
+        status=transfer.status,
+        notes=transfer.notes,
+        created_by=transfer.created_by,
+    )
+    db.add(tr)
+    db.flush()
+
+    for item in transfer.items:
+        db.add(WarehouseTransferItem(
+            transfer_id=tr.id,
+            product_id=item.product_id,
+            quantity=item.quantity,
+        ))
+
+    db.commit()
+    db.refresh(tr)
+    return tr
+
+@router.post("/warehouses/transfers/{id}/complete", response_model=WarehouseTransferOut)
+def complete_transfer(id: UUID, db: Session = Depends(get_db)):
+    transfer = db.query(WarehouseTransfer).filter(WarehouseTransfer.id == id).first()
+    if not transfer:
+        raise HTTPException(404, detail="Transfer not found")
+
+    transfer.status = "completed"
+    db.commit()
+    db.refresh(transfer)
+    return transfer
+# -------------------- xxxxxxxxxxxxxxxxxx --------------------
+# -------------------- Warehouse --------------------
+@router.get("/warehouses", response_model=List[WarehouseOut])
+def list_warehouses(
+    is_active: Optional[bool] = Query(None),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Warehouse)
+    if is_active is not None:
+        query = query.filter(Warehouse.is_active == is_active)
+    if search:
+        query = query.filter(Warehouse.name.ilike(f"%{search}%"))
+    return query.all()
+
+
+@router.post("/warehouses", response_model=WarehouseOut, status_code=201)
+def create_warehouse(data: WarehouseCreate, db: Session = Depends(get_db)):
+    wh = Warehouse(**data.dict())
+    db.add(wh)
+    db.commit()
+    db.refresh(wh)
+    return wh
+
+
+@router.put("/warehouses/{id}", response_model=WarehouseOut)
+def update_warehouse(id: UUID, data: WarehouseUpdate, db: Session = Depends(get_db)):
+    wh = db.query(Warehouse).filter(Warehouse.id == id).first()
+    if not wh:
+        raise HTTPException(404, detail="Warehouse not found")
+    for k, v in data.dict(exclude_unset=True).items():
+        setattr(wh, k, v)
+    db.commit()
+    db.refresh(wh)
+    return wh
+
+
+@router.get("/warehouses/{id}", response_model=WarehouseOut)
+def get_warehouse(id: UUID, db: Session = Depends(get_db)):
+    wh = db.query(Warehouse).filter(Warehouse.id == id).first()
+    if not wh:
+        raise HTTPException(404, detail="Warehouse not found")
+    return wh
+#################### warehouse stock table #########################
+
+# routes/inventory/warehouse_stock.py
+
+@router.post("/warehouse-stocks", response_model=WarehouseStockOut)
+def create_stock(stock: WarehouseStockCreate, db: Session = Depends(get_db)):
+    return create_warehouse_stock(db, stock)
+
+@router.get("/warehouse-stocks", response_model=List[WarehouseStockOut])
+def list_stocks(db: Session = Depends(get_db)):
+    return get_all_warehouse_stocks(db)
+
+@router.get("/warehouse-stocks/{stock_id}", response_model=WarehouseStockOut)
+def get_stock(stock_id: UUID, db: Session = Depends(get_db)):
+    stock = get_warehouse_stock(db, stock_id)
+    if not stock:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    return stock
+
+@router.put("/warehouse-stocks/{stock_id}", response_model=WarehouseStockOut)
+def update_stock(stock_id: UUID, stock_data: WarehouseStockUpdate, db: Session = Depends(get_db)):
+    return update_warehouse_stock(db, stock_id, stock_data)
+
+@router.delete("/warehouse-stocks/{stock_id}")
+def delete_stock(stock_id: UUID, db: Session = Depends(get_db)):
+    delete_warehouse_stock(db, stock_id)
+    return {"detail": "Deleted"}
+
 
                 ##################   Sales API Calls  ######################
 ## List All Sales
@@ -606,12 +759,12 @@ def sales_by_product_customer(db: Session = Depends(get_db)):
 def purchase_by_supplier(db: Session = Depends(get_db)):
     results = (
         db.query(
-            Supplier.name,
+            Warehouse.name,
             func.count(PurchaseOrder.id).label("total_pos"),
             func.sum(PurchaseOrder.total_amount).label("total_amount")
         )
-        .join(PurchaseOrder, PurchaseOrder.supplier_id == Supplier.id)
-        .group_by(Supplier.name)
+        .join(PurchaseOrder, PurchaseOrder.supplier_id == Warehouse.id)
+        .group_by(Warehouse.name)
         .order_by(func.sum(PurchaseOrder.total_amount).desc())
         .all()
     )
