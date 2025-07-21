@@ -1,238 +1,201 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { getInventoryTransactions } from "@/lib/inventory";
-import { getProducts } from '@/lib/inventory';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+"use client"
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Search, Filter, Package } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import { InventoryStats } from "./components/Stats"
+import { TransactionItem } from "./components/TransactionItems"
+import { TransactionPagination } from "./components/TransactionPagination"
+import { ItemDetailsSidebar } from "./components/ItemDetails"
+import { AnimatedButton } from "./components/premium-button"
+import { getInventoryTransactions, getProducts } from "@/lib/inventory";
+import { useSession } from "next-auth/react";
 
 interface Transaction {
-  id: string;
-  product_id: string;
-  transaction_type: string;
-  quantity: string;
-  reference_type: string;
-  reference_id: string | null;
-  notes?: string;
-  created_at: string;
+  id: string
+  product_id: string
+  product_name: string
+  transaction_type: "inbound" | "outbound"
+  quantity: string
+  reference_type: string
+  reference_id: string | null
+  notes: string
+  created_at: string
+  category: string
+  unit_price: number
+  status: "completed" | "pending" | "processing"
 }
 
-interface Product {
-  id: string;
-  name: string;
-}
-
-const TRANSACTION_TYPES = ["all", "purchase", "sale", "adjustment"];
-
-export default function InventoryTransactionsPage() {
+export default function PremiumInventoryDashboard() {
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterType, setFilterType] = useState<"all" | "inbound" | "outbound">("all")
+  const [currentPage, setCurrentPage] = useState(1)
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [viewTxn, setViewTxn] = useState<Transaction | null>(null);
+  const [productMap, setProductMap] = useState<Record<string, string>>({});
+
+  const itemsPerPage = 8
+  const { data: session } = useSession();
 
   useEffect(() => {
-    setLoading(true);
     Promise.all([
       getInventoryTransactions(),
       getProducts()
-    ])
-      .then(([txns, prods]) => {
-        setTransactions(txns);
-        setProducts(prods);
-      })
-      .catch(() => setError("Failed to load transactions or products."))
-      .finally(() => setLoading(false));
+    ]).then(([data, products]) => {
+      const txs = (data.items ?? data).map((tx: any) => ({
+        ...tx,
+        unit_price: Number(tx.unit_price) || 0,
+        quantity: Number(tx.quantity) || 0,
+      }));
+      setTransactions(txs);
+      // Build productId -> productName map
+      const map: Record<string, string> = {};
+      products.forEach((p: any) => { map[p.id] = p.name; });
+      setProductMap(map);
+    });
   }, []);
 
-  function getProductName(id: string) {
-    const prod = products.find(p => p.id === id);
-    return prod ? prod.name : id;
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesSearch =
+      (transaction.product_name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
+      (transaction.category?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
+      (transaction.notes?.toLowerCase() ?? "").includes(searchQuery.toLowerCase());
+    const matchesFilter = filterType === "all" || transaction.transaction_type === filterType;
+
+    return matchesSearch && matchesFilter;
+  })
+
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
+  const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
+  const handleViewTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction)
+    setSidebarOpen(true)
   }
 
-  function getReferenceUrl(type: string, id: string | null) {
-    if (!id) return null;
-    if (type === 'sale') return `/inventory/sales/${id}`;
-    if (type === 'product') return `/inventory/products/${id}`;
-    if (type === 'adjustment') return `/inventory/adjustments/${id}`;
-    // Add more as needed
-    return null;
+  const handleCloseSidebar = () => {
+    setSidebarOpen(false)
+    setTimeout(() => setSelectedTransaction(null), 300)
   }
 
-  // Filtering logic
-  const filtered = transactions.filter((txn) => {
-    if (typeFilter !== "all" && txn.transaction_type !== typeFilter) return false;
-    if (search && !(
-      txn.reference_type?.toLowerCase().includes(search.toLowerCase()) ||
-      txn.notes?.toLowerCase().includes(search.toLowerCase())
-    )) return false;
-    if (dateFrom && new Date(txn.created_at) < new Date(dateFrom)) return false;
-    if (dateTo && new Date(txn.created_at) > new Date(dateTo)) return false;
-    return true;
-  });
-
-  // Export to CSV
-  function handleExport() {
-    const rows = [
-      ["Date", "Type", "Reference", "Quantity", "Notes"],
-      ...filtered.map(txn => [
-        new Date(txn.created_at).toLocaleString(),
-        txn.transaction_type,
-        txn.reference_type,
-        txn.quantity,
-        txn.notes || ""
-      ])
-    ];
-    const csv = rows.map(r => r.map(String).map(x => `"${x.replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "transactions_export.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, filterType])
 
   return (
-    <DashboardLayout title="Inventory Transactions">
-      <div className="max-w-5xl mx-auto p-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Transactions</CardTitle>
-            <div className="flex gap-2 items-center">
-              <Badge variant="secondary">All Time</Badge>
-              <Button size="sm" variant="outline" className="text-sm font-medium" onClick={handleExport}>Export CSV</Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-4 mb-4 items-center">
-              <div className="w-full sm:w-auto">
-                <label className="block text-xs font-medium mb-1">Type</label>
-                <select
-                  className="border rounded-md px-3 h-10 w-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={typeFilter}
-                  onChange={e => setTypeFilter(e.target.value)}
-                >
-                  {TRANSACTION_TYPES.map(type => (
-                    <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
-                  ))}
-                </select>
+    <DashboardLayout session={session} title="Transaction Report">
+      <div className="min-h-screen bg-white dark:bg-[#0b1437] p-4">
+        <div className="space-y-8">
+          {/* Premium Stats Cards */}
+          <InventoryStats transactions={transactions} />
+
+          {/* Premium Transactions Section */}
+          <div className="space-y-6">
+            <motion.div
+              className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div>
+                <h2 className="text-2xl font-bold mb-2 text-foreground">Transaction History</h2>
+                <p className="text-muted-foreground">Recent inventory movements and adjustments</p>
               </div>
-              <div className="w-full sm:w-auto">
-                <label className="block text-xs font-medium mb-1">From</label>
-                <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full h-10 text-sm font-normal rounded-md px-3" />
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search transactions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-11 w-full sm:w-80 h-11 rounded-xl backdrop-blur-sm bg-white/40 dark:bg-white/5 border-white/20 dark:border-white/10 focus:bg-white/60 dark:focus:bg-white/10 transition-all duration-300"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/20 dark:border-white/10">
+                    {(["all", "inbound", "outbound"] as const).map((type) => (
+                      <motion.div key={type} whileTap={{ scale: 0.95 }}>
+                        <AnimatedButton
+                          variant={filterType === type ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setFilterType(type)}
+                          gradient={filterType === type}
+                          className={cn(
+                            "text-sm capitalize rounded-lg transition-all duration-300",
+                            filterType === type && "shadow-lg",
+                          )}
+                        >
+                          {type}
+                        </AnimatedButton>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <AnimatedButton variant="ghost" size="sm" className="h-11 w-11 rounded-xl">
+                    <Filter className="h-4 w-4" />
+                  </AnimatedButton>
+                </div>
               </div>
-              <div className="w-full sm:w-auto">
-                <label className="block text-xs font-medium mb-1">To</label>
-                <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full h-10 text-sm font-normal rounded-md px-3" />
-              </div>
-              <div className="flex-1 min-w-[180px] w-full sm:w-auto">
-                <label className="block text-xs font-medium mb-1">Search</label>
-                <Input
-                  type="text"
-                  placeholder="Reference or notes..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="h-10 text-sm font-normal rounded-md px-3 w-full"
-                />
-              </div>
-            </div>
-            {loading ? (
-              <div className="p-8 text-center">Loading transactions...</div>
-            ) : error ? (
-              <div className="p-8 text-center text-red-500">{error}</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[700px]">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-medium">Date</th>
-                      <th className="text-left p-3 font-medium">Type</th>
-                      <th className="text-left p-3 font-medium">Reference Type</th>
-                      <th className="text-left p-3 font-medium">Reference ID</th>
-                      <th className="text-left p-3 font-medium">Product ID</th>
-                      <th className="text-center p-3 font-medium">Quantity</th>
-                      <th className="text-left p-3 font-medium">Notes</th>
-                      <th className="text-center p-3 font-medium">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="text-center py-8 text-gray-500">No transactions found.</td>
-                      </tr>
-                    ) : (
-                      filtered.map((txn) => (
-                        <tr key={txn.id} className="border-b hover:bg-gray-50 dark:hover:bg-zinc-900">
-                          <td className="p-3">{new Date(txn.created_at).toLocaleString()}</td>
-                          <td className="p-3">{txn.transaction_type}</td>
-                          <td className="p-3">{txn.reference_type}</td>
-                          <td className="p-3">
-                            {txn.reference_id ? (
-                              <a
-                                href={getReferenceUrl(txn.reference_type, txn.reference_id) || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline hover:text-blue-800"
-                              >
-                                {txn.reference_id}
-                              </a>
-                            ) : '-'}
-                          </td>
-                          <td className="p-3">{getProductName(txn.product_id)}</td>
-                          <td className="text-center p-3">{txn.quantity}</td>
-                          <td className="p-3">{txn.notes || '-'}</td>
-                          <td className="p-3 text-center">
-                            <Button size="sm" variant="outline" onClick={() => setViewTxn(txn)}>View</Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            </motion.div>
+
+            {/* Premium Transaction List */}
+            <motion.div
+              className="space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <AnimatePresence mode="wait">
+                {paginatedTransactions.map((transaction, index) => (
+                  <TransactionItem
+                    key={transaction.id}
+                    transaction={{ ...transaction, product_name: productMap[transaction.product_id] || transaction.product_name }}
+                    onView={handleViewTransaction}
+                    index={index}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Premium Pagination */}
+            {totalPages > 1 && (
+              <TransactionPagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
             )}
-          </CardContent>
-        </Card>
+
+            {filteredTransactions.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="text-center py-16"
+              >
+                <div className="p-6 rounded-2xl backdrop-blur-sm bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 inline-block mb-4">
+                  <Package className="h-16 w-16 text-muted-foreground mx-auto" />
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-foreground">No transactions found</h3>
+                <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {/* Premium Transaction Details Sidebar */}
+        <ItemDetailsSidebar
+          transaction={selectedTransaction}
+          isOpen={sidebarOpen}
+          onClose={handleCloseSidebar}
+        />
       </div>
-      {/* View Transaction Modal */}
-      <Dialog open={!!viewTxn} onOpenChange={() => setViewTxn(null)}>
-        <DialogContent className="sm:max-w-md w-full max-w-full overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Transaction Details</DialogTitle>
-          </DialogHeader>
-          {viewTxn && (
-            <div className="space-y-2 text-sm">
-              <div><span className="font-medium">ID:</span> {viewTxn.id}</div>
-              <div><span className="font-medium">Product:</span> {getProductName(viewTxn.product_id)}</div>
-              <div><span className="font-medium">Transaction Type:</span> {viewTxn.transaction_type}</div>
-              <div><span className="font-medium">Quantity:</span> {viewTxn.quantity}</div>
-              <div><span className="font-medium">Reference Type:</span> {viewTxn.reference_type}</div>
-              <div><span className="font-medium">Reference ID:</span> {viewTxn.reference_id ? (
-                <a
-                  href={getReferenceUrl(viewTxn.reference_type, viewTxn.reference_id) || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline hover:text-blue-800"
-                >
-                  {viewTxn.reference_id}
-                </a>
-              ) : '-'}</div>
-              <div><span className="font-medium">Notes:</span> {viewTxn.notes || '-'}</div>
-              <div><span className="font-medium">Date:</span> {new Date(viewTxn.created_at).toLocaleString()}</div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
-  );
-} 
+  )
+}

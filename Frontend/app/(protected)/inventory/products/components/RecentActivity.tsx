@@ -23,11 +23,9 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
   const [isPaused, setIsPaused] = useState(false)
   // State to store the calculated drag constraints for Framer Motion
   const [dragConstraints, setDragConstraints] = useState({ left: 0, right: 0 })
-
   // Refs to get DOM elements for width calculations
   const containerRef = useRef<HTMLDivElement>(null) // Outer container for overflow and fades
   const contentRef = useRef<HTMLDivElement>(null) // Inner content that scrolls
-
   // MotionValue for controlling the horizontal position of the content
   const x = useMotionValue(0)
 
@@ -124,7 +122,7 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
       } else {
         x.set(nextX)
       }
-    }, 40) // ~20 frames per second, adjust for desired speed
+    }, 40) // ~25 frames per second, adjust for desired speed
 
     // Cleanup function to clear the interval when component unmounts or dependencies change.
     return () => clearInterval(interval)
@@ -147,24 +145,23 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
   const duplicatedActivities = [...displayActivities, ...displayActivities]
 
   return (
-    <div className="w-full">
-      {/* Recent Activity Title */}
+    <div className="w-full font-sans">
       {/* Marquee Container */}
       {/* This div acts as the viewport for the marquee. It hides overflowing content. */}
       {/* It also handles hover events to pause/resume auto-scrolling. */}
       <div
         ref={containerRef}
-        className="relative overflow-hidden rounded-xl h-[40px] flex items-center"
+        className="relative overflow-hidden rounded-xl h-[40px] flex items-center bg-gradient-to-r from-background via-muted/20 to-background border border-border/50 shadow-lg backdrop-blur-sm"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Left Fade Overlay */}
         {/* Creates a fading effect on the left edge, making content appear/disappear smoothly. */}
-        <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white dark:from-[#0b1437] z-10 pointer-events-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-background via-background/80 to-transparent z-10 pointer-events-none" />
 
         {/* Right Fade Overlay */}
         {/* Creates a fading effect on the right edge. */}
-        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white dark:from-[#0b1437] to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background via-background/80 to-transparent z-10 pointer-events-none" />
 
         {/* Marquee Content (Draggable) */}
         {/* This is the actual content that scrolls. It uses Framer Motion for dragging. */}
@@ -183,38 +180,37 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
           {duplicatedActivities.map((activity, index) => (
             <motion.div
               key={`${activity.name}-${activity.time}-${index}`} // Unique key for each item
-              className="flex items-center gap-2 px-3 py-1 mx-1 min-w-fit whitespace-nowrap" // Compact styling, no background/border
-              whileHover={{ scale: 1.02, y: -2 }} // Subtle hover animation
+              className="flex items-center gap-2 px-3 py-1 mx-1 min-w-fit whitespace-nowrap rounded-lg bg-gradient-to-r from-purple-500/5 to-blue-500/5 border border-purple-500/10 shadow-sm backdrop-blur-sm" // Compact styling, no background/border
+              whileHover={{ scale: 1.02, y: -1 }} // Subtle hover animation
               transition={{ type: "spring", stiffness: 400, damping: 25 }} // Smooth spring transition
             >
               {/* Avatar */}
               {/* Displays user avatar or a fallback initial */}
-                      {activity.avatar ? (
+              {activity.avatar ? (
                 <img
                   src={activity.avatar || "/placeholder.svg"}
-                  className="w-7 h-7 rounded-full object-cover border border-gray-200"
+                  className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-purple-500/25"
                   alt={activity.name}
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs">
                   {activity.name?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                      )}
+                </div>
+              )}
 
               {/* Combined Activity Text */}
               {/* Displays a concise summary of the activity */}
-              <div className="text-sm text-gray-700">
+              <div className="text-xs lg:text-sm text-foreground">
                 <span className="font-medium">{activity.name}</span>{" "}
-                <span className="text-gray-500">{activity.action.toLowerCase()}</span>{" "}
-                <span className="font-semibold text-blue-600">{activity.count}</span>{" "}
-                <span className="text-gray-500">{activity.product}</span>{" "}
-                <span className="text-gray-400 ml-1">{activity.time}</span>
-                      </div>
+                <span className="text-muted-foreground">{activity.action.toLowerCase()}</span>{" "}
+                <span className="font-semibold text-purple-500">{activity.count}</span>{" "}
+                <span className="text-muted-foreground">{activity.product}</span>{" "}
+                <span className="text-muted-foreground/70 ml-1">{activity.time}</span>
+              </div>
             </motion.div>
           ))}
         </motion.div>
       </div>
-
     </div>
   )
 }

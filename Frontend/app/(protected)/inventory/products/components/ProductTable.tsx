@@ -30,32 +30,7 @@ import {
   Clock,
   FileText,
 } from "lucide-react"
-
-// Enhanced Product interface
-export interface Product {
-  id: string
-  name: string
-  sku: string
-  barcode: string
-  category: string
-  brand: string
-  unit: string
-  current_stock: number
-  min_stock_level: number
-  reorder_point: number
-  max_stock_level: number
-  cost_price: number
-  selling_price: number
-  description: string
-  weight: number
-  dimensions: string
-  is_active: boolean
-  track_serial: boolean
-  track_batch: boolean
-  is_composite: boolean
-  created_at: string
-  updated_at: string
-}
+import type { Product } from "@/lib/inventory";
 
 interface ProductTableProps {
   products: Product[]
@@ -96,9 +71,11 @@ const columns = [
 const getStockStatus = (currentStock: string | number, minStock: string | number) => {
   const current = Number(currentStock)
   const min = Number(minStock)
-  if (current === 0) return { color: "bg-red-500", dotColor: "bg-red-500", text: "Out of Stock" }
-  if (current <= min) return { color: "bg-yellow-500", dotColor: "bg-yellow-500", text: "Low Stock" }
-  return { color: "bg-emerald-500", dotColor: "bg-emerald-500", text: "In Stock" }
+  if (current === 0)
+    return { color: "bg-gradient-to-r from-red-500 to-pink-500", dotColor: "bg-red-500", text: "Out of Stock" }
+  if (current <= min)
+    return { color: "bg-gradient-to-r from-yellow-500 to-orange-500", dotColor: "bg-yellow-500", text: "Low Stock" }
+  return { color: "bg-gradient-to-r from-green-500 to-emerald-500", dotColor: "bg-emerald-500", text: "In Stock" }
 }
 
 const getStockBars = (currentStock: string | number, minStock: string | number) => {
@@ -115,7 +92,7 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
   // State management
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
   const [compareProductId, setCompareProductId] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [visibleColumns, setVisibleColumns] = useState(columns)
   const [currentPage, setCurrentPage] = useState(1)
@@ -177,7 +154,6 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
       // Dynamic filters with null safety
       const matchesFilters = Object.entries(filters).every(([key, value]) => {
         if (!value || value === "all") return true
-
         switch (key) {
           case "category":
             return (product.category || "") === value
@@ -247,107 +223,113 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
   )
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <ProductStats products={products} />
+    <div className="space-y-4 lg:space-y-8 bg-background rounded-2xl lg:rounded-3xl shadow-2xl p-4 lg:p-8 border border-border">
+        {/* Stats Cards */}
+        <ProductStats products={products} />
 
-      {/* Enhanced Filter Bar */}
-      <ProductFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filters={filters}
-        setFilters={setFilters}
-        filterOptions={filterOptions}
-        visibleColumns={visibleColumns}
-        toggleColumnVisibility={toggleColumnVisibility}
-        isMobile={isMobile}
-        onAddProduct={onAddProduct}
-      />
+        {/* Enhanced Filter Bar */}
+        <ProductFilters
+          searchTerm={searchTerm ?? ""}
+          setSearchTerm={setSearchTerm}
+          filters={filters}
+          setFilters={setFilters}
+          filterOptions={filterOptions}
+          visibleColumns={visibleColumns}
+          toggleColumnVisibility={toggleColumnVisibility}
+          isMobile={isMobile}
+          onAddProduct={onAddProduct}
+        />
 
-      {/* Table or Mobile Cards */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-        {isMobile ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <Checkbox checked={selectedProducts.length === products.length} onCheckedChange={toggleAllProducts} />
-              <span className="text-sm text-gray-600">
-                {selectedProducts.length} of {products.length} selected
-              </span>
-            </div>
-            {paginatedProducts.map((product) => (
-              <MobileProductCard
-                key={product.id}
-                product={product}
-                isExpanded={expandedRows.includes(product.id)}
-                isSelected={selectedProducts.includes(product.id)}
-                onToggleExpansion={toggleRowExpansion}
-                onToggleSelection={toggleProductSelection}
-                onCompare={setCompareProductId}
-                onEdit={onEdit || (() => {})}
-                onAdjust={setAdjustProduct}
-                onDelete={onDelete || (() => {})}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-                getStockStatus={getStockStatus}
-              />
-            ))}
-            {/* Mobile Pagination */}
-            <ProductTablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              totalItems={filteredProducts.length}
-              onPageChange={setCurrentPage}
-              visibleColumnsCount={visibleColumns.filter((col) => col.visible).length}
-            />
-          </div>
-        ) : (
-          <div className="rounded-lg border bg-white shadow-sm overflow-hidden dark:bg-[#020817]">
-            <div className="overflow-x-auto">
-              <ProductTableView
-                products={paginatedProducts}
-                visibleColumns={visibleColumns}
-                selectedProducts={selectedProducts}
-                onToggleAllProducts={toggleAllProducts}
-                onToggleProductSelection={toggleProductSelection}
-                onCompare={setCompareProductId}
-                onEdit={onEdit || (() => {})}
-                onAdjust={setAdjustProduct}
-                onDelete={onDelete || (() => {})}
-                formatCurrency={formatCurrency}
-                formatDate={formatDate}
-                getStockStatus={getStockStatus}
-                getStockBars={getStockBars}
+        {/* Table or Mobile Cards */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
+          {isMobile ? (
+            <div className="space-y-3 lg:space-y-4">
+              <div className="flex items-center justify-between mb-4 lg:mb-6 px-1 lg:px-2">
+                <Checkbox
+                  checked={selectedProducts.length === products.length}
+                  onCheckedChange={toggleAllProducts}
+                  className="border-purple-500 data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-blue-500"
+                />
+                <span className="text-xs lg:text-sm text-muted-foreground font-medium font-sans">
+                  {selectedProducts.length} of {products.length} selected
+                </span>
+              </div>
+              {paginatedProducts.map((product) => (
+                <MobileProductCard
+                  key={product.id}
+                  product={product}
+                  isExpanded={expandedRows.includes(product.id)}
+                  isSelected={selectedProducts.includes(product.id)}
+                  onToggleExpansion={toggleRowExpansion}
+                  onToggleSelection={toggleProductSelection}
+                  onCompare={setCompareProductId}
+                  onEdit={onEdit || (() => {})}
+                  onAdjust={setAdjustProduct}
+                  onDelete={onDelete || (() => {})}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                  getStockStatus={getStockStatus}
+                />
+              ))}
+              {/* Mobile Pagination */}
+              <ProductTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredProducts.length}
+                onPageChange={setCurrentPage}
+                visibleColumnsCount={visibleColumns.filter((col) => col.visible).length}
               />
             </div>
-            {/* Desktop Pagination */}
-            <ProductTablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              totalItems={filteredProducts.length}
-              onPageChange={setCurrentPage}
-              visibleColumnsCount={visibleColumns.filter((col) => col.visible).length}
-            />
-          </div>
-        )}
-      </motion.div>
-
-      {/* Modals */}
-      <ProductAdjustModal
-        product={adjustProduct}
-        onClose={() => setAdjustProduct(null)}
-        onAdjust={onAdjust || (() => {})}
-      />
-
-      <Dialog open={!!compareProductId} onOpenChange={() => setCompareProductId(null)}>
-        <DialogContent className="max-w-lg w-full">
-          <DialogTitle>Supplier Pricing Comparison</DialogTitle>
-          {compareProductId && (
-            <SupplierPricingComparison productId={compareProductId} onClose={() => setCompareProductId(null)} />
+          ) : (
+            <div className="bg-background border border-border rounded-xl lg:rounded-2xl shadow-2xl">
+              <div className="overflow-x-auto">
+                <ProductTableView
+                  products={paginatedProducts}
+                  visibleColumns={visibleColumns}
+                  selectedProducts={selectedProducts}
+                  onToggleAllProducts={toggleAllProducts}
+                  onToggleProductSelection={toggleProductSelection}
+                  onCompare={setCompareProductId}
+                  onEdit={onEdit || (() => {})}
+                  onAdjust={setAdjustProduct}
+                  onDelete={onDelete || (() => {})}
+                  formatCurrency={formatCurrency}
+                  formatDate={formatDate}
+                  getStockStatus={getStockStatus}
+                  getStockBars={getStockBars}
+                />
+              </div>
+              {/* Desktop Pagination */}
+              <ProductTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredProducts.length}
+                onPageChange={setCurrentPage}
+                visibleColumnsCount={visibleColumns.filter((col) => col.visible).length}
+              />
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </motion.div>
+
+        {/* Modals */}
+        <ProductAdjustModal
+          product={adjustProduct}
+          onClose={() => setAdjustProduct(null)}
+          onAdjust={onAdjust || (() => {})}
+        />
+
+        <Dialog open={!!compareProductId} onOpenChange={() => setCompareProductId(null)}>
+          <DialogContent className="max-w-lg w-full bg-background text-foreground border border-border shadow-2xl">
+            <DialogTitle className="text-lg lg:text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent font-sans">
+              Supplier Pricing Comparison
+            </DialogTitle>
+            {compareProductId && (
+              <SupplierPricingComparison productId={compareProductId} onClose={() => setCompareProductId(null)} />
+            )}
+          </DialogContent>
+        </Dialog>
     </div>
   )
 }

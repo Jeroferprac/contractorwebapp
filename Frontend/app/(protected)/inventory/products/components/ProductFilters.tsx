@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { ProductSearchBar } from "./ProductSearchBar";
 
 interface Column {
   key: string
@@ -106,7 +107,7 @@ export function ProductFilters({
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-2 block">Category</label>
                   <select
-                    className="w-full h-8 px-2 text-sm border rounded-md bg-white"
+                    className="w-full h-8 px-2 text-sm border rounded-md bg-white dark:bg-[#020817] border border-white/20 dark:border-white/10 rounded-xl"
                     value={filters.category || "all"}
                     onChange={(e) => updateFilter("category", e.target.value)}
                   >
@@ -121,9 +122,9 @@ export function ProductFilters({
 
                 {/* Brand Filter */}
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-2 block">Brand</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block font-sans">Brand</label>
                   <select
-                    className="w-full h-8 px-2 text-sm border rounded-md bg-white"
+                    className="w-full h-8 px-2 text-sm border rounded-lg bg-background/50 backdrop-blur-sm text-foreground border-border/50 hover:border-purple-500/50 transition-all duration-300"
                     value={filters.brand || "all"}
                     onChange={(e) => updateFilter("brand", e.target.value)}
                   >
@@ -140,7 +141,7 @@ export function ProductFilters({
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-2 block">Status</label>
                   <select
-                    className="w-full h-8 px-2 text-sm border rounded-md bg-white"
+                    className="w-full h-8 px-2 text-sm border rounded-md bg-white dark:bg-[#020817] border border-white/20 dark:border-white/10 rounded-xl"
                     value={filters.status || "all"}
                     onChange={(e) => updateFilter("status", e.target.value)}
                   >
@@ -157,7 +158,7 @@ export function ProductFilters({
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-2 block">Price Range</label>
                   <select
-                    className="w-full h-8 px-2 text-sm border rounded-md bg-white"
+                    className="w-full h-8 px-2 text-sm border rounded-md bg-white dark:bg-[#020817] border border-white/20 dark:border-white/10 rounded-xl"
                     value={filters.price_range || "all"}
                     onChange={(e) => updateFilter("price_range", e.target.value)}
                   >
@@ -174,7 +175,7 @@ export function ProductFilters({
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-2 block">Stock Range</label>
                   <select
-                    className="w-full h-8 px-2 text-sm border rounded-md bg-white"
+                    className="w-full h-8 px-2 text-sm border rounded-md bg-white dark:bg-[#020817] border border-white/20 dark:border-white/10 rounded-xl"
                     value={filters.stock_range || "all"}
                     onChange={(e) => updateFilter("stock_range", e.target.value)}
                   >
@@ -303,12 +304,10 @@ export function ProductFilters({
         {/* Right Section: Search and Add Product Button */}
         <div className="flex items-center gap-3 w-full lg:w-auto">
           <div className="relative flex-1 lg:flex-none lg:w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search products..."
+            <ProductSearchBar
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 rounded-xl h-9 w-full dark:bg-[#1e293b]"
+              onChange={setSearchTerm}
+              placeholder="Search products..."
             />
           </div>
           {/* Add Product Button */}

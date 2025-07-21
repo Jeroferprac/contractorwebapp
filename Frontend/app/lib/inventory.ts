@@ -137,15 +137,25 @@ export interface Product {
   id: string;
   name: string;
   sku: string;
+  barcode?: string;
   category?: string;
   brand?: string;
   unit?: string;
   current_stock: number;
   min_stock_level: number;
+  reorder_point?: number;
+  max_stock_level?: number;
   cost_price?: number;
   selling_price?: number;
   description?: string;
+  weight?: number;
+  dimensions?: string;
+  is_active?: boolean;
+  track_serial?: boolean;
+  track_batch?: boolean;
+  is_composite?: boolean;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Supplier {
@@ -198,3 +208,9 @@ export interface CreatePurchaseOrderData {
 }
 
 export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>;
+
+export async function getProductByBarcode(barcode: string): Promise<Product | null> {
+  const res = await fetch(`${API_BASE}/products/barcode/${barcode}`);
+  if (!res.ok) return null;
+  return await res.json();
+}
