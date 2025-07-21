@@ -6,7 +6,11 @@ import type {
   CreatePurchaseOrderData,
   // Add other types as needed
 } from "@/types/inventory";
+import { useEffect, useState } from "react";
+import { getProducts, createProduct } from "@/lib/inventory";
+import type { Product, ProductFormData } from "@/types/inventory";
 
+// Correct API base
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
 
 // --- Product APIs ---

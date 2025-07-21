@@ -1,27 +1,28 @@
 import { useState, useEffect } from "react";
 import { getSuppliers, createProductSupplier, updateProductSupplier } from "@/lib/inventory";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import type { Supplier, ProductSupplier } from "@/types/inventory";
 
 interface SupplierPriceFormProps {
   open: boolean;
   onClose: () => void;
   productId: string;
-  initialData?: any;
+  initialData?: ProductSupplier;
   onSaved: () => void;
 }
 
 export default function SupplierPriceForm({ open, onClose, productId, initialData, onSaved }: SupplierPriceFormProps) {
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [form, setForm] = useState<any>(initialData || {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [form, setForm] = useState<ProductSupplier>(initialData || {
     supplier_id: "",
     supplier_price: "",
     lead_time_days: "",
     min_order_qty: "",
     is_preferred: false,
     notes: ""
-  });
+  } as any);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function SupplierPriceForm({ open, onClose, productId, initialDat
           <Input name="lead_time_days" value={form.lead_time_days} onChange={handleChange} placeholder="Lead Time (days)" type="number" />
           <Input name="min_order_qty" value={form.min_order_qty} onChange={handleChange} placeholder="Min Order Qty" />
           <label className="flex items-center gap-2">
-            <input type="checkbox" name="is_preferred" checked={form.is_preferred} onChange={handleChange} />
+            <input type="checkbox" name="is_preferred" checked={!!form.is_preferred} onChange={handleChange} />
             Preferred Supplier
           </label>
           <Input name="notes" value={form.notes} onChange={handleChange} placeholder="Notes" />

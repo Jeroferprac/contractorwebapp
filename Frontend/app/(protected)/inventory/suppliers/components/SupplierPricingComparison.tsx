@@ -4,19 +4,7 @@ import { getProductSuppliers, getSuppliers, deleteProductSupplier } from "@/lib/
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import SupplierPriceForm from "./SupplierPriceForm";
 import { Button } from "@/components/ui/button";
-
-type Supplier = {
-  id: string;
-  name: string;
-};
-
-type ProductSupplier = {
-  id: string;
-  product_id: string;
-  supplier_id: string;
-  supplier_price: number | string;
-  notes?: string;
-};
+import type { Supplier, ProductSupplier } from "@/types/inventory";
 
 interface SupplierPricingComparisonProps {
   productId: string;
@@ -28,7 +16,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editData, setEditData] = useState<any | null>(null);
+  const [editData, setEditData] = useState<ProductSupplier | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function refreshData() {
@@ -36,7 +24,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
     Promise.all([getProductSuppliers(), getSuppliers()])
       .then(([productSuppliers, allSuppliers]) => {
         setSuppliers(allSuppliers);
-        setData((productSuppliers as ProductSupplier[]).filter((ps) => ps.product_id === productId));
+        setData((productSuppliers as ProductSupplier[]).filter((ps) => String(ps.product_id) === String(productId)));
       })
       .finally(() => setLoading(false));
   }
@@ -47,7 +35,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
   }, [productId]);
 
   function getSupplierName(supplierId: string) {
-    const supplier = suppliers.find(s => s.id === supplierId);
+    const supplier = suppliers.find(s => String(s.id) === String(supplierId));
     return supplier ? supplier.name : supplierId;
   }
 
@@ -57,7 +45,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
     try {
       await deleteProductSupplier(id);
       refreshData();
-    } catch (e) {
+    } catch {
       alert("Failed to delete supplier price");
     } finally {
       setDeletingId(null);
@@ -102,13 +90,13 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
           <tbody>
             {data.map((ps) => (
               <tr key={ps.id}>
-                <td className="p-2">{getSupplierName(ps.supplier_id)}</td>
+                <td className="p-2">{getSupplierName(String(ps.supplier_id))}</td>
                 <td className="p-2">₹{ps.supplier_price}</td>
                 <td className="p-2">{ps.notes || "-"}</td>
                 <td className="p-2">
                   <Button size="sm" variant="outline" className="mr-2" onClick={() => { setEditData(ps); setFormOpen(true); }}>Edit</Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(ps.id)} disabled={deletingId === ps.id}>
-                    {deletingId === ps.id ? "Deleting..." : "Delete"}
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(String(ps.id))} disabled={deletingId === String(ps.id)}>
+                    {deletingId === String(ps.id) ? "Deleting..." : "Delete"}
                   </Button>
                 </td>
               </tr>

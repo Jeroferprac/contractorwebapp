@@ -1,116 +1,94 @@
-'use client';
+"use client"
 
-import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useSession } from "next-auth/react"
+import { useState } from "react"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
+import SummaryCards from "./components/SummaryCards"
+import StockReportChart from "./components/StockReportChart"
+import FastMovingItems from "./components/FastMovingItems"
+import QuickActions from "./components/QuickActions"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AddProductForm } from "./products/components/AddProductForm"
+import { SaleForm, type SaleFormData } from "./sales/components/SaleForm"
+import { createProduct, createSale } from "@/lib/inventory"
+import { useToast } from "@/components/ui/use-toast"
 
-import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import SummaryCards from './components/SummaryCards';
-import StockReportChart from './components/StockReportChart';
-import FastMovingItems from './components/FastMovingItems';
-import QuickActions from './components/QuickActions';
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AddProductForm } from './products/components/AddProductForm';
-import { SupplierModal } from './suppliers/components/SupplierModal';
-import { SaleForm, SaleFormData } from './sales/components/SaleForm';
-
-import { createProduct, createSupplier, createSale, getSales } from '@/lib/inventory';
-import { useToast } from '@/components/ui/use-toast';
-
-import type { ProductFormData, SupplierFormData } from '@/types/inventory';
-import type { Product } from "@/types/inventory";
-
-// (Best: use the hook from lib/hooks/useProductByBarcode)
-import { useProductByBarcode } from "@/lib/hooks/useProductByBarcode";
 
 export default function InventoryDashboard() {
-  const { data: session } = useSession();
-  const { toast } = useToast();
+  const { data: session } = useSession()
+  const { toast } = useToast()
 
   // UI States
-  const [addProductOpen, setAddProductOpen] = useState(false);
-  const [addSupplierOpen, setAddSupplierOpen] = useState(false);
-  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
-  const [orderLoading, setOrderLoading] = useState(false);
+  const [addProductOpen, setAddProductOpen] = useState(false)
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false)
+  const [orderLoading, setOrderLoading] = useState(false)
 
   // Handle Add Product
   async function handleAddProduct(form: ProductFormData) {
     try {
-      await createProduct(form);
-      setAddProductOpen(false);
+      await createProduct(form)
+      setAddProductOpen(false)
       toast({
-        title: 'Product added',
+        title: "Product added",
         description: `Product '${form.name}' was added successfully.`,
-        variant: 'success',
-      });
+        variant: "success",
+      })
     } catch (err: any) {
       toast({
-        title: 'Error',
-        description: err.message || 'Failed to add product',
-        variant: 'error',
-      });
-    }
-  }
-
-  // Handle Add Supplier
-  async function handleAddSupplier(form: SupplierFormData) {
-    try {
-      await createSupplier(form);
-      setAddSupplierOpen(false);
-      toast({
-        title: 'Supplier added',
-        description: `Supplier '${form.name}' was added successfully.`,
-        variant: 'success',
-      });
-    } catch (err: any) {
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to add supplier',
-        variant: 'error',
-      });
+        title: "Error",
+        description: err.message || "Failed to add product",
+        variant: "error",
+      })
     }
   }
 
   // Handle Create Order
   async function handleCreateOrder(form: SaleFormData) {
-    setOrderLoading(true);
+    setOrderLoading(true)
     try {
-      await createSale(form);
-      setOrderDialogOpen(false);
+      await createSale(form)
+      setOrderDialogOpen(false)
       toast({
-        title: 'Order placed',
+        title: "Order placed",
         description: `Order for '${form.customer_name}' was created successfully.`,
-        variant: 'success',
-      });
+        variant: "success",
+      })
     } catch (err: any) {
       toast({
-        title: 'Error',
-        description: err.message || 'Failed to create order',
-        variant: 'error',
-      });
+        title: "Error",
+        description: err.message || "Failed to create order",
+        variant: "error",
+      })
     } finally {
-      setOrderLoading(false);
+      setOrderLoading(false)
     }
   }
 
   // Handle CSV Export
   function handleExport() {
     const rows = [
-      ['Metric', 'Value'],
-      ['Total Products', '-'],
-      ['Low Stock', '-'],
-      ['Total Suppliers', '-'],
-    ];
+      ["Metric", "Value"],
+      ["Total Products", "-"],
+      ["Low Stock", "-"],
+      ["Total Suppliers", "-"],
+    ]
+
     const csv = rows
-      .map((r) => r.map(String).map((x) => `"${x.replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'inventory_export.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+      .map((r) =>
+        r
+          .map(String)
+          .map((x) => `"${x.replace(/"/g, '""')}"`)
+          .join(","),
+      )
+      .join("\n")
+
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "inventory_export.csv"
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -128,7 +106,6 @@ export default function InventoryDashboard() {
         <div className="xl:col-span-4 flex flex-col space-y-6 w-full">
           <QuickActions
             onAddProduct={() => setAddProductOpen(true)}
-            onAddSupplier={() => setAddSupplierOpen(true)}
             onCreateOrder={() => setOrderDialogOpen(true)}
             onExport={handleExport}
           />
@@ -138,38 +115,23 @@ export default function InventoryDashboard() {
 
       {/* Add Product Dialog */}
       <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle>Add Product</DialogTitle>
+            <DialogTitle className="text-slate-900 dark:text-slate-100">Add Product</DialogTitle>
           </DialogHeader>
-          <AddProductForm
-            onSubmit={handleAddProduct}
-            onCancel={() => setAddProductOpen(false)}
-          />
+          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setAddProductOpen(false)} />
         </DialogContent>
       </Dialog>
-
-      {/* Add Supplier Dialog */}
-      <SupplierModal
-        open={addSupplierOpen}
-        onClose={() => setAddSupplierOpen(false)}
-        onSubmit={handleAddSupplier}
-        loading={false}
-      />
 
       {/* Create Order Dialog */}
       <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
-        <DialogContent className="p-0">
-          <DialogHeader>
-            <DialogTitle>Create Order</DialogTitle>
+        <DialogContent className="p-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="text-slate-900 dark:text-slate-100">Create Order</DialogTitle>
           </DialogHeader>
-          <SaleForm
-            onSubmit={handleCreateOrder}
-            onCancel={() => setOrderDialogOpen(false)}
-            loading={orderLoading}
-          />
+          <SaleForm onSubmit={handleCreateOrder} onCancel={() => setOrderDialogOpen(false)} loading={orderLoading} />
         </DialogContent>
       </Dialog>
     </DashboardLayout>
-  );
+  )
 }
