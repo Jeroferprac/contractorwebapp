@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 import { getSales } from "@/lib/inventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { parseISO, isSameWeek, getDay, getHours, startOfWeek, endOfWeek, addWeeks, format } from "date-fns";
+import { BarChart3 } from "lucide-react";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const hours = [9, 10, 11, 12, 13, 14, 15, 16];
 
 const getIntensityColor = (intensity: number) => {
   const colors = [
-    "bg-cyan-50", // 0 - lightest
-    "bg-cyan-100", // 1
-    "bg-cyan-200", // 2
-    "bg-cyan-400", // 3
-    "bg-cyan-600", // 4 - darkest
+    "bg-cyan-50 dark:bg-cyan-900/30", // 0 - lightest
+    "bg-cyan-200 dark:bg-cyan-800/60",
+    "bg-cyan-400 dark:bg-cyan-700/80",
+    "bg-blue-400 dark:bg-blue-700/80",
+    "bg-blue-600 dark:bg-blue-900/90", // 4 - darkest
   ];
   return colors[Math.min(intensity, colors.length - 1)] || colors[0];
 };
@@ -73,13 +74,16 @@ export function WeeklySalesChart() {
   const weekLabel = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
 
   return (
-    <Card className="h-fit">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-base font-semibold">Weekly Sales</CardTitle>
+    <Card className="h-fit bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-[#0e172a] dark:via-[#181c2a] dark:to-[#0ea5e9] shadow-xl border-0">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 gap-2">
         <div className="flex items-center gap-2">
-          <button onClick={handlePrevWeek} className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">Prev</button>
-          <span className="text-sm text-gray-500 min-w-[120px] text-center">{weekLabel}</span>
-          <button onClick={handleNextWeek} className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">Next</button>
+          <BarChart3 className="w-5 h-5 text-cyan-500" />
+          <CardTitle className="text-base font-semibold">Weekly Sales</CardTitle>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={handlePrevWeek} className="px-2 py-1 rounded bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-200 font-semibold shadow-sm transition-all duration-200">Prev</button>
+          <span className="text-sm text-gray-500 min-w-[120px] text-center font-medium">{weekLabel}</span>
+          <button onClick={handleNextWeek} className="px-2 py-1 rounded bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-200 font-semibold shadow-sm transition-all duration-200">Next</button>
         </div>
       </CardHeader>
       <CardContent className="pb-4">
@@ -107,11 +111,11 @@ export function WeeklySalesChart() {
               {row.map((intensity, dayIdx) => (
                 <div
                   key={dayIdx}
-                    className={`w-10 h-5 rounded flex items-center justify-center ${getIntensityColor(intensity)} hover:ring-2 hover:ring-cyan-300 cursor-pointer transition-all duration-200`}
-                    title={`Sales: ${intensity}`}
-                  >
-                    {intensity > 0 ? <span className="text-xs text-gray-700">{intensity}</span> : null}
-                  </div>
+                  className={`w-10 h-5 rounded-lg flex items-center justify-center ${getIntensityColor(intensity)} hover:ring-2 hover:ring-cyan-300 cursor-pointer shadow-sm transition-all duration-200`}
+                  title={`Sales: ${intensity}`}
+                >
+                  {intensity > 0 ? <span className="text-xs text-cyan-900 dark:text-cyan-100 font-semibold">{intensity}</span> : null}
+                </div>
               ))}
             </div>
           ))}
@@ -122,7 +126,7 @@ export function WeeklySalesChart() {
           <span>Less</span>
           <div className="flex space-x-1">
             {[0, 1, 2, 3, 4].map((intensity) => (
-              <div key={intensity} className={`w-4 h-4 rounded ${getIntensityColor(intensity)}`} />
+              <div key={intensity} className={`w-4 h-4 rounded-lg shadow-sm border border-cyan-100 dark:border-cyan-900 ${getIntensityColor(intensity)}`} />
             ))}
           </div>
           <span>More</span>

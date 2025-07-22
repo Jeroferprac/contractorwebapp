@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { getSuppliers, createSupplier, createProduct, updateSupplier, deleteSupplier } from "@/lib/inventory"
-import { TopSuppliersChart } from "./components/TopSuppliersChart"
 import { SupplierModal, type SupplierFormData } from "./components/SupplierModal"
 import { AddProductForm } from "../products/components/AddProductForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -21,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import type { CreateProductData, CreateSaleData } from "@/types/inventory";
 import { Plus, Users, UserCheck, UserX, UserPlus } from "lucide-react";
 import {
@@ -46,6 +45,7 @@ import {
 import { cn } from "@/lib/utils"; // If you have a classnames utility, otherwise use className directly
 import type { Supplier } from "./components/SuppliersTable";
 import { Mail, Phone, MapPin, Calendar, BadgeCheck, ClipboardCopy } from "lucide-react";
+import QuickActions from "../components/QuickActions";
 
 type Activity = { action: string; item: string; time: string };
 
@@ -176,13 +176,12 @@ export default function SuppliersPage() {
   // Export to CSV for suppliers
   function handleExport() {
     const rows = [
-      ["Name", "Contact Person", "Email", "Phone", "Address", "Payment Terms"],
+      ["Name", "Contact Person", "Email", "Phone", "Payment Terms"],
       ...filteredSuppliers.map((s) => [
         s.name,
         s.contact_person,
         s.email,
         s.phone,
-        s.address || "",
         s.payment_terms ?? "",
       ]),
     ]
@@ -212,6 +211,7 @@ export default function SuppliersPage() {
         items: form.items.map(item => ({
           ...item,
           quantity: Number(item.quantity) || 0,
+          unit_price: Number(item.unit_price) || 0,
         })),
       };
       await createSale(saleData);
@@ -231,8 +231,7 @@ export default function SuppliersPage() {
 
   // --- Overview Card Data ---
   const totalSuppliers = suppliers.length;
-  const activeSuppliers = suppliers.filter((s) => s.is_active !== false).length;
-  const inactiveSuppliers = suppliers.filter((s) => s.is_active === false).length;
+  // Removed activeSuppliers and inactiveSuppliers (is_active not present)
   const newThisMonth = suppliers.filter((s) => {
     if (!s.created_at) return false;
     const created = new Date(s.created_at);
@@ -248,8 +247,16 @@ export default function SuppliersPage() {
   return (
     <DashboardLayout title="Suppliers">
       <div className="p-4 lg:p-6 min-h-screen bg-gray-50 dark:bg-[#10172a]">
+        <div className="mb-6 flex justify-end">
+          <QuickActions
+            onAddProduct={() => setAddProductOpen(true)}
+            onAddSupplier={() => { setEditSupplier(null); setModalOpen(true); }}
+            onCreateOrder={() => setCreateOrderOpen(true)}
+            onExport={handleExport}
+          />
+        </div>
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-blue-400 to-blue-600 text-white transition-transform duration-200 hover:scale-105 hover:shadow-2xl cursor-pointer">
             <CardContent className="flex flex-col items-start p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -257,24 +264,6 @@ export default function SuppliersPage() {
                 <span className="text-lg font-semibold">Total Suppliers</span>
               </div>
               <div className="text-3xl font-bold">{totalSuppliers}</div>
-            </CardContent>
-          </Card>
-          <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-green-400 to-green-600 text-white transition-transform duration-200 hover:scale-105 hover:shadow-2xl cursor-pointer">
-            <CardContent className="flex flex-col items-start p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <UserCheck className="w-6 h-6 text-white opacity-80" />
-                <span className="text-lg font-semibold">Active</span>
-              </div>
-              <div className="text-3xl font-bold">{activeSuppliers}</div>
-            </CardContent>
-          </Card>
-          <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-red-400 to-red-600 text-white transition-transform duration-200 hover:scale-105 hover:shadow-2xl cursor-pointer">
-            <CardContent className="flex flex-col items-start p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <UserX className="w-6 h-6 text-white opacity-80" />
-                <span className="text-lg font-semibold">Inactive</span>
-              </div>
-              <div className="text-3xl font-bold">{inactiveSuppliers}</div>
             </CardContent>
           </Card>
           <Card className="rounded-2xl shadow-md border-0 bg-gradient-to-br from-purple-400 to-purple-600 text-white transition-transform duration-200 hover:scale-105 hover:shadow-2xl cursor-pointer">
@@ -496,21 +485,10 @@ export default function SuppliersPage() {
             <div className="flex justify-end p-4">
               {/* <PaginationComponent ... /> */}
             </div>
-          </CardContent>
-        </Card>
+                </CardContent>
+              </Card>
 
-        {/* Sidebar cards below table */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="rounded-xl shadow-lg">
-            <CardHeader>
-              <CardTitle>Top Suppliers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TopSuppliersChart />
-            </CardContent>
-          </Card>
-          {/* ...other sidebar cards if any... */}
-        </div>
+        {/* (Removed TopSuppliersChart and sidebar cards for a cleaner, more compact layout) */}
 
         {/* Add Product Dialog */}
         <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>

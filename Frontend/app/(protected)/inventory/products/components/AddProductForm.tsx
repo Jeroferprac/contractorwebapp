@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,15 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import {
   AlertCircle,
-  BarChart3,
   CheckCircle2,
-  DollarSign,
-  FileText,
   Loader2,
-  Settings,
-  Tag,
-  X,
   Zap,
+  X,
+  Tag,
+  BarChart3,
+  DollarSign,
+  Settings,
+  FileText,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -45,6 +44,7 @@ const formSchema = z.object({
   sku: z.string().min(2, {
     message: "SKU must be at least 2 characters.",
   }),
+  barcode: z.string().optional(),
   category: z.string().optional(),
   brand: z.string().optional(),
   unit: z.string().optional(),
@@ -54,13 +54,13 @@ const formSchema = z.object({
   max_stock_level: z.number().optional(),
   cost_price: z.number().optional(),
   selling_price: z.number().optional(),
-  weight: z.string().optional(),
+  description: z.string().optional(),
+  weight: z.number().optional(),
   dimensions: z.string().optional(),
   is_active: z.boolean().optional(),
   track_serial: z.boolean().optional(),
   track_batch: z.boolean().optional(),
   is_composite: z.boolean().optional(),
-  description: z.string().optional(),
 })
 
 export const AddProductForm: React.FC<AddProductFormProps> = ({
@@ -78,6 +78,7 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
     defaultValues: initialData || {
       name: "",
       sku: "",
+      barcode: "",
       category: "",
       brand: "",
       unit: "",
@@ -87,13 +88,13 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
       max_stock_level: 0,
       cost_price: 0,
       selling_price: 0,
-      weight: "",
+      description: "",
+      weight: 0,
       dimensions: "",
       is_active: false,
       track_serial: false,
       track_batch: false,
       is_composite: false,
-      description: "",
     },
     mode: "onChange",
   })
@@ -105,51 +106,44 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
   }
 
   return (
-    <div className="rounded-2xl shadow-2xl bg-white dark:bg-[#181c2a] border border-slate-200 dark:border-slate-800 p-0 transition-all duration-300">
+    <div>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add New Product</h2>
+      <div className="flex flex-col gap-1 p-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-t-2xl">
+        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200 tracking-tight">Add New Product</h2>
+        <span className="text-sm text-blue-100/80">Fill in the product details below</span>
         <Button
           variant="ghost"
           size="icon"
           onClick={onCancel}
-          className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          className="absolute top-4 right-4 text-white hover:text-blue-200"
         >
           <X className="w-5 h-5" />
           <span className="sr-only">Close</span>
         </Button>
       </div>
-
-      {/* Scrollable Content Area */}
-      <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      {/* Form Content Area - visually attached to header */}
+      <div className="bg-white dark:bg-[#181c2a] rounded-b-2xl p-4 max-h-[500px] overflow-y-auto">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8" id="product-form">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-10" id="product-form">
             {/* Basic Information Section */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                    <Tag className="w-6 h-6 text-white" />
-                  </div>
             <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Basic Information</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Essential product details</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <Tag className="w-5 h-5 text-blue-500" /> Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="name"
+                name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
+                        <FormLabel className="text-xs font-semibold">
                           Product Name{" "}
                           <Badge variant="destructive" className="ml-2 text-xs">
                             Required
                           </Badge>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter product name" required />
+                          <Input {...field} placeholder="Enter product name" required className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormDescription>This will be the display name for your product.</FormDescription>
                         <FormMessage />
@@ -161,16 +155,30 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                 name="sku"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
+                        <FormLabel className="text-xs font-semibold">
                           SKU{" "}
                           <Badge variant="destructive" className="ml-2 text-xs">
                             Required
                           </Badge>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter SKU" required />
+                          <Input {...field} placeholder="Enter SKU" required className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormDescription>Stock Keeping Unit (unique product code).</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="barcode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Barcode</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter barcode" className="h-9 text-sm px-2" />
+                        </FormControl>
+                        <FormDescription>Optional: Product barcode.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -180,28 +188,10 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <SelectTrigger className="h-12 text-base border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl">
-                            {categories.map((catObj: { category: string; count?: number }) => (
-                    <SelectItem
-                      key={catObj.category}
-                      value={catObj.category}
-                                className="hover:bg-slate-50 dark:hover:bg-slate-800"
-                    >
-                      {catObj.category}
-                                {typeof catObj.count === "number" && (
-                                  <Badge variant="secondary" className="ml-2 text-xs">
-                                    {catObj.count}
-                                  </Badge>
-                                )}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                        <FormLabel className="text-xs font-semibold">Category</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter category" className="h-9 text-sm px-2" />
+                        </FormControl>
                         <FormDescription>Organize your product by category.</FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -212,9 +202,9 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                 name="brand"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Brand</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Brand</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter brand name" />
+                          <Input {...field} placeholder="Enter brand name" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormDescription>Optional: Specify the product brand.</FormDescription>
                         <FormMessage />
@@ -226,9 +216,9 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                 name="unit"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unit of Measure</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Unit of Measure</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., pieces, kg, liters" />
+                          <Input {...field} placeholder="e.g., pieces, kg, liters" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormDescription>How you measure this product (e.g., pieces, kg).</FormDescription>
                         <FormMessage />
@@ -236,29 +226,23 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                     )}
               />
             </div>
-              </CardContent>
-            </Card>
+          </div>
+            {/* Subtle divider between sections */}
+            <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
           {/* Stock Management Section */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <CardContent className="p-8">
-            <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-lg">
-                    <BarChart3 className="w-6 h-6 text-white" />
-                  </div>
               <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Stock Management</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Inventory levels and thresholds</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-emerald-500" /> Stock Management
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="current_stock"
+                  name="current_stock"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Current Stock</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Current Stock</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" placeholder="0" />
+                          <Input {...field} type="number" placeholder="0" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -269,9 +253,9 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                     name="min_stock_level"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Minimum Stock Level</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Minimum Stock Level</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" placeholder="0" />
+                          <Input {...field} type="number" placeholder="0" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -282,9 +266,9 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                   name="reorder_point"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reorder Point</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Reorder Point</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" placeholder="0" />
+                          <Input {...field} type="number" placeholder="0" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -295,38 +279,31 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                   name="max_stock_level"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Maximum Stock Level</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Maximum Stock Level</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" placeholder="0" />
+                          <Input {...field} type="number" placeholder="0" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                 />
               </div>
-              </CardContent>
-            </Card>
-            {/* Pricing Section */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
-                    <DollarSign className="w-6 h-6 text-white" />
-          </div>
-            <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pricing & Specifications</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Cost and selling prices</p>
             </div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
+            {/* Pricing Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-amber-500" /> Pricing & Specifications
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="cost_price"
+                name="cost_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cost Price</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Cost Price</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" step="0.01" placeholder="0.00" />
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -334,17 +311,17 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                   />
                   <FormField
                     control={form.control}
-                    name="selling_price"
+                name="selling_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
+                        <FormLabel className="text-xs font-semibold">
                           Selling Price{" "}
                           <Badge variant="destructive" className="ml-2 text-xs">
                             Required
                           </Badge>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" step="0.01" placeholder="0.00" required />
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" required className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -355,43 +332,37 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                 name="weight"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Weight</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Weight</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., 1.5 kg" />
+                          <Input {...field} type="number" placeholder="e.g., 1.5" className="h-9 text-sm px-2" />
                         </FormControl>
+                        <FormDescription>Product weight (kg).</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="dimensions"
+                name="dimensions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Dimensions</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Dimensions</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., 10x5x3 cm" />
+                          <Input {...field} placeholder="e.g., 10x5x3 cm" className="h-9 text-sm px-2" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
               />
             </div>
-              </CardContent>
-            </Card>
-            {/* Options Section */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
-                    <Settings className="w-6 h-6 text-white" />
-                  </div>
-            <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Product Options</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Configure tracking and status</p>
-            </div>
           </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
+            {/* Options Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-purple-500" /> Product Options
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="is_active"
@@ -485,27 +456,20 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
-            {/* Description Section */}
-            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl shadow-lg">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Description</h2>
-                    <p className="text-slate-600 dark:text-slate-400">Additional product information</p>
             </div>
-          </div>
-                <div className="space-y-2">
+            <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
+            {/* Description Section */}
+          <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-slate-500" /> Description
+              </h3>
+              <div className="space-y-2">
                   <FormField
                     control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Product Description</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Product Description</FormLabel>
                         <FormControl>
             <Textarea
                             {...field}
@@ -519,37 +483,28 @@ export const AddProductForm: React.FC<AddProductFormProps> = ({
                     )}
             />
           </div>
-              </CardContent>
-            </Card>
-            {/* Status Messages */}
-          {apiError && (
-              <Card className="border-0 shadow-xl bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                    <div>
-                      <h3 className="font-semibold text-red-900 dark:text-red-100">Error</h3>
-                      <p className="text-red-700 dark:text-red-300">{apiError}</p>
-                    </div>
             </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Status Messages */}
+            {apiError && (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4 flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <div>
+                  <h3 className="font-semibold text-red-900 dark:text-red-100">Error</h3>
+                  <p className="text-red-700 dark:text-red-300">{apiError}</p>
+                </div>
+            </div>
+          )}
             {apiSuccess && (
-              <Card className="border-0 shadow-xl bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
-                    <div>
-                      <h3 className="font-semibold text-green-900 dark:text-green-100">Success</h3>
-                      <p className="text-green-700 dark:text-green-300">Product added successfully!</p>
-                    </div>
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4 flex items-center gap-3">
+                <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <div>
+                  <h3 className="font-semibold text-green-900 dark:text-green-100">Success</h3>
+                  <p className="text-green-700 dark:text-green-300">Product added successfully!</p>
+                </div>
       </div>
-                </CardContent>
-              </Card>
             )}
             {/* Action Buttons */}
-            <DialogFooter className="pt-8 border-t border-slate-200 dark:border-slate-700">
+            <DialogFooter className="pt-8 border-t border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-4 md:gap-2">
         <Button
           type="button"
           variant="outline"
