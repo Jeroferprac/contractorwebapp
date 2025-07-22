@@ -91,7 +91,7 @@ const getStockBars = (currentStock: string | number, minStock: string | number) 
 }
 
 
-export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct, headerRight }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
   // State management
 
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)

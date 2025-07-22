@@ -9,6 +9,7 @@ import { SalesReportPieChart } from "./components/SalesReportChart"
 import { SalesOrderTable } from "./components/SalesOrderTable"
 import { SalesSearchBar } from "./components/SalesSearchBar"
 import { PlaceOrderButton } from "./components/PlaceOrderButton"
+import { ProfessionalHeader } from "./components/SalesHeader"
 import QuickActions from "../components/QuickActions"
 import { RecentActivity } from "../products/components/RecentActivity"
 import {
@@ -17,7 +18,6 @@ import {
   DialogHeader as UIDialogHeader,
   DialogTitle as UIDialogTitle,
 } from "@/components/ui/dialog"
-import { ProfessionalHeader } from "./components/SalesHeader"
 import { AddProductForm } from "../products/components/AddProductForm"
 import { SaleForm, type SaleFormData } from "./components/SaleForm"
 import { SupplierModal, type SupplierFormData } from "../suppliers/components/SupplierModal"
@@ -180,12 +180,12 @@ export default function SalesPage() {
     try {
       await createSale({
         ...form,
-        total_amount: form.total_amount,
+        total_amount: Number(form.total_amount),
         items: form.items.map((item) => ({
           product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          line_total: item.line_total,
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+          line_total: item.line_total !== undefined ? Number(item.line_total) : 0,
         })),
       })
       setAddSaleOpen(false)
@@ -207,12 +207,12 @@ export default function SalesPage() {
     try {
       await updateSale(selectedSale.id, {
         ...form,
-        total_amount: form.total_amount,
+        total_amount: Number(form.total_amount),
         items: form.items.map((item) => ({
           product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          line_total: item.line_total,
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+          line_total: item.line_total !== undefined ? Number(item.line_total) : 0,
         })),
       })
       setEditSaleOpen(false)
@@ -321,25 +321,8 @@ export default function SalesPage() {
     <DashboardLayout title="Sales Orders">
       <div className="min-h-screen bg-white dark:bg-[#0b1437] p-4">
         <motion.div style={{ y: contentY }} className="space-y-8">
-          {/* Professional Header Section */}
-          <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="bg-white dark:bg-[#020817] border border-white/20 dark:border-white/10 rounded-xl p-6 shadow-lg"
-          >
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                {displayName}
-              </h1>
-              <p className="text-gray-700">Let's check your store today</p>
-            </div>
-
-            {/* Top bar: Search and Place Order */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <SalesSearchBar value={search} onChange={setSearch} />
-              <PlaceOrderButton onClick={() => setAddSaleOpen(true)} />
-            </div>
-          </motion.div>
+          {/* Header */}
+          <ProfessionalHeader/>
 
           {/* Metric Cards */}
           <MetricCards salesData={rawSales} />
