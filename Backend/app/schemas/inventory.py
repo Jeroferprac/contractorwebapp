@@ -12,7 +12,7 @@ class ProductBase(BaseModel):
     name: str
     sku: str
     barcode: Optional[str] = None
-    category: Optional[str] = None
+    category_name: str 
     brand: Optional[str] = None
     unit: Optional[str] = None  # sqft, pcs, etc.
     current_stock: Optional[Decimal] = 0
@@ -52,9 +52,15 @@ class ProductBulkUpdate(BaseModel):
     products: List[dict]  # List of product updates with id and fields to update
 
 # --- Category response schema ---
+# app/schemas/inventory.py or wherever your schema is
+
 class CategoryOut(BaseModel):
-    category: str
-    count: int
+    id: UUID
+    name: str
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+
 
                ###################     Supplier    #####################
 # --- Shared Base ---

@@ -22,7 +22,7 @@ from app.schemas.inventory import (
     InventoryTransactionCreate, InventoryTransactionOut
 )
 from app.models.inventory import (
-    Product,Supplier, ProductSupplier, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
+    Product,Category,Supplier, ProductSupplier, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
     PurchaseOrderItem, PurchaseOrder, InventoryTransaction)
 
 from app.CRUD.inventory import (create_warehouse_stock,get_all_warehouse_stocks,delete_warehouse_stock,update_warehouse_stock,
@@ -37,22 +37,26 @@ router = APIRouter(prefix="/inventory", tags=["inventory"])
 @router.get("/products", response_model=List[ProductOut])
 def list_products(
     db: Session = Depends(get_db),
-    category: Optional[str] = Query(None, description="Filter by category"),
+    category: Optional[str] = Query(None, description="Filter by category name"),
     brand: Optional[str] = Query(None, description="Filter by brand"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     search: Optional[str] = Query(None, description="Search in name, sku, or barcode"),
     skip: int = Query(0, ge=0, description="Skip items for pagination"),
     limit: int = Query(100, ge=1, le=1000, description="Limit items returned")
 ):
-    query = db.query(Product)
-    
-    # Apply filters
+    query = db.query(Product).options(joinedload(Product.category))
+
+    # Filter by category name (from related Category table)
     if category:
-        query = query.filter(Product.category == category)
+        query = query.join(Product.category).filter(Category.name == category)
+
+    # Other filters remain unchanged
     if brand:
         query = query.filter(Product.brand == brand)
+
     if is_active is not None:
         query = query.filter(Product.is_active == is_active)
+
     if search:
         query = query.filter(
             or_(
@@ -61,7 +65,7 @@ def list_products(
                 Product.barcode.ilike(f"%{search}%")
             )
         )
-    
+
     return query.offset(skip).limit(limit).all()
 
 # POST /api/products - Create a new product
@@ -75,7 +79,18 @@ def create_product(product_in: ProductCreate, db: Session = Depends(get_db)):
     if product_in.barcode and db.query(Product).filter(Product.barcode == product_in.barcode).first():
         raise HTTPException(status_code=400, detail="Barcode already exists")
     
-    db_product = Product(**product_in.dict())
+    # 🔁 Step 4: Handle category creation or reuse
+    category = db.query(Category).filter(Category.name.ilike(product_in.category_name.strip())).first()
+    if not category:
+        category = Category(name=product_in.category_name.strip())
+        db.add(category)
+        db.commit()
+        db.refresh(category)
+
+    # Create product with linked category_id
+    product_data = product_in.dict(exclude={"category_name"})
+    db_product = Product(**product_data, category_id=category.id)
+
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -138,16 +153,24 @@ def bulk_update_products(bulk_update: ProductBulkUpdate, db: Session = Depends(g
     }
 
 # GET /api/products/categories - Get all categories
-@router.get("/products/categories", response_model=List[CategoryOut])
-def get_categories(db: Session = Depends(get_db)):
+@router.get("/products/categories", response_model=List[dict])
+def get_categories_with_counts(db: Session = Depends(get_db)):
     categories = db.query(
-        Product.category,
-        func.count(Product.id).label('count')
-    ).filter(
-        and_(Product.category.isnot(None), Product.is_active == True)
-    ).group_by(Product.category).all()
-    
-    return [{"category": cat.category, "count": cat.count} for cat in categories]
+        Category.id,
+        Category.name,
+        func.count(Product.id).label("product_count")
+    ).outerjoin(Product, Product.category_id == Category.id) \
+     .group_by(Category.id).order_by(Category.name).all()
+
+    return [
+        {
+            "id": cat.id,
+            "name": cat.name,
+            "product_count": cat.product_count
+        }
+        for cat in categories
+    ]
+
 
 # GET /api/products/{id}/stock - Stock across all warehouses
 @router.get("/products/{id}/stock")

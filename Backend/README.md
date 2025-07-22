@@ -57,6 +57,9 @@ contractor_portal/
 │   │   ├── database.py      # Database connection
 │   │   └── security.py      # Security utilities
 │   │   └── types.py         # Input HTTP URL Supports
+│   ├── CRUD/
+│   │   ├── __init__.py      # Init file
+│   │   ├── inventory.py     # Inventory CRUD operations
 │   ├── models/
 │   │   ├── __init__.py      # Init file
 │   │   ├── base.py          # Base model class
