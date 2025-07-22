@@ -10,12 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 
 interface AddProductFormProps {
+  onSubmit: (form: CreateProductData) => void;
   onCancel: () => void;
   initialData?: Partial<CreateProductData>;
   loading?: boolean;
 }
 
-export function AddProductForm({ onCancel, initialData, loading }: Omit<AddProductFormProps, 'onSubmit'>) {
+export function AddProductForm({ onSubmit, onCancel, initialData, loading }: AddProductFormProps) {
   const [form, setForm] = useState({
     name: initialData?.name ?? "",
     sku: initialData?.sku ?? "",
@@ -144,7 +145,7 @@ export function AddProductForm({ onCancel, initialData, loading }: Omit<AddProdu
       };
       await createProduct(payload);
       setApiSuccess(true);
-      if (typeof onCancel === "function") onCancel();
+      if (typeof onSubmit === "function") onSubmit(payload);
     } catch {
       setApiError("Failed to add product.");
     } finally {

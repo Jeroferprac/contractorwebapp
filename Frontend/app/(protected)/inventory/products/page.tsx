@@ -11,7 +11,6 @@ import {
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
 import type { Product } from "@/lib/inventory"
-
 import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { AddProductForm } from "./components/AddProductForm"
@@ -22,12 +21,12 @@ import { Button } from "@/components/ui/button"
 import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
 
 import { createSale } from "@/lib/inventory"
-import type { CreateProductData } from "./components/AddProductForm"
 import { motion, AnimatePresence } from "framer-motion"
 import { Download, Sparkles } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { useUser } from "@/lib/hooks/useUser"
 import QuickActions from "../components/QuickActions"
+import type { CreateProductData } from "@/types/inventory";
 
 type User = { name?: string }
 
@@ -48,6 +47,10 @@ export default function ProductsPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
   const user = useUser(token) as User | null
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
+
+  const [addError, setAddError] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
 
   // Fetch products function
@@ -381,7 +384,7 @@ export default function ProductsPage() {
               Add New Product
             </DialogTitle>
           </DialogHeader>
-          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} />
+          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} loading={loading} />
           {addError && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -428,14 +431,23 @@ export default function ProductsPage() {
                 ? {
                     name: editProduct.name,
                     sku: editProduct.sku,
+                    barcode: editProduct.barcode ?? "",
                     category: editProduct.category ?? "",
                     brand: editProduct.brand ?? "",
                     unit: editProduct.unit ?? "",
-                    current_stock: editProduct.current_stock ?? "",
-                    min_stock_level: editProduct.min_stock_level ?? "",
-                    cost_price: editProduct.cost_price ?? "",
-                    selling_price: editProduct.selling_price ?? "",
+                    current_stock: editProduct.current_stock ?? 0,
+                    min_stock_level: editProduct.min_stock_level ?? 0,
+                    reorder_point: editProduct.reorder_point ?? 0,
+                    max_stock_level: editProduct.max_stock_level ?? 0,
+                    cost_price: editProduct.cost_price ?? 0,
+                    selling_price: editProduct.selling_price ?? 0,
                     description: editProduct.description ?? "",
+                    weight: String(editProduct.weight ?? ""),
+                    dimensions: String(editProduct.dimensions ?? ""),
+                    is_active: editProduct.is_active ?? true,
+                    track_serial: editProduct.track_serial ?? false,
+                    track_batch: editProduct.track_batch ?? false,
+                    is_composite: editProduct.is_composite ?? false,
                   }
                 : undefined
             }

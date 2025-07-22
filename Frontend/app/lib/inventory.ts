@@ -3,7 +3,7 @@ import type {
   CreateProductData,
   CreateSupplierData,
   CreateSaleData,
-  CreatePurchaseOrderData,
+  CreatePurchaseOrderData
   // Add other types as needed
 } from "@/types/inventory";
 
@@ -18,8 +18,6 @@ export const createProduct = (data: CreateProductData) =>
     body: JSON.stringify(data),
   }).then(res => res.json());
 export const getLowStockProducts = () => fetch(`${API_BASE}/products/low-stock`).then(res => res.json());
-export const getProductByBarcode = (barcode: string) =>
-  fetch(`${API_BASE}/products/barcode/${barcode}`).then(res => res.json());
 export const bulkUpdateProducts = (data: Record<string, unknown>) =>
   fetch(`${API_BASE}/products/bulk-update`, {
     method: 'POST',
@@ -136,28 +134,7 @@ export const adjustInventory = (
     body: JSON.stringify({ product_id, quantity, notes, transaction_type }),
   });
 
-// --- Purchase Summary ---
-export const getPurchaseSummaryBySupplier = () => fetchWithError(`${API_BASE}/purchase/summary/by-supplier`);
-export const getPurchaseSummaryByProduct = () => fetchWithError(`${API_BASE}/purchase/summary/by-product`);
-
-// --- Purchase Orders APIs ---
-export const getPurchaseOrders = () => fetchWithError(`${API_BASE}/purchase-orders`);
-export const getPurchaseOrder = (id: string) => fetchWithError(`${API_BASE}/purchase-orders/${id}`);
-export const createPurchaseOrder = (data: any) =>
-  fetchWithError(`${API_BASE}/purchase-orders`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-export const updatePurchaseOrder = (id: string, data: any) =>
-  fetchWithError(`${API_BASE}/purchase-orders/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-
-  // --- Types ---
+// --- Types ---
 export interface Product {
   id: string;
   name: string;
@@ -217,21 +194,6 @@ export interface PurchaseOrder {
   items: PurchaseOrderItem[];
 }
 
-export interface CreatePurchaseOrderData {
-  supplier_id: string;
-  po_number?: string;
-  order_date?: string;
-  total_amount: number;
-  status?: string;
-  items: {
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    line_total: number;
-    received_qty?: number;
-  }[];
-}
-
 export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>;
 
 export async function getProductByBarcode(barcode: string): Promise<Product | null> {
@@ -239,4 +201,3 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
   if (!res.ok) return null;
   return await res.json();
 }
-
