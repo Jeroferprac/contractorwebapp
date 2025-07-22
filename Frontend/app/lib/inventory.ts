@@ -3,8 +3,8 @@ import type {
   CreateProductData,
   CreateSupplierData,
   CreateSaleData,
-  CreatePurchaseOrderData,
-  ProductFormData,
+  CreatePurchaseOrderData
+  // Add other types as needed
 } from "@/types/inventory";
 
 // Export the local Product interface if defined
@@ -45,8 +45,6 @@ export const createProduct = (data: CreateProductData) =>
     body: JSON.stringify(data),
   }).then(res => res.json());
 export const getLowStockProducts = () => fetch(`${API_BASE}/products/low-stock`).then(res => res.json());
-export const getProductByBarcode = (barcode: string) =>
-  fetch(`${API_BASE}/products/barcode/${barcode}`).then(res => res.json());
 export const bulkUpdateProducts = (data: Record<string, unknown>) =>
   fetch(`${API_BASE}/products/bulk-update`, {
     method: 'POST',
@@ -161,3 +159,70 @@ export const adjustInventory = (
     body: JSON.stringify({ product_id, quantity, notes, transaction_type }),
   });
 
+// --- Types ---
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  category?: string;
+  brand?: string;
+  unit?: string;
+  current_stock: number;
+  min_stock_level: number;
+  reorder_point?: number;
+  max_stock_level?: number;
+  cost_price?: number;
+  selling_price?: number;
+  description?: string;
+  weight?: number;
+  dimensions?: string;
+  is_active?: boolean;
+  track_serial?: boolean;
+  track_batch?: boolean;
+  is_composite?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  payment_terms?: number;
+  created_at: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  po_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  received_qty: number;
+  created_at: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplier_id: string;
+  po_number?: string;
+  order_date: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  supplier?: Supplier;
+  items: PurchaseOrderItem[];
+}
+
+export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>;
+
+export async function getProductByBarcode(barcode: string): Promise<Product | null> {
+  const res = await fetch(`${API_BASE}/products/barcode/${barcode}`);
+  if (!res.ok) return null;
+  return await res.json();
+}

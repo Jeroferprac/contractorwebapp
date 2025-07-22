@@ -7,8 +7,8 @@ import {
   adjustInventory,
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
-import type { Product } from "@/types/inventory"
-
+import type { Product } from "@/lib/inventory"
+import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { AddProductForm } from "./components/AddProductForm"
 import { SupplierModal } from "../suppliers/components/SupplierModal"
@@ -21,6 +21,9 @@ import { createSale } from "@/lib/inventory"
 import { motion, AnimatePresence } from "framer-motion"
 import { Download, Sparkles } from "lucide-react"
 import QuickActions from "../components/QuickActions"
+import type { CreateProductData } from "@/types/inventory";
+
+type User = { name?: string }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -38,17 +41,10 @@ export default function ProductsPage() {
   const { toast } = useToast()
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
 
-  // Extract unique categories for AddProductForm
-  const categories = Array.from(new Set(products.map((p) => p.category).filter((c): c is string => !!c))).map((category) => ({ category }));
+  const [addError, setAddError] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleAddProduct(values: Record<string, unknown>) {
-    setSubmitting(true);
-    // TODO: Implement product creation logic here
-    // For now, just log the values to avoid unused var warning
-    console.log('AddProductForm submitted:', values);
-    setSubmitting(false);
-    setDialogOpen(false);
-  }
 
   // Fetch products function
   async function fetchProducts() {
@@ -288,14 +284,22 @@ export default function ProductsPage() {
 
       {/* Enhanced Add Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-transparent border-0 shadow-none">
-          <AddProductForm
-            onCancel={() => setDialogOpen(false)}
-            onSubmit={handleAddProduct}
-            loading={loading}
-            submitting={submitting}
-            categories={categories}
-          />
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-background to-muted/20 border border-border/50 shadow-2xl backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+              Add New Product
+            </DialogTitle>
+          </DialogHeader>
+          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} loading={loading} />
+          {addError && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-red-500 text-sm mt-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20"
+            >
+              {addError}
+            </motion.div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -333,15 +337,20 @@ export default function ProductsPage() {
                 ? {
                     name: editProduct.name,
                     sku: editProduct.sku,
+                    barcode: editProduct.barcode ?? "",
                     category: editProduct.category ?? "",
                     brand: editProduct.brand ?? "",
                     unit: editProduct.unit ?? "",
-                    current_stock: editProduct.current_stock ?? "",
-                    min_stock_level: editProduct.min_stock_level ?? "",
-                    cost_price: Number(editProduct.cost_price ?? 0),
-                    selling_price: Number(editProduct.selling_price ?? 0),
+                    current_stock: editProduct.current_stock ?? 0,
+                    min_stock_level: editProduct.min_stock_level ?? 0,
+                    reorder_point: editProduct.reorder_point ?? 0,
+                    max_stock_level: editProduct.max_stock_level ?? 0,
+                    cost_price: editProduct.cost_price ?? 0,
+                    selling_price: editProduct.selling_price ?? 0,
                     description: editProduct.description ?? "",
-                    is_active: editProduct.is_active ?? false,
+                    weight: String(editProduct.weight ?? ""),
+                    dimensions: String(editProduct.dimensions ?? ""),
+                    is_active: editProduct.is_active ?? true,
                     track_serial: editProduct.track_serial ?? false,
                     track_batch: editProduct.track_batch ?? false,
                     is_composite: editProduct.is_composite ?? false,

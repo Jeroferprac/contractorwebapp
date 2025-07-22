@@ -2,6 +2,7 @@ import uuid
 from uuid import uuid4
 from sqlalchemy import Column, String, Text, DECIMAL, TIMESTAMP, func, UniqueConstraint, Integer, ForeignKey, Boolean, Date,DateTime
 from sqlalchemy.dialects.postgresql import UUID
+from typing import Optional
 from app.models.base import BaseModel
 from sqlalchemy.orm import relationship
 
@@ -11,7 +12,7 @@ class Product(BaseModel):
     name = Column(String(255), nullable=False)
     sku = Column(String(50), nullable=False, unique=True)
     barcode = Column(String(100), unique=True)
-    category = Column(String(100))
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"))
     brand = Column(String(100))
     unit = Column(String(20))  # e.g., sqft, pieces, lbs
     current_stock = Column(DECIMAL(10, 2), default=0)
@@ -30,8 +31,22 @@ class Product(BaseModel):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
+    category = relationship("Category", back_populates="products")
     transactions = relationship("InventoryTransaction", back_populates="product")
 
+    @property
+    def category_name(self) -> Optional[str]:
+        return self.category.name if self.category else None
+
+# models/category.py
+class Category(BaseModel):
+    __tablename__ = "categories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    name = Column(String(100), unique=True, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    products = relationship("Product", back_populates="category")
 class Supplier(BaseModel):
     __tablename__ = "suppliers"
 
