@@ -3,16 +3,12 @@
 import { useState, useEffect } from "react"
 import {
   getProducts,
-  createProduct,
-  updateProduct,
   deleteProduct,
-  createSupplier,
   adjustInventory,
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
-import type { Product } from "@/lib/inventory"
+import type { Product } from "@/types/inventory"
 
-import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
 import { AddProductForm } from "./components/AddProductForm"
 import { SupplierModal } from "../suppliers/components/SupplierModal"
@@ -22,14 +18,9 @@ import { Button } from "@/components/ui/button"
 import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
 
 import { createSale } from "@/lib/inventory"
-import type { CreateProductData } from "./components/AddProductForm"
 import { motion, AnimatePresence } from "framer-motion"
 import { Download, Sparkles } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
-import { useUser } from "@/lib/hooks/useUser"
 import QuickActions from "../components/QuickActions"
-
-type User = { name?: string }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -42,11 +33,8 @@ export default function ProductsPage() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
 
-  const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { toast } = useToast()
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-  const user = useUser(token) as User | null
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
 
 
@@ -55,9 +43,6 @@ export default function ProductsPage() {
     try {
       const data = await getProducts();
       setProducts(data);
-    } catch (err) {
-      // Optionally set an error state here if you want to show an error message
-      // setError("Failed to load products");
     } finally {
       setLoading(false); // <-- Ensure loading is set to false
     }
@@ -68,14 +53,6 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  // Handler to call after a product is added or edited
-  function handleProductFormSuccess() {
-    fetchProducts(); // Refetch the product list
-    setDialogOpen(false); // Close the add dialog
-    setEditDialogOpen(false); // Close the edit dialog
-    setEditProduct(null); // Reset edit state
-  }
-
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -85,62 +62,14 @@ export default function ProductsPage() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const recentActivities = products.slice(0, 5).map((product) => ({
-    action: "Added",
-    count: Number(product.current_stock) || 1,
-    product: product.name,
-    name: "System",
-    surname: "",
-    avatar: "",
-    time: product.created_at ? formatDistanceToNow(new Date(product.created_at), { addSuffix: true }) : "recently",
-  }))
-
-  async function handleAddProduct(form: CreateProductData) {
-    try {
-      const newProduct = await createProduct(form)
-      setDialogOpen(false)
-      setProducts((prev) => [newProduct, ...prev])
-      toast({
-        title: "Product added",
-        description: `Product '${form.name}' was added successfully.`,
-        variant: "success",
-      })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add product"
-      setAddError(errorMessage)
-      toast({ title: "Error", description: errorMessage, variant: "error" })
-    }
-  }
-
-  async function handleAddSupplier(form: any) {
+  async function handleAddSupplier() {
 
     try {
-      // await createSupplier(form) // This line was removed as per the new_code
       toast({
         title: "Supplier added",
-        description: `Supplier '${form.name}' was added successfully.`,
+        description: `Supplier added successfully.`,
         variant: "success",
       })
-
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" })
-    }
-  }
-
-  async function handleEditProduct(form: CreateProductData) {
-    if (!editProduct) return
-    setEditLoading(true)
-    try {
-      const updated = await updateProduct(editProduct.id, form)
-      setProducts((prev) => prev.map((p) => (p.id === editProduct.id ? updated : p)))
-      toast({
-        title: "Product updated",
-        description: `Product '${form.name}' was updated successfully.`,
-        variant: "success",
-      })
-      setEditProduct(null)
-      setEditDialogOpen(false)
-
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add supplier"
       toast({ title: "Error", description: errorMessage, variant: "error" })
@@ -263,22 +192,6 @@ export default function ProductsPage() {
   }
 
 
-  if (error) {
-    return (
-      <DashboardLayout title="Products">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-center min-h-[60vh]"
-        >
-          <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-red-500/10 to-pink-500/10 border border-red-500/20 shadow-2xl backdrop-blur-sm">
-            <p className="text-red-500 font-medium">{error}</p>
-          </div>
-        </motion.div>
-      </DashboardLayout>
-    )
-  }
-
   return (
     <DashboardLayout title="Products">
       {/* Enhanced Header */}
@@ -331,18 +244,6 @@ export default function ProductsPage() {
         </motion.div>
       </motion.div>
 
-      {/* Enhanced Recent Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="flex flex-col md:flex-row gap-6 w-full max-w-7xl mx-auto mb-6"
-      >
-        <div className="flex-1 min-w-0" style={{ flexBasis: "70%" }}>
-          <RecentActivity activities={recentActivities} />
-        </div>
-      </motion.div>
-
       {/* Enhanced Product Table */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <ProductTable
@@ -363,8 +264,8 @@ export default function ProductsPage() {
               setLoading(true)
               const updated = await getProducts()
               setProducts(updated)
-            } catch (err: any) {
-              toast({ title: "Error", description: err.message || "Failed to adjust stock", variant: "error" })
+            } catch (err: unknown) {
+              toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to adjust stock", variant: "error" })
             } finally {
               setLoading(false)
             }
@@ -381,16 +282,7 @@ export default function ProductsPage() {
               Add New Product
             </DialogTitle>
           </DialogHeader>
-          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} />
-          {addError && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-red-500 text-sm mt-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20"
-            >
-              {addError}
-            </motion.div>
-          )}
+          <AddProductForm onCancel={() => setDialogOpen(false)} />
         </DialogContent>
       </Dialog>
 
@@ -418,7 +310,6 @@ export default function ProductsPage() {
             </DialogTitle>
           </DialogHeader>
           <AddProductForm
-            onSubmit={handleEditProduct}
             onCancel={() => {
               setEditDialogOpen(false)
               setEditProduct(null)
@@ -433,13 +324,17 @@ export default function ProductsPage() {
                     unit: editProduct.unit ?? "",
                     current_stock: editProduct.current_stock ?? "",
                     min_stock_level: editProduct.min_stock_level ?? "",
-                    cost_price: editProduct.cost_price ?? "",
-                    selling_price: editProduct.selling_price ?? "",
+                    cost_price: Number(editProduct.cost_price ?? 0),
+                    selling_price: Number(editProduct.selling_price ?? 0),
                     description: editProduct.description ?? "",
+                    is_active: editProduct.is_active ?? false,
+                    track_serial: editProduct.track_serial ?? false,
+                    track_batch: editProduct.track_batch ?? false,
+                    is_composite: editProduct.is_composite ?? false,
                   }
                 : undefined
             }
-            loading={editLoading}
+            loading={loading}
           />
         </DialogContent>
       </Dialog>

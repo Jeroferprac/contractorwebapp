@@ -2,479 +2,583 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { getCategories, createProduct } from "@/lib/inventory"
-import type { CreateProductData } from "@/types/inventory"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertCircle,
+  BarChart3,
+  CheckCircle2,
+  DollarSign,
+  FileText,
+  Loader2,
+  Settings,
+  Tag,
+  X,
+  Zap,
+} from "lucide-react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { DialogFooter } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AlertCircle, BarChart3, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 interface AddProductFormProps {
   onCancel: () => void
-  initialData?: Partial<CreateProductData>
-  loading?: boolean
+  onSubmit: (values: z.infer<typeof formSchema>) => Promise<void>
+  initialData?: unknown
+  loading: boolean
+  submitting: boolean
+  apiError?: string | null
+  apiSuccess?: boolean
+  categories: { category: string; count?: number }[]
 }
 
-export function AddProductForm({ onCancel, initialData, loading }: Omit<AddProductFormProps, "onSubmit">) {
-  const [form, setForm] = useState({
-    name: initialData?.name ?? "",
-    sku: initialData?.sku ?? "",
-    category: initialData?.category ?? "",
-    brand: initialData?.brand ?? "",
-    unit: initialData?.unit ?? "",
-    current_stock: initialData?.current_stock !== undefined ? String(initialData.current_stock) : "",
-    min_stock_level: initialData?.min_stock_level !== undefined ? String(initialData.min_stock_level) : "",
-    reorder_point: initialData?.reorder_point !== undefined ? String(initialData.reorder_point) : "",
-    max_stock_level: initialData?.max_stock_level !== undefined ? String(initialData.max_stock_level) : "",
-    cost_price: initialData?.cost_price !== undefined ? String(initialData.cost_price) : "",
-    selling_price: initialData?.selling_price !== undefined ? String(initialData.selling_price) : "",
-    description: initialData?.description ?? "",
-    weight: initialData?.weight ?? "",
-    dimensions: initialData?.dimensions ?? "",
-    is_active: initialData?.is_active ?? true,
-    track_serial: initialData?.track_serial ?? false,
-    track_batch: initialData?.track_batch ?? false,
-    is_composite: initialData?.is_composite ?? false,
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Product name must be at least 2 characters.",
+  }),
+  sku: z.string().min(2, {
+    message: "SKU must be at least 2 characters.",
+  }),
+  category: z.string().optional(),
+  brand: z.string().optional(),
+  unit: z.string().optional(),
+  current_stock: z.number().optional(),
+  min_stock_level: z.number().optional(),
+  reorder_point: z.number().optional(),
+  max_stock_level: z.number().optional(),
+  cost_price: z.number().optional(),
+  selling_price: z.number().optional(),
+  weight: z.string().optional(),
+  dimensions: z.string().optional(),
+  is_active: z.boolean().optional(),
+  track_serial: z.boolean().optional(),
+  track_batch: z.boolean().optional(),
+  is_composite: z.boolean().optional(),
+  description: z.string().optional(),
+})
+
+export const AddProductForm: React.FC<AddProductFormProps> = ({
+  onCancel,
+  onSubmit,
+  initialData,
+  loading,
+  submitting,
+  apiError,
+  apiSuccess,
+  categories = [],
+}) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: initialData || {
+      name: "",
+      sku: "",
+      category: "",
+      brand: "",
+      unit: "",
+      current_stock: 0,
+      min_stock_level: 0,
+      reorder_point: 0,
+      max_stock_level: 0,
+      cost_price: 0,
+      selling_price: 0,
+      weight: "",
+      dimensions: "",
+      is_active: false,
+      track_serial: false,
+      track_batch: false,
+      is_composite: false,
+      description: "",
+    },
+    mode: "onChange",
   })
 
-  const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [apiError, setApiError] = useState<string | null>(null)
-  const [categories, setCategories] = useState<{ category: string; count?: number }[]>([])
+  const isInvalid = !form.formState.isValid
 
-  useEffect(() => {
-    getCategories().then((data) => {
-      if (Array.isArray(data)) {
-        setCategories(data)
-      } else if (data?.categories) {
-        setCategories(data.categories)
-      }
-    })
-  }, [])
-
-  function validate(currentForm = form) {
-    const newErrors: { [key: string]: string } = {}
-    if (!currentForm.name.trim()) newErrors.name = "Product name is required"
-    if (!currentForm.sku.trim()) newErrors.sku = "SKU is required"
-    if (!String(currentForm.selling_price).trim()) newErrors.selling_price = "Selling price is required"
-    if (currentForm.selling_price && isNaN(Number(currentForm.selling_price)))
-      newErrors.selling_price = "Must be a valid number"
-    if (currentForm.current_stock && isNaN(Number(currentForm.current_stock)))
-      newErrors.current_stock = "Must be a valid number"
-    if (currentForm.min_stock_level && isNaN(Number(currentForm.min_stock_level)))
-      newErrors.min_stock_level = "Must be a valid number"
-    if (currentForm.reorder_point && isNaN(Number(currentForm.reorder_point)))
-      newErrors.reorder_point = "Must be a valid number"
-    if (currentForm.max_stock_level && isNaN(Number(currentForm.max_stock_level)))
-      newErrors.max_stock_level = "Must be a valid number"
-    if (currentForm.cost_price && isNaN(Number(currentForm.cost_price))) newErrors.cost_price = "Must be a valid number"
-    return newErrors
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    await onSubmit(values)
   }
-
-  useEffect(() => {
-    setErrors(validate())
-  }, [form])
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    const { name, value } = e.target
-    setForm({ ...form, [name]: value })
-  }
-
-  const handleCheckbox = (name: string, checked: boolean) => {
-    setForm({ ...form, [name]: checked })
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setApiError(null)
-
-    const validationErrors = validate()
-    setErrors(validationErrors)
-
-    if (Object.keys(validationErrors).length > 0) {
-      return
-    }
-
-    setSubmitting(true)
-    try {
-      const payload: CreateProductData = {
-        name: form.name,
-        sku: form.sku,
-        category: form.category || undefined,
-        brand: form.brand || undefined,
-        unit: form.unit || undefined,
-        current_stock: form.current_stock !== "" ? Number(form.current_stock) : 0,
-        min_stock_level: form.min_stock_level !== "" ? Number(form.min_stock_level) : 0,
-        reorder_point: form.reorder_point !== "" ? Number(form.reorder_point) : 0,
-        max_stock_level: form.max_stock_level !== "" ? Number(form.max_stock_level) : 0,
-        cost_price: form.cost_price !== "" ? Number(form.cost_price) : 0,
-        selling_price: form.selling_price !== "" ? Number(form.selling_price) : 0,
-        description: form.description || undefined,
-        weight: form.weight || undefined,
-        dimensions: form.dimensions || undefined,
-        is_active: form.is_active,
-        track_serial: form.track_serial,
-        track_batch: form.track_batch,
-        is_composite: form.is_composite,
-      }
-
-      await createProduct(payload)
-      onCancel()
-    } catch {
-      setApiError("Failed to add product. Please try again.")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const isInvalid = Object.keys(errors).length > 0
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-      {/* Modal Content */}
+    <div className="rounded-2xl shadow-2xl bg-white dark:bg-[#181c2a] border border-slate-200 dark:border-slate-800 p-0 transition-all duration-300">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add New Product</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onCancel}
+          className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        >
+          <X className="w-5 h-5" />
+          <span className="sr-only">Close</span>
+        </Button>
+      </div>
+
+      {/* Scrollable Content Area */}
       <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="grid grid-cols-2 gap-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8" id="product-form">
+            {/* Basic Information Section */}
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+                    <Tag className="w-6 h-6 text-white" />
+                  </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Product Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Enter product name"
-                className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                }`}
-              />
-              {errors.name && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm mt-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.name}
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Basic Information</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Essential product details</p>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                SKU <span className="text-red-500">*</span>
-              </label>
-              <Input
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Product Name{" "}
+                          <Badge variant="destructive" className="ml-2 text-xs">
+                            Required
+                          </Badge>
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter product name" required />
+                        </FormControl>
+                        <FormDescription>This will be the display name for your product.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                 name="sku"
-                value={form.sku}
-                onChange={handleChange}
-                placeholder="Enter SKU"
-                className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.sku ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                }`}
-              />
-              {errors.sku && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm mt-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.sku}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-              <Select value={form.category} onValueChange={(value) => setForm({ ...form, category: value })}>
-                <SelectTrigger className="h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500">
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          SKU{" "}
+                          <Badge variant="destructive" className="ml-2 text-xs">
+                            Required
+                          </Badge>
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter SKU" required />
+                        </FormControl>
+                        <FormDescription>Stock Keeping Unit (unique product code).</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger className="h-12 text-base border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  {categories.map((catObj) => (
+                          <SelectContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl">
+                            {categories.map((catObj: { category: string; count?: number }) => (
                     <SelectItem
                       key={catObj.category}
                       value={catObj.category}
-                      className="text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       {catObj.category}
+                                {typeof catObj.count === "number" && (
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    {catObj.count}
+                                  </Badge>
+                                )}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand</label>
-              <Input
+                        <FormDescription>Organize your product by category.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                 name="brand"
-                value={form.brand}
-                onChange={handleChange}
-                placeholder="Enter brand name"
-                className="h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit of Measure</label>
-              <Input
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter brand name" />
+                        </FormControl>
+                        <FormDescription>Optional: Specify the product brand.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                 name="unit"
-                value={form.unit}
-                onChange={handleChange}
-                placeholder="e.g., pieces, kg, liters"
-                className="h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit of Measure</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., pieces, kg, liters" />
+                        </FormControl>
+                        <FormDescription>How you measure this product (e.g., pieces, kg).</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
               />
             </div>
-          </div>
-
+              </CardContent>
+            </Card>
           {/* Stock Management Section */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardContent className="p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Stock Management</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Inventory levels and thresholds</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Stock</label>
-                <Input
-                  name="current_stock"
-                  type="number"
-                  value={form.current_stock}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.current_stock ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                  }`}
-                />
-                {errors.current_stock && (
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm mt-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.current_stock}
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl shadow-lg">
+                    <BarChart3 className="w-6 h-6 text-white" />
                   </div>
-                )}
-              </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Minimum Stock Level
-                </label>
-                <Input
-                  name="min_stock_level"
-                  type="number"
-                  value={form.min_stock_level}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.min_stock_level ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                  }`}
-                />
-                {errors.min_stock_level && (
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm mt-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.min_stock_level}
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Stock Management</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Inventory levels and thresholds</p>
                   </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reorder Point</label>
-                <Input
-                  name="reorder_point"
-                  type="number"
-                  value={form.reorder_point}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.reorder_point ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Maximum Stock Level
-                </label>
-                <Input
-                  name="max_stock_level"
-                  type="number"
-                  value={form.max_stock_level}
-                  onChange={handleChange}
-                  placeholder="0"
-                  className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                    errors.max_stock_level ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                  }`}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cost Price</label>
-              <Input
-                name="cost_price"
-                type="number"
-                step="0.01"
-                value={form.cost_price}
-                onChange={handleChange}
-                placeholder="0.00"
-                className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.cost_price ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                }`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Selling Price <span className="text-red-500">*</span>
-              </label>
-              <Input
-                name="selling_price"
-                type="number"
-                step="0.01"
-                value={form.selling_price}
-                onChange={handleChange}
-                placeholder="0.00"
-                className={`h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 ${
-                  errors.selling_price ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
-                }`}
-              />
-              {errors.selling_price && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm mt-2">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.selling_price}
                 </div>
-              )}
-            </div>
-
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="current_stock"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Stock</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="min_stock_level"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Minimum Stock Level</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                  name="reorder_point"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reorder Point</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                  name="max_stock_level"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maximum Stock Level</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" placeholder="0" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                />
+              </div>
+              </CardContent>
+            </Card>
+            {/* Pricing Section */}
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                    <DollarSign className="w-6 h-6 text-white" />
+          </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Weight</label>
-              <Input
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pricing & Specifications</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Cost and selling prices</p>
+            </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="cost_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cost Price</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="selling_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Selling Price{" "}
+                          <Badge variant="destructive" className="ml-2 text-xs">
+                            Required
+                          </Badge>
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" step="0.01" placeholder="0.00" required />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                 name="weight"
-                value={form.weight}
-                onChange={handleChange}
-                placeholder="e.g., 1.5 kg"
-                className="h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Weight</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., 1.5 kg" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="dimensions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dimensions</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., 10x5x3 cm" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
               />
             </div>
-
+              </CardContent>
+            </Card>
+            {/* Options Section */}
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                    <Settings className="w-6 h-6 text-white" />
+                  </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Dimensions</label>
-              <Input
-                name="dimensions"
-                value={form.dimensions}
-                onChange={handleChange}
-                placeholder="e.g., 10x5x3 cm"
-                className="h-11 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-              />
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Product Options</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Configure tracking and status</p>
             </div>
           </div>
-
-          {/* Options */}
-          <div className="grid grid-cols-2 gap-6">
-            <div className="flex items-center space-x-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="is_active"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <Checkbox
                 id="is_active"
-                checked={form.is_active}
-                onCheckedChange={(checked) => handleCheckbox("is_active", !!checked)}
-                className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-              />
-              <label htmlFor="is_active" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
+                        />
+                        <div>
+                          <label
+                            htmlFor="is_active"
+                            className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
+                          >
                 Active Product
               </label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Product is available for sale</p>
             </div>
-
-            <div className="flex items-center space-x-3">
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="track_serial"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <Checkbox
                 id="track_serial"
-                checked={form.track_serial}
-                onCheckedChange={(checked) => handleCheckbox("track_serial", !!checked)}
-                className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-              />
-              <label htmlFor="track_serial" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                        />
+                        <div>
+                          <label
+                            htmlFor="track_serial"
+                            className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
+                          >
                 Track Serial Numbers
               </label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Enable serial number tracking</p>
             </div>
-
-            <div className="flex items-center space-x-3">
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="track_batch"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <Checkbox
                 id="track_batch"
-                checked={form.track_batch}
-                onCheckedChange={(checked) => handleCheckbox("track_batch", !!checked)}
-                className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-              />
-              <label htmlFor="track_batch" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                        />
+                        <div>
+                          <label
+                            htmlFor="track_batch"
+                            className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
+                          >
                 Track Batches
               </label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Enable batch tracking</p>
             </div>
-
-            <div className="flex items-center space-x-3">
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="is_composite"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <Checkbox
                 id="is_composite"
-                checked={form.is_composite}
-                onCheckedChange={(checked) => handleCheckbox("is_composite", !!checked)}
-                className="border-gray-300 dark:border-gray-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-              />
-              <label htmlFor="is_composite" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                        />
+                        <div>
+                          <label
+                            htmlFor="is_composite"
+                            className="text-base font-semibold text-slate-900 dark:text-slate-100 cursor-pointer"
+                          >
                 Composite Product
               </label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Product made from components</p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            {/* Description Section */}
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-slate-500 to-slate-600 rounded-xl shadow-lg">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Description</h2>
+                    <p className="text-slate-600 dark:text-slate-400">Additional product information</p>
             </div>
           </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Product Description</FormLabel>
+                        <FormControl>
             <Textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Enter product description..."
-              className="min-h-[100px] border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 resize-none"
-              rows={4}
+                            {...field}
+                            placeholder="Enter detailed product description..."
+                            className="min-h-[120px] text-base border-2 border-slate-200 dark:border-slate-700 focus:border-slate-500 focus:ring-slate-500/20 bg-white dark:bg-slate-800 rounded-xl shadow-sm transition-all duration-300 resize-none"
+                            rows={5}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
             />
           </div>
-
-          {/* Error Message */}
+              </CardContent>
+            </Card>
+            {/* Status Messages */}
           {apiError && (
-            <div className="flex items-center gap-3 text-red-600 dark:text-red-400 text-sm p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-              <AlertCircle className="w-5 h-5" />
-              {apiError}
+              <Card className="border-0 shadow-xl bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    <div>
+                      <h3 className="font-semibold text-red-900 dark:text-red-100">Error</h3>
+                      <p className="text-red-700 dark:text-red-300">{apiError}</p>
+                    </div>
             </div>
-          )}
-        </form>
+                </CardContent>
+              </Card>
+            )}
+            {apiSuccess && (
+              <Card className="border-0 shadow-xl bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <div>
+                      <h3 className="font-semibold text-green-900 dark:text-green-100">Success</h3>
+                      <p className="text-green-700 dark:text-green-300">Product added successfully!</p>
+                    </div>
       </div>
-
-      {/* Modal Footer */}
-      <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                </CardContent>
+              </Card>
+            )}
+            {/* Action Buttons */}
+            <DialogFooter className="pt-8 border-t border-slate-200 dark:border-slate-700">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="px-6 py-2 h-11 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                className="px-8 py-3 h-12 text-base font-semibold border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl bg-transparent"
         >
           Cancel
         </Button>
         <Button
           type="submit"
+                form="product-form"
           disabled={submitting || isInvalid || loading}
-          className="px-6 py-2 h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={handleSubmit}
+                className="px-8 py-3 h-12 text-base font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 text-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {loading || submitting ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               {loading ? "Saving..." : "Adding..."}
             </>
-          ) : initialData ? (
-            "Save Changes"
           ) : (
-            "Add Product"
+                  <>
+                    <Zap className="w-5 h-5 mr-2" />
+                    {initialData ? "Save Changes" : "Add Product"}
+                  </>
           )}
         </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </div>
     </div>
   )

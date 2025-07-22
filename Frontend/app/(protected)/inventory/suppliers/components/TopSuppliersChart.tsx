@@ -10,7 +10,6 @@ const chartData = [
 ];
 
 export function TopSuppliersChart() {
-  const total = chartData.reduce((sum, item) => sum + item.value, 0)
   let cumulativePercentage = 0
 
   const createPath = (percentage: number, cumulativePercentage: number) => {

@@ -7,18 +7,11 @@ import { SupplierPerformanceChart } from "./components/SupplierPerformance";
 import { ReportActions } from "./components/ReportActions";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import SalesByCustomerReport from "./components/SalesByCustomerReport";
-import SalesByProductReport from "./components/SalesByProductReport";
-import PurchaseBySupplierReport from "./components/PurchaseBySupplierReport";
-import PurchaseByProductReport from "./components/PurchaseByProductReport";
-import SalesByProductBarChart from "./components/SalesByProductBarChart";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import SalesByProductCustomerChart from "./components/SalesByProductCustomerChart";
 import PurchaseBySupplierChart from "./components/PurchaseBySupplierChart";
-import { getSalesDetailsByPeriod } from "@/lib/inventory";
 import SalesByCustomerChart from "./components/SalesByCustomerChart";
 import SalesByProductChart from "./components/SalesByProductChart";
-import {PurchaseByProductChart} from "./components/PurchaseByProductChart";
+import { PurchaseByProductChart } from "./components/PurchaseByProductChart";
 
 export default function ReportsPage() {
   return (

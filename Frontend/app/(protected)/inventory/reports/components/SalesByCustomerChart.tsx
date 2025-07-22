@@ -60,7 +60,8 @@ export default function SalesByCustomerChart() {
       const end = today.toISOString().slice(0, 10);
       let sales: SaleDetail[] = [];
       try {
-        sales = await getSalesDetailsByPeriod(start, end);
+        const result = await getSalesDetailsByPeriod(start, end);
+        sales = Array.isArray(result) ? result : [];
       } catch {
         sales = [];
       }

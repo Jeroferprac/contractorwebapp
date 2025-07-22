@@ -4,11 +4,9 @@ import type {
   CreateSupplierData,
   CreateSaleData,
   CreatePurchaseOrderData,
-  // Add other types as needed
+  Product,
+  ProductFormData,
 } from "@/types/inventory";
-import { useEffect, useState } from "react";
-import { getProducts, createProduct } from "@/lib/inventory";
-import type { Product, ProductFormData } from "@/types/inventory";
 
 // Correct API base
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
@@ -57,7 +55,6 @@ export const updateSupplier = (id: string, data: CreateSupplierData) =>
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-
   }).then(res => res.json());
 export const deleteSupplier = (id: string) =>
   fetch(`${API_BASE}/suppliers/${id}`, { method: 'DELETE' }).then(res => res.json());
@@ -66,7 +63,6 @@ export const deleteSupplier = (id: string) =>
 export const getProductSuppliers = () => fetch(`${API_BASE}/product-suppliers`).then(res => res.json());
 export const createProductSupplier = (data: Record<string, unknown>) =>
   fetch(`${API_BASE}/product-suppliers`, {
-
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -139,108 +135,4 @@ export const adjustInventory = (
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ product_id, quantity, notes, transaction_type }),
   });
-
-// --- Purchase Summary ---
-export const getPurchaseSummaryBySupplier = () => fetchWithError(`${API_BASE}/purchase/summary/by-supplier`);
-export const getPurchaseSummaryByProduct = () => fetchWithError(`${API_BASE}/purchase/summary/by-product`);
-
-// --- Purchase Orders APIs ---
-export const getPurchaseOrders = () => fetchWithError(`${API_BASE}/purchase-orders`);
-export const getPurchaseOrder = (id: string) => fetchWithError(`${API_BASE}/purchase-orders/${id}`);
-export const createPurchaseOrder = (data: any) =>
-  fetchWithError(`${API_BASE}/purchase-orders`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-export const updatePurchaseOrder = (id: string, data: any) =>
-  fetchWithError(`${API_BASE}/purchase-orders/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-
-  // --- Types ---
-export interface Product {
-  id: string;
-  name: string;
-  sku: string;
-  barcode?: string;
-  category?: string;
-  brand?: string;
-  unit?: string;
-  current_stock: number;
-  min_stock_level: number;
-  reorder_point?: number;
-  max_stock_level?: number;
-  cost_price?: number;
-  selling_price?: number;
-  description?: string;
-  weight?: number;
-  dimensions?: string;
-  is_active?: boolean;
-  track_serial?: boolean;
-  track_batch?: boolean;
-  is_composite?: boolean;
-  created_at: string;
-  updated_at?: string;
-}
-
-export interface Supplier {
-  id: string;
-  name: string;
-  contact_person?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  payment_terms?: number;
-  created_at: string;
-}
-
-export interface PurchaseOrderItem {
-  id: string;
-  po_id: string;
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-  received_qty: number;
-  created_at: string;
-}
-
-export interface PurchaseOrder {
-  id: string;
-  supplier_id: string;
-  po_number?: string;
-  order_date: string;
-  total_amount: number;
-  status: string;
-  created_at: string;
-  supplier?: Supplier;
-  items: PurchaseOrderItem[];
-}
-
-export interface CreatePurchaseOrderData {
-  supplier_id: string;
-  po_number?: string;
-  order_date?: string;
-  total_amount: number;
-  status?: string;
-  items: {
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    line_total: number;
-    received_qty?: number;
-  }[];
-}
-
-export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>;
-
-export async function getProductByBarcode(barcode: string): Promise<Product | null> {
-  const res = await fetch(`${API_BASE}/products/barcode/${barcode}`);
-  if (!res.ok) return null;
-  return await res.json();
-}
 

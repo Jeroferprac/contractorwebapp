@@ -1,12 +1,11 @@
 "use client"
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { getProductByBarcode } from "@/lib/inventory";
-// Use the Product type from ProductTable.tsx for consistency
-import type { Product } from "@/lib/inventory";
+// Use the Product type from your types file for consistency
+import type { Product } from "@/types/inventory";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search, Camera } from "lucide-react";
 
 interface ProductSearchBarProps {
@@ -23,7 +22,8 @@ export function ProductSearchBar({ value, onChange, placeholder = "Search produc
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const scannerId = "html5qr-code-full-region";
 
-  const handleBarcodeScan = async (barcode: string) => {
+  // useCallback to avoid missing dependency warning
+  const handleBarcodeScan = useCallback(async (barcode: string) => {
     setScannerOpen(false);
     setError("");
     setLoading(true);
@@ -40,7 +40,7 @@ export function ProductSearchBar({ value, onChange, placeholder = "Search produc
       setScannedProduct(null);
       setError("Product not found!");
     }
-  };
+  }, [onChange]);
 
   // Start scanner when modal opens
   React.useEffect(() => {
@@ -56,12 +56,11 @@ export function ProductSearchBar({ value, onChange, placeholder = "Search produc
           fps: 10,
           qrbox: { width: 300, height: 150 },
           aspectRatio: 2.0,
-          // formatsToSupport removed (not supported in config)
         },
         (decodedText) => {
           handleBarcodeScan(decodedText);
         },
-        (err) => {
+        () => {
           // Optionally handle scan errors
         }
       ).catch((err) => {
@@ -78,7 +77,7 @@ export function ProductSearchBar({ value, onChange, placeholder = "Search produc
         try { html5QrcodeRef.current.clear(); } catch {}
       }
     };
-  }, [scannerOpen]);
+  }, [scannerOpen, handleBarcodeScan]);
 
   return (
     <div className="relative w-full max-w-sm lg:max-w-md flex items-center">
