@@ -38,11 +38,19 @@ class ProductUpdate(ProductBase):
     name: Optional[str] = None
     sku: Optional[str] = None
 
+class CategoryOut(BaseModel):
+    id: UUID
+    name: str
+
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+
 # --- Output schema ---
 class ProductOut(ProductBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    category: CategoryOut
 
     class Config:
         model_config = ConfigDict(from_attributes=True)
@@ -53,13 +61,6 @@ class ProductBulkUpdate(BaseModel):
 
 # --- Category response schema ---
 # app/schemas/inventory.py or wherever your schema is
-
-class CategoryOut(BaseModel):
-    id: UUID
-    name: str
-
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
 
 
                ###################     Supplier    #####################
