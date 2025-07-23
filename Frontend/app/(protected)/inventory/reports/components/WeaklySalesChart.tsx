@@ -18,11 +18,13 @@ const getIntensityColor = (intensity: number) => {
   return colors[Math.min(intensity, colors.length - 1)] || colors[0];
 };
 
+// Fix 1: Specify a type instead of 'any' for allSales
+type Sale = { sale_date?: string; saleDate?: string };
 export function WeeklySalesChart() {
   const [salesData, setSalesData] = useState<number[][]>(hours.map(() => Array(7).fill(0)));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allSales, setAllSales] = useState<any[]>([]);
+  const [allSales, setAllSales] = useState<Sale[]>([]);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   useEffect(() => {
@@ -39,16 +41,16 @@ export function WeeklySalesChart() {
   useEffect(() => {
     // Build 2D array: hours x days (Mon-Sun)
     const grid = hours.map(() => Array(7).fill(0));
-    allSales.forEach((sale: any) => {
+    allSales.forEach((sale) => { // Fix 2: remove ': any'
       // Always use sale_date (or saleDate) for grouping
       // Professional: If sale_date is date-only (YYYY-MM-DD), default to 09:00 for heatmap
-      let dateStr = sale.sale_date || sale.saleDate;
+      const dateStr = sale.sale_date || sale.saleDate; // Fix 3: use 'const' instead of 'let'
       let date: Date;
       if (dateStr && dateStr.length === 10) {
         // Date-only, append T09:00:00
         date = parseISO(dateStr + 'T09:00:00');
       } else {
-        date = parseISO(dateStr);
+        date = parseISO(dateStr ?? "");
       }
       if (isSameWeek(date, weekStart, { weekStartsOn: 1 })) {
         let dayIdx = getDay(date) - 1;

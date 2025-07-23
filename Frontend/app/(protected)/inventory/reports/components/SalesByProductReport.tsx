@@ -45,7 +45,7 @@ export default function SalesByProductReport() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => (
+                {data.map((row) => (
                   <tr key={row.product_id}>
                     <td className="p-2">{row.product_name}</td>
                     <td className="p-2 text-right">{row.total_quantity_sold}</td>

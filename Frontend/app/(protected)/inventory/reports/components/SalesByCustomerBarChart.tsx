@@ -1,7 +1,14 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  XAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -26,8 +33,13 @@ interface SaleDetail {
   items: SaleItem[];
 }
 
-export default function SalesByProductCustomerChart() {
-  const [chartData, setChartData] = useState<any[]>([]);
+type ChartRow = {
+  date: string;
+  [customer: string]: string | number;
+};
+
+export function SalesByProductCustomerChart() {
+  const [chartData, setChartData] = useState<ChartRow[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,33 +52,44 @@ export default function SalesByProductCustomerChart() {
       const end = today.toISOString().slice(0, 10);
       let sales: SaleDetail[] = [];
       try {
-        sales = await getSalesDetailsByPeriod(start, end);
+        const result = await getSalesDetailsByPeriod({ start_date: start, end_date: end });
+        sales = Array.isArray(result) ? result : [];
       } catch {
         sales = [];
       }
-      // Build a map: { date: { customer1: value, customer2: value, ... } }
-      const dateMap: Record<string, any> = {};
+
+      const dateMap: Record<string, ChartRow> = {};
       const customerSet = new Set<string>();
+
       sales.forEach((sale) => {
         const date = sale.sale_date;
         if (!dateMap[date]) dateMap[date] = { date };
+
         sale.items.forEach((item) => {
           const customer = sale.customer_name;
-          dateMap[date][customer] = (dateMap[date][customer] || 0) + Number(item.line_total);
+          if (!dateMap[date][customer]) {
+            dateMap[date][customer] = 0;
+          }
+          dateMap[date][customer] = (dateMap[date][customer] as number) + item.line_total;
           customerSet.add(customer);
         });
       });
+
       setChartData(Object.values(dateMap));
       setCustomers(Array.from(customerSet));
       setLoading(false);
     })();
   }, []);
 
-  if (loading) return <div className="h-64 flex items-center justify-center">Loading chart...</div>;
-  if (!chartData.length) return <div className="h-64 flex items-center justify-center text-gray-400">No data</div>;
+  if (loading)
+    return <div className="h-64 flex items-center justify-center">Loading chart...</div>;
+
+  if (!chartData.length)
+    return <div className="h-64 flex items-center justify-center text-gray-400">No data</div>;
 
   const colors = [
-    "#06b6d4", "#6366f1", "#f59e42", "#10b981", "#f43f5e", "#a21caf", "#eab308", "#0ea5e9", "#f472b6"
+    "#06b6d4", "#6366f1", "#f59e42", "#10b981",
+    "#f43f5e", "#a21caf", "#eab308", "#0ea5e9", "#f472b6"
   ];
 
   return (
@@ -98,20 +121,28 @@ export default function SalesByProductCustomerChart() {
               tickMargin={8}
               minTickGap={32}
               tickFormatter={(value: string) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
+                return new Date(value).toLocaleDateString("en-US");
               }}
             />
             <Tooltip
-              content={(props: any) => {
-                if (!props.active || !props.payload) return null;
+              content={({
+                active,
+                payload,
+                label,
+              }: {
+                active?: boolean;
+                payload?: Array<{
+                  name: string;
+                  color: string;
+                  value: number;
+                }>;
+                label?: string;
+              }) => {
+                if (!active || !payload) return null;
                 return (
                   <div className="bg-white rounded shadow p-2 text-xs">
-                    <div className="font-semibold mb-1">{props.label}</div>
-                    {props.payload.map((entry: any, idx: number) => (
+                    <div className="font-semibold mb-1">{label}</div>
+                    {payload.map((entry, idx) => (
                       <div key={idx} className="flex justify-between gap-2">
                         <span style={{ color: entry.color }}>{entry.name}</span>
                         <span>₹{Number(entry.value).toLocaleString()}</span>
@@ -138,4 +169,4 @@ export default function SalesByProductCustomerChart() {
       </CardContent>
     </Card>
   );
-} 
+}

@@ -226,3 +226,15 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
   if (!res.ok) return null;
   return await res.json();
 }
+// Example: Adjust the type and endpoint as needed for your backend
+export async function addProduct(productData: any) {
+  const response = await fetch("/api/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(productData),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to add product");
+  }
+  return response.json();
+}

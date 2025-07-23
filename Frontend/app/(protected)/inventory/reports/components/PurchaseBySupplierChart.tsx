@@ -34,7 +34,7 @@ export default function PurchaseBySupplierChart() {
           <XAxis type="number" />
           <YAxis dataKey="supplier_name" type="category" width={120} />
           <Tooltip
-            formatter={(value: any, name: string, props: any) =>
+            formatter={(value: unknown, name: string) =>
               name === "total_amount"
                 ? [
                     `₹${Number(value).toLocaleString()}`,

@@ -28,13 +28,22 @@ interface SaleDetail {
   items: SaleItem[];
 }
 
-function exportToCSV(data: any[], products: string[]) {
+// Define a type for a chart row (date is a string, all other keys are product names)
+type ChartRow = {
+  date: string;
+  [product: string]: { revenue: number; quantity: number } | string;
+};
+
+function exportToCSV(data: ChartRow[], products: string[]) {
   if (!data.length) return;
   const header = ["Date", ...products.flatMap(p => [p + " Revenue", p + " Quantity"])].join(",");
   const rows = data.map(row => {
     return [
       row.date,
-      ...products.flatMap(p => [row[p]?.revenue ?? 0, row[p]?.quantity ?? 0])
+      ...products.flatMap(p => [
+        (row[p] && typeof row[p] !== "string" ? (row[p] as { revenue: number }).revenue : 0),
+        (row[p] && typeof row[p] !== "string" ? (row[p] as { quantity: number }).quantity : 0)
+      ])
     ].join(",");
   });
   const csv = [header, ...rows].join("\n");
@@ -48,7 +57,7 @@ function exportToCSV(data: any[], products: string[]) {
 }
 
 export default function SalesByProductChart() {
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartRow[]>([]);
   const [products, setProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +70,7 @@ export default function SalesByProductChart() {
       const end = today.toISOString().slice(0, 10);
       let sales: SaleDetail[] = [];
       try {
-        sales = await getSalesDetailsByPeriod(start, end);
+        sales = await getSalesDetailsByPeriod({ start_date: start, end_date: end });
       } catch {
         sales = [];
       }
@@ -74,8 +83,8 @@ export default function SalesByProductChart() {
           }
         });
       });
-      // Build a map: { date: { productName: {revenue, quantity}, ... } }
-      const dateMap: Record<string, any> = {};
+      // Build a map: { date: { productName: {revenue, quantity}, ... }, date: string }
+      const dateMap: Record<string, ChartRow> = {};
       const productSet = new Set<string>();
       sales.forEach((sale) => {
         const date = sale.sale_date;
@@ -83,8 +92,8 @@ export default function SalesByProductChart() {
         sale.items.forEach((item) => {
           const product = productIdToName[item.product_id] || item.product_id;
           if (!dateMap[date][product]) dateMap[date][product] = { revenue: 0, quantity: 0 };
-          dateMap[date][product].revenue += Number(item.line_total);
-          dateMap[date][product].quantity += Number(item.quantity);
+          (dateMap[date][product] as { revenue: number; quantity: number }).revenue += Number(item.line_total);
+          (dateMap[date][product] as { revenue: number; quantity: number }).quantity += Number(item.quantity);
           productSet.add(product);
         });
       });
@@ -141,19 +150,39 @@ export default function SalesByProductChart() {
               }}
             />
             <Tooltip
-              content={(props: any) => {
-                if (!props.active || !props.payload) return null;
+              content={(
+                props: {
+                  active?: boolean;
+                  payload?: Array<{
+                    name: string;
+                    color: string;
+                    payload: ChartRow;
+                  }>;
+                  label?: string;
+                }
+              ) => {
+                if (!props || !props.active || !props.payload) return null;
                 return (
                   <div className="bg-white rounded shadow p-2 text-xs">
                     <div className="font-semibold mb-1">{props.label}</div>
-                    {products.map((product, idx) => {
-                      const entry = props.payload.find((e: any) => e.name === product);
+                    {products.map((product) => {
+                      const entry = props.payload?.find((e) => e.name === product);
                       if (!entry) return null;
                       return (
                         <div key={product} className="mb-1">
                           <div style={{ color: entry.color, fontWeight: 600 }}>{product}</div>
-                          <div>Revenue: ₹{entry.payload[product]?.revenue?.toLocaleString() ?? 0}</div>
-                          <div>Quantity: {entry.payload[product]?.quantity ?? 0}</div>
+                          <div>
+                            Revenue: ₹
+                            {typeof entry.payload[product] !== "string"
+                              ? (entry.payload[product] as { revenue: number }).revenue?.toLocaleString() ?? 0
+                              : 0}
+                          </div>
+                          <div>
+                            Quantity:{" "}
+                            {typeof entry.payload[product] !== "string"
+                              ? (entry.payload[product] as { quantity: number }).quantity ?? 0
+                              : 0}
+                          </div>
                         </div>
                       );
                     })}
@@ -164,7 +193,7 @@ export default function SalesByProductChart() {
             {products.map((product, idx) => (
               <Area
                 key={product}
-                dataKey={product + ".revenue"}
+                dataKey={`${product}.revenue`}
                 type="natural"
                 fill={`url(#fill${idx})`}
                 stroke={colors[idx % colors.length]}

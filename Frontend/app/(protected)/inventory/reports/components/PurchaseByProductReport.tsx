@@ -1,5 +1,11 @@
+
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 import { getPurchaseSummaryByProduct } from "@/lib/inventory";
 
 interface PurchaseSummaryProduct {
@@ -9,7 +15,7 @@ interface PurchaseSummaryProduct {
   total_amount: number;
 }
 
-export default function PurchaseByProductReport() {
+export function PurchaseByProductReport() {
   const [data, setData] = useState<PurchaseSummaryProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,33 +29,40 @@ export default function PurchaseByProductReport() {
   }, []);
 
   return (
-    <Card>
+    <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full">
       <CardHeader>
-        <CardTitle>Purchase Summary by Product</CardTitle>
+        <CardTitle className="text-blue-700 dark:text-blue-300">
+          Purchase Summary by Product
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="p-4">Loading...</div>
+          <div className="p-4 text-center text-muted-foreground">Loading...</div>
         ) : error ? (
-          <div className="p-4 text-red-500">{error}</div>
+          <div className="p-4 text-center text-red-500">{error}</div>
         ) : !data.length ? (
-          <div className="p-4 text-gray-500">No data available.</div>
+          <div className="p-4 text-center text-gray-500">No data available.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[400px] text-sm rounded-lg overflow-hidden">
               <thead>
-                <tr>
-                  <th className="text-left p-2">Product Name</th>
-                  <th className="text-right p-2">Total Quantity Purchased</th>
-                  <th className="text-right p-2">Total Amount</th>
+                <tr className="bg-muted">
+                  <th className="text-left p-3 font-semibold">Product Name</th>
+                  <th className="text-right p-3 font-semibold">Total Quantity Purchased</th>
+                  <th className="text-right p-3 font-semibold">Total Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((row, idx) => (
-                  <tr key={row.product_id}>
-                    <td className="p-2">{row.product_name}</td>
-                    <td className="p-2 text-right">{row.total_quantity_purchased}</td>
-                    <td className="p-2 text-right">₹{row.total_amount?.toLocaleString()}</td>
+                {data.map((row) => (
+                  <tr
+                    key={row.product_id}
+                    className="even:bg-muted/40 hover:bg-muted/60 transition-colors"
+                  >
+                    <td className="p-3 max-w-xs truncate">{row.product_name}</td>
+                    <td className="p-3 text-right">{row.total_quantity_purchased}</td>
+                    <td className="p-3 text-right">
+                      ₹{row.total_amount?.toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>

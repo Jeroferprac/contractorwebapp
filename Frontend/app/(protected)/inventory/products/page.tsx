@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react"
 import {
   getProducts,
+  createProduct,
+  updateProduct,
   deleteProduct,
+  createSupplier,
   adjustInventory,
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
@@ -20,6 +23,8 @@ import { SaleForm, type SaleFormData } from "../sales/components/SaleForm"
 import { createSale } from "@/lib/inventory"
 import { motion, AnimatePresence } from "framer-motion"
 import { Download, Sparkles } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
+import { useUser } from "@/lib/hooks/useUser"
 import QuickActions from "../components/QuickActions"
 import type { CreateProductData } from "@/types/inventory";
 
@@ -35,10 +40,12 @@ export default function ProductsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
+  const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { toast } = useToast()
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+  const user = useUser(token) as User | null
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(""))
 
   const [addError, setAddError] = useState<string | null>(null);
@@ -51,6 +58,9 @@ export default function ProductsPage() {
     try {
       const data = await getProducts();
       setProducts(data);
+    } catch (err) {
+      // Optionally set an error state here if you want to show an error message
+      // setError("Failed to load products");
     } finally {
       setLoading(false); // <-- Ensure loading is set to false
     }
@@ -61,6 +71,14 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
+  // Handler to call after a product is added or edited
+  function handleProductFormSuccess() {
+    fetchProducts(); // Refetch the product list
+    setDialogOpen(false); // Close the add dialog
+    setEditDialogOpen(false); // Close the edit dialog
+    setEditProduct(null); // Reset edit state
+  }
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -70,14 +88,62 @@ export default function ProductsPage() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  async function handleAddSupplier() {
+  const recentActivities = products.slice(0, 5).map((product) => ({
+    action: "Added",
+    count: Number(product.current_stock) || 1,
+    product: product.name,
+    name: "System",
+    surname: "",
+    avatar: "",
+    time: product.created_at ? formatDistanceToNow(new Date(product.created_at), { addSuffix: true }) : "recently",
+  }))
 
+  async function handleAddProduct(form: CreateProductData) {
     try {
+      const newProduct = await createProduct(form)
+      setDialogOpen(false)
+      setProducts((prev) => [newProduct, ...prev])
       toast({
-        title: "Supplier added",
-        description: `Supplier added successfully.`,
+        title: "Product added",
+        description: `Product '${form.name}' was added successfully.`,
         variant: "success",
       })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to add product"
+      setAddError(errorMessage)
+      toast({ title: "Error", description: errorMessage, variant: "error" })
+    }
+  }
+
+  async function handleAddSupplier(form: any) {
+
+    try {
+      // await createSupplier(form) // This line was removed as per the new_code
+      toast({
+        title: "Supplier added",
+        description: `Supplier '${form.name}' was added successfully.`,
+        variant: "success",
+      })
+
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" })
+    }
+  }
+
+  async function handleEditProduct(form: CreateProductData) {
+    if (!editProduct) return
+    setEditLoading(true)
+    try {
+      const updated = await updateProduct(editProduct.id, form)
+      setProducts((prev) => prev.map((p) => (p.id === editProduct.id ? updated : p)))
+      toast({
+        title: "Product updated",
+        description: `Product '${form.name}' was updated successfully.`,
+        variant: "success",
+      })
+      setEditProduct(null)
+      setEditDialogOpen(false)
+
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add supplier"
       toast({ title: "Error", description: errorMessage, variant: "error" })
@@ -200,6 +266,22 @@ export default function ProductsPage() {
   }
 
 
+  if (error) {
+    return (
+      <DashboardLayout title="Products">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-center min-h-[60vh]"
+        >
+          <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-red-500/10 to-pink-500/10 border border-red-500/20 shadow-2xl backdrop-blur-sm">
+            <p className="text-red-500 font-medium">{error}</p>
+          </div>
+        </motion.div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout title="Products">
       {/* Enhanced Header */}
@@ -252,6 +334,18 @@ export default function ProductsPage() {
         </motion.div>
       </motion.div>
 
+      {/* Enhanced Recent Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="flex flex-col md:flex-row gap-6 w-full max-w-7xl mx-auto mb-6"
+      >
+        <div className="flex-1 min-w-0" style={{ flexBasis: "70%" }}>
+          <RecentActivity activities={recentActivities} />
+        </div>
+      </motion.div>
+
       {/* Enhanced Product Table */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <ProductTable
@@ -272,8 +366,8 @@ export default function ProductsPage() {
               setLoading(true)
               const updated = await getProducts()
               setProducts(updated)
-            } catch (err: unknown) {
-              toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to adjust stock", variant: "error" })
+            } catch (err: any) {
+              toast({ title: "Error", description: err.message || "Failed to adjust stock", variant: "error" })
             } finally {
               setLoading(false)
             }
@@ -282,14 +376,10 @@ export default function ProductsPage() {
         />
       </motion.div>
 
-      {/* Enhanced Add Product Dialog */}
+      Enhanced Add Product Dialog
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-background to-muted/20 border border-border/50 shadow-2xl backdrop-blur-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-              Add New Product
-            </DialogTitle>
-          </DialogHeader>
+          
           <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} loading={loading} />
           {addError && (
             <motion.div
@@ -327,11 +417,11 @@ export default function ProductsPage() {
             </DialogTitle>
           </DialogHeader>
           <AddProductForm
+            onSubmit={handleEditProduct}
             onCancel={() => {
               setEditDialogOpen(false)
               setEditProduct(null)
             }}
-            onSubmit={handleAddProduct}
             initialData={
               editProduct
                 ? {
@@ -357,9 +447,7 @@ export default function ProductsPage() {
                   }
                 : undefined
             }
-            loading={loading}
-            submitting={submitting}
-            categories={categories}
+            loading={editLoading}
           />
         </DialogContent>
       </Dialog>
@@ -414,5 +502,5 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
-  )
+  );
 }
