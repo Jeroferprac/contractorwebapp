@@ -10,9 +10,9 @@ const performanceData = [
 
 export function SupplierPerformanceChart() {
   return (
-    <Card>
+    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold">Supplier Performance Report (Top 5 Suppliers)</CardTitle>
+        <CardTitle className="text-base font-semibold text-blue-700 dark:text-blue-300">Supplier Performance Report (Top 5 Suppliers)</CardTitle>
       </CardHeader>
       <CardContent className="pb-4">
         <div className="space-y-3">

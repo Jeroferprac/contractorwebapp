@@ -81,9 +81,9 @@ export const SalesByCustomerChart = () => {
   };
 
   return (
-    <Card className="col-span-1">
+    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium">Sales by Customer</CardTitle>
+        <CardTitle className="text-base font-medium text-blue-700 dark:text-blue-300">Sales by Customer</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (

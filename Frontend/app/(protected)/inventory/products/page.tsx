@@ -6,7 +6,6 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  createSupplier,
   adjustInventory,
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
@@ -41,7 +40,6 @@ export default function ProductsPage() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
 
-  const [quickActionsDialogOpen, setQuickActionsDialogOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { toast } = useToast()
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -115,7 +113,7 @@ export default function ProductsPage() {
     }
   }
 
-  async function handleAddSupplier(form: any) {
+  async function handleAddSupplier(form: { name: string }) {
 
     try {
       // await createSupplier(form) // This line was removed as per the new_code
@@ -125,8 +123,8 @@ export default function ProductsPage() {
         variant: "success",
       })
 
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to add supplier", variant: "error" })
+    } catch (err: unknown) {
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to add supplier", variant: "error" })
     }
   }
 
@@ -366,8 +364,8 @@ export default function ProductsPage() {
               setLoading(true)
               const updated = await getProducts()
               setProducts(updated)
-            } catch (err: any) {
-              toast({ title: "Error", description: err.message || "Failed to adjust stock", variant: "error" })
+            } catch (err: unknown) {
+              toast({ title: "Error", description: err instanceof Error ? err.message : "Failed to adjust stock", variant: "error" })
             } finally {
               setLoading(false)
             }
@@ -376,26 +374,22 @@ export default function ProductsPage() {
         />
       </motion.div>
 
-      Enhanced Add Product Dialog
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] bg-gradient-to-br from-background to-muted/20 border border-border/50 shadow-2xl backdrop-blur-sm">
-          
-          <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} loading={loading} />
-          {addError && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-red-500 text-sm mt-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20"
-            >
-              {addError}
-            </motion.div>
-          )}
-        </DialogContent>
-      </Dialog>
-
+      {/* Add Product Form rendered directly, no Dialog/modal */}
+      {dialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="w-full max-w-2xl mx-auto">
+            <AddProductForm onSubmit={handleAddProduct} onCancel={() => setDialogOpen(false)} loading={loading} />
+            {addError && (
+              <div className="text-red-500 text-sm mt-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                {addError}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Enhanced Add Supplier Dialog */}
-      <SupplierModal
+                  <SupplierModal
         open={addSupplierOpen}
         onClose={() => setAddSupplierOpen(false)}
         onSubmit={handleAddSupplier}
@@ -448,9 +442,9 @@ export default function ProductsPage() {
                 : undefined
             }
             loading={editLoading}
-          />
-        </DialogContent>
-      </Dialog>
+                  />
+                </DialogContent>
+              </Dialog>
 
 
       {/* Enhanced Delete Confirm Dialog */}
@@ -484,7 +478,7 @@ export default function ProductsPage() {
                 >
                   Delete
                 </Button>
-              </div>
+            </div>
             </motion.div>
           </motion.div>
         )}

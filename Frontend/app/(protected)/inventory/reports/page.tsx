@@ -1,135 +1,72 @@
+// src/app/reports/page.tsx (or wherever your ReportsPage component is located)
+
 "use client";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-
-// Use default imports for default exports:
-import SalesByCustomerChart from "./components/SalesByCustomerChart";
-import SalesByProductChart from "./components/SalesByProductChart";
-import PurchaseBySupplierChart from "./components/PurchaseBySupplierChart";
-import {PurchaseByProductChart} from "./components/PurchaseByProductChart";
-import { ReportActions } from "./components/ReportActions";
+import { WeeklySalesChart } from "./components/WeaklySalesChart";
 import { TopSuppliersChart } from "./components/TopSuppliers";
 import { SupplierPerformanceChart } from "./components/SupplierPerformance";
-import { WeeklySalesChart } from "./components/WeaklySalesChart";
+import { ReportActions } from "./components/ReportActions";
+import PurchaseBySupplierChart from "./components/PurchaseBySupplierChart";
+import { SalesByCustomerChart } from "./components/SalesByCustomerChart";
+import SalesByProductChart from "./components/SalesByProductChart";
+import PurchaseByProductChart from "./components/PurchaseByProductChart";
 
 export default function ReportsPage() {
   return (
     <DashboardLayout title="Reports">
-      <section className="w-full px-2 sm:px-4 py-8 bg-gradient-to-br from-blue-100 via-purple-100 to-cyan-100 dark:from-slate-800 dark:via-slate-900 dark:to-blue-900">
-        <div className="w-full max-w-7xl mx-auto space-y-10">
-          {/* Header Action */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Reports Dashboard</h1>
-            <Button
-              className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-500 text-white font-medium hover:from-blue-700 hover:to-cyan-600"
-              size="lg"
-            >
-              <Printer className="w-5 h-5 mr-2" />
+      <div className="min-h-screen w-full bg-[#f8fafc] dark:bg-[#181f36]">
+        <div className="max-w-7xl mx-auto space-y-8 p-4 lg:p-8">
+          {/* 1. Top Summary Cards - Professional Look */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <Card className="bg-[#2156f8] text-white rounded-[24px] shadow-lg p-7 flex flex-col min-h-[120px] min-w-[180px] dark:bg-[#232946] dark:text-white">
+              <span className="text-base font-semibold mb-2">Total Shipments</span>
+              <span className="text-3xl font-extrabold tracking-tight">18,250</span>
+            </Card>
+            <Card className="bg-[#e0f7fa] text-[#2156f8] rounded-[24px] shadow-lg p-7 flex flex-col min-h-[120px] min-w-[180px] dark:bg-[#232946] dark:text-blue-200">
+              <span className="text-base font-semibold mb-2">Active Shipments</span>
+              <span className="text-3xl font-extrabold tracking-tight">880</span>
+              <span className="text-xs mt-1 text-[#0097a7] font-medium dark:text-cyan-300">14% of total</span>
+            </Card>
+            <Card className="bg-[#e8f5e9] text-[#388e3c] rounded-[24px] shadow-lg p-7 flex flex-col min-h-[120px] min-w-[180px] dark:bg-[#232946] dark:text-green-200">
+              <span className="text-base font-semibold mb-2">Completed</span>
+              <span className="text-3xl font-extrabold tracking-tight">16,456</span>
+              <span className="text-xs mt-1 text-[#43a047] font-medium dark:text-green-300">81% of total</span>
+            </Card>
+            <Card className="bg-[#ffebee] text-[#d32f2f] rounded-[24px] shadow-lg p-7 flex flex-col min-h-[120px] min-w-[180px] dark:bg-[#232946] dark:text-pink-200">
+              <span className="text-base font-semibold mb-2">Returned</span>
+              <span className="text-3xl font-extrabold tracking-tight">912</span>
+              <span className="text-xs mt-1 text-[#c62828] font-medium dark:text-pink-300">5% of total</span>
+            </Card>
+            <Card className="bg-[#e3e7fd] text-[#3949ab] rounded-[24px] shadow-lg p-7 flex flex-col min-h-[120px] min-w-[180px] dark:bg-[#232946] dark:text-indigo-200">
+              <span className="text-base font-semibold mb-2">Active Shipments</span>
+              <span className="text-3xl font-extrabold tracking-tight">$96</span>
+              <span className="text-xs mt-1 text-[#5c6bc0] font-medium dark:text-indigo-300">14% of total</span>
+            </Card>
+          </div>
+          {/* 2. Print Reports Button */}
+          <div className="flex justify-end mb-4">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow font-semibold flex items-center gap-2 dark:bg-blue-500 dark:hover:bg-blue-400">
+              <Printer className="w-5 h-5" />
               Print Reports
             </Button>
           </div>
-
-          {/* Main Chart Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-            <div className="xl:col-span-3 space-y-6">
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="text-blue-700 dark:text-blue-300">Weekly Sales Overview</CardTitle>
-                  <CardDescription>Sales performance over the last week</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <WeeklySalesChart />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="text-purple-700 dark:text-purple-300">Supplier Performance</CardTitle>
-                  <CardDescription>Performance metrics for key suppliers</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SupplierPerformanceChart />
-                </CardContent>
-              </Card>
-            </div>
-            <div className="space-y-6">
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="text-cyan-700 dark:text-cyan-300">Top Suppliers</CardTitle>
-                  <CardDescription>Suppliers with the highest volume</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TopSuppliersChart />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="text-blue-700 dark:text-blue-300">Report Actions</CardTitle>
-                  <CardDescription>Quick actions for managing reports</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ReportActions />
-                </CardContent>
-              </Card>
-            </div>
+          {/* 3. Main Analytics Grid (Stacked) */}
+          <div className="grid grid-cols-1 gap-6">
+            <SupplierPerformanceChart />
+            <WeeklySalesChart />
           </div>
-
-          {/* Summary Section */}
-          <div className="space-y-4 pt-6">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-              Summary Reports
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-blue-700 dark:text-blue-300">Sales by Customer</CardTitle>
-                  <CardDescription>
-                    Overview of sales performance by individual customers.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-center">
-                  <SalesByCustomerBarChart />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-purple-700 dark:text-purple-300">Sales by Product</CardTitle>
-                  <CardDescription>
-                    Breakdown of sales revenue generated by each product.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-center">
-                  <SalesByProductChart />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-cyan-700 dark:text-cyan-300">Purchase by Supplier</CardTitle>
-                  <CardDescription>
-                    Highest purchase orders and spending per supplier.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-center">
-                  <PurchaseBySupplierChart />
-                </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-blue-700 dark:text-blue-300">Purchase by Product</CardTitle>
-                  <CardDescription>
-                    Analysis of purchase cost by product.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-center">
-                  <PurchaseByProductChart />
-                </CardContent>
-              </Card>
-            </div>
+          {/* 4. Lower Analytics Grid - Remove Outer Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TopSuppliersChart />
+            <SalesByProductChart />
+            <PurchaseBySupplierChart />
           </div>
         </div>
-      </section>
+      </div>
     </DashboardLayout>
   );
 }

@@ -188,7 +188,7 @@ export function ProductTableView({
                 variant="outline"
                 className="font-medium text-foreground border-purple-500/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs font-sans"
               >
-                {product.category}
+                {product.category?.name || "Uncategorized"}
               </Badge>
             </div>
           </TableCell>

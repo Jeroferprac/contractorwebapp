@@ -111,11 +111,11 @@ export default function SalesByProductChart() {
   ];
 
   return (
-    <Card className="pt-0">
+    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
-          <CardTitle>Sales by Product</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-blue-700 dark:text-blue-300">Sales by Product</CardTitle>
+          <CardDescription className="text-base text-gray-400 dark:text-gray-300">
             Area chart: each color is a product, hover for full breakdown. Export to CSV available.
           </CardDescription>
         </div>

@@ -29,7 +29,7 @@ export function PurchaseByProductReport() {
   }, []);
 
   return (
-    <Card className="rounded-2xl border-none shadow-md bg-white/80 dark:bg-slate-900/80 backdrop-blur h-full">
+    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
       <CardHeader>
         <CardTitle className="text-blue-700 dark:text-blue-300">
           Purchase Summary by Product

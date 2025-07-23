@@ -27,15 +27,15 @@ export function TopSuppliersChart() {
   }
 
   return (
-    <Card className="h-fit bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-[#232946] dark:via-[#181c2a] dark:to-[#0ea5e9] shadow-xl border-0">
-      <CardHeader className="pb-3 flex flex-row items-center gap-2">
-        <Award className="w-5 h-5 text-blue-500" />
-        <CardTitle className="text-base font-semibold">Top Suppliers</CardTitle>
+    <Card className="bg-white rounded-2xl shadow-md p-4 dark:bg-[#232946] border-0 max-w-xs w-full mx-auto">
+      <CardHeader className="pb-2 flex flex-row items-center gap-2">
+        <Award className="w-4 h-4 text-blue-500" />
+        <CardTitle className="text-sm font-semibold">Top Suppliers</CardTitle>
       </CardHeader>
-      <CardContent className="pb-4">
-        <div className="flex items-center justify-center mb-4">
-          <div className="relative w-32 h-32">
-            <svg viewBox="0 0 100 100" className="w-32 h-32">
+      <CardContent className="pb-2">
+        <div className="flex items-center justify-center mb-2">
+          <div className="relative w-20 h-20">
+            <svg viewBox="0 0 100 100" className="w-20 h-20">
               {chartData.map((item, index) => {
                 const path = createPath(item.value, cumulativePercentage)
                 cumulativePercentage += item.value
@@ -45,16 +45,16 @@ export function TopSuppliersChart() {
               <circle cx="50" cy="50" r="18" fill="white" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-300">{total}</span>
+              <span className="text-base font-bold text-blue-600 dark:text-blue-300">{total}</span>
               <span className="text-xs text-gray-500 dark:text-gray-300">Total</span>
             </div>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1">
           {chartData.map((item, index) => (
-            <div key={index} className="flex items-center justify-between group hover:bg-blue-100/40 dark:hover:bg-blue-900/30 rounded px-2 py-1 transition-all duration-200">
+            <div key={index} className="flex items-center justify-between group hover:bg-blue-100/40 dark:hover:bg-blue-900/30 rounded px-1 py-0.5 transition-all duration-200">
               <div className="flex items-center">
-                <div className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: item.color }} />
+                <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: item.color }} />
                 <span className="text-xs text-gray-600 dark:text-gray-200 font-medium group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-all duration-200">{item.name}</span>
               </div>
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-100 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-all duration-200">{item.value}%</span>

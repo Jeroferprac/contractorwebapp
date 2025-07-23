@@ -7,19 +7,8 @@ import { BarChart3 } from "lucide-react";
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const hours = [9, 10, 11, 12, 13, 14, 15, 16];
 
-const getIntensityColor = (intensity: number) => {
-  const colors = [
-    "bg-cyan-50 dark:bg-cyan-900/30", // 0 - lightest
-    "bg-cyan-200 dark:bg-cyan-800/60",
-    "bg-cyan-400 dark:bg-cyan-700/80",
-    "bg-blue-400 dark:bg-blue-700/80",
-    "bg-blue-600 dark:bg-blue-900/90", // 4 - darkest
-  ];
-  return colors[Math.min(intensity, colors.length - 1)] || colors[0];
-};
-
-// Fix 1: Specify a type instead of 'any' for allSales
 type Sale = { sale_date?: string; saleDate?: string };
+
 export function WeeklySalesChart() {
   const [salesData, setSalesData] = useState<number[][]>(hours.map(() => Array(7).fill(0)));
   const [loading, setLoading] = useState(true);
@@ -39,22 +28,18 @@ export function WeeklySalesChart() {
   }, []);
 
   useEffect(() => {
-    // Build 2D array: hours x days (Mon-Sun)
     const grid = hours.map(() => Array(7).fill(0));
-    allSales.forEach((sale) => { // Fix 2: remove ': any'
-      // Always use sale_date (or saleDate) for grouping
-      // Professional: If sale_date is date-only (YYYY-MM-DD), default to 09:00 for heatmap
-      const dateStr = sale.sale_date || sale.saleDate; // Fix 3: use 'const' instead of 'let'
+    allSales.forEach((sale) => {
+      const dateStr = sale.sale_date || sale.saleDate;
       let date: Date;
       if (dateStr && dateStr.length === 10) {
-        // Date-only, append T09:00:00
         date = parseISO(dateStr + 'T09:00:00');
       } else {
         date = parseISO(dateStr ?? "");
       }
       if (isSameWeek(date, weekStart, { weekStartsOn: 1 })) {
         let dayIdx = getDay(date) - 1;
-        if (dayIdx < 0) dayIdx = 6; // Sunday to last index
+        if (dayIdx < 0) dayIdx = 6;
         const hour = getHours(date);
         const hourIdx = hours.indexOf(hour);
         if (hourIdx !== -1) {
@@ -65,27 +50,41 @@ export function WeeklySalesChart() {
     setSalesData(grid);
   }, [allSales, weekStart]);
 
-  const handlePrevWeek = () => {
-    setWeekStart((prev: Date) => addWeeks(prev, -1));
-  };
-  const handleNextWeek = () => {
-    setWeekStart((prev: Date) => addWeeks(prev, 1));
-  };
+  const handlePrevWeek = () => setWeekStart((prev: Date) => addWeeks(prev, -1));
+  const handleNextWeek = () => setWeekStart((prev: Date) => addWeeks(prev, 1));
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const weekLabel = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
 
+  // Modern color scale for cells (light blue to deep blue)
+  const getCellColor = (intensity: number) => {
+    if (intensity === 0) return "bg-[#e0e7ff]";
+    if (intensity < 2) return "bg-[#a5b4fc]";
+    if (intensity < 4) return "bg-[#6366f1]";
+    return "bg-[#2563eb]";
+  };
+
   return (
-    <Card className="h-fit bg-gradient-to-br from-cyan-50 via-white to-blue-50 dark:from-[#0e172a] dark:via-[#181c2a] dark:to-[#0ea5e9] shadow-xl border-0">
+    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
       <CardHeader className="flex flex-row items-center justify-between pb-3 gap-2">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-cyan-500" />
-          <CardTitle className="text-base font-semibold">Weekly Sales</CardTitle>
+          <BarChart3 className="w-5 h-5 text-[#2563eb]" />
+          <CardTitle className="text-base font-semibold text-[#2563eb]">Weekly Sales</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handlePrevWeek} className="px-2 py-1 rounded bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-200 font-semibold shadow-sm transition-all duration-200">Prev</button>
+          <button
+            onClick={handlePrevWeek}
+            className="px-3 py-1 rounded-lg bg-[#e0e7ff] hover:bg-[#a5b4fc] text-[#2563eb] font-semibold shadow-sm transition-all duration-200"
+          >
+            Prev
+          </button>
           <span className="text-sm text-gray-500 min-w-[120px] text-center font-medium">{weekLabel}</span>
-          <button onClick={handleNextWeek} className="px-2 py-1 rounded bg-cyan-100 dark:bg-cyan-900/40 hover:bg-cyan-200 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-200 font-semibold shadow-sm transition-all duration-200">Next</button>
+          <button
+            onClick={handleNextWeek}
+            className="px-3 py-1 rounded-lg bg-[#e0e7ff] hover:bg-[#a5b4fc] text-[#2563eb] font-semibold shadow-sm transition-all duration-200"
+          >
+            Next
+          </button>
         </div>
       </CardHeader>
       <CardContent className="pb-4">
@@ -94,41 +93,52 @@ export function WeeklySalesChart() {
         ) : error ? (
           <div className="text-center text-red-500 py-8">{error}</div>
         ) : (
-        <div className="overflow-x-auto">
-          {/* Days header */}
-          <div className="grid grid-cols-8 gap-1 mb-2 min-w-[600px]">
-            <div></div> {/* Empty cell for hour labels */}
-            {days.map((day, index) => (
-              <div key={index} className="text-xs text-gray-500 text-center font-medium">
-                {day}
-              </div>
-            ))}
-          </div>
-            {/* Calendar grid - Rectangular cells for each hour x day */}
-          {salesData.map((row, hourIdx) => (
-            <div key={hourIdx} className="grid grid-cols-8 gap-1 min-w-[600px]">
-              {/* Hour label */}
-                <div className="text-xs text-gray-500 font-medium flex items-center w-14">{`${hours[hourIdx].toString().padStart(2, '0')}:00`}</div>
-              {/* Day cells */}
-              {row.map((intensity, dayIdx) => (
-                <div
-                  key={dayIdx}
-                  className={`w-10 h-5 rounded-lg flex items-center justify-center ${getIntensityColor(intensity)} hover:ring-2 hover:ring-cyan-300 cursor-pointer shadow-sm transition-all duration-200`}
-                  title={`Sales: ${intensity}`}
-                >
-                  {intensity > 0 ? <span className="text-xs text-cyan-900 dark:text-cyan-100 font-semibold">{intensity}</span> : null}
+          <div className="overflow-x-auto">
+            {/* Days header */}
+            <div className="grid grid-cols-8 gap-1 mb-2 min-w-[600px]">
+              <div></div>
+              {days.map((day, index) => (
+                <div key={index} className="text-xs text-gray-500 text-center font-medium">
+                  {day}
                 </div>
               ))}
             </div>
-          ))}
-        </div>
+            {/* Calendar grid */}
+            {salesData.map((row, hourIdx) => (
+              <div key={hourIdx} className="grid grid-cols-8 gap-1 min-w-[600px]">
+                <div className="text-xs text-gray-500 font-medium flex items-center w-14">
+                  {`${hours[hourIdx].toString().padStart(2, "0")}:00`}
+                </div>
+                {row.map((intensity, dayIdx) => (
+                  <div
+                    key={dayIdx}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center ${getCellColor(intensity)} hover:ring-2 hover:ring-[#2563eb] cursor-pointer shadow-sm transition-all duration-200`}
+                    title={`Sales: ${intensity}`}
+                  >
+                    {intensity > 0 ? (
+                      <span
+                        className={`text-xs font-semibold ${
+                          intensity < 4 ? "text-[#2563eb]" : "text-white"
+                        }`}
+                      >
+                        {intensity}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         )}
         {/* Legend */}
         <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
           <span>Less</span>
           <div className="flex space-x-1">
             {[0, 1, 2, 3, 4].map((intensity) => (
-              <div key={intensity} className={`w-4 h-4 rounded-lg shadow-sm border border-cyan-100 dark:border-cyan-900 ${getIntensityColor(intensity)}`} />
+              <div
+                key={intensity}
+                className={`w-4 h-4 rounded-full shadow-sm border border-[#e0e7ff] ${getCellColor(intensity)}`}
+              />
             ))}
           </div>
           <span>More</span>

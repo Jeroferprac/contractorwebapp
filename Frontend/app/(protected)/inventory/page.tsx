@@ -13,17 +13,14 @@ import { SaleForm, type SaleFormData } from "./sales/components/SaleForm"
 import { createProduct, createSale } from "@/lib/inventory"
 import { useToast } from "@/components/ui/use-toast"
 
-
 export default function InventoryDashboard() {
   const { data: session } = useSession()
   const { toast } = useToast()
 
-  // UI States
   const [addProductOpen, setAddProductOpen] = useState(false)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
 
-  // Handle Add Product
   async function handleAddProduct(form: ProductFormData) {
     try {
       await createProduct(form)
@@ -42,7 +39,6 @@ export default function InventoryDashboard() {
     }
   }
 
-  // Handle Create Order
   async function handleCreateOrder(form: SaleFormData) {
     setOrderLoading(true)
     try {
@@ -64,7 +60,6 @@ export default function InventoryDashboard() {
     }
   }
 
-  // Handle CSV Export
   function handleExport() {
     const rows = [
       ["Metric", "Value"],
@@ -78,7 +73,7 @@ export default function InventoryDashboard() {
         r
           .map(String)
           .map((x) => `"${x.replace(/"/g, '""')}"`)
-          .join(","),
+          .join(",")
       )
       .join("\n")
 
@@ -94,7 +89,6 @@ export default function InventoryDashboard() {
   return (
     <DashboardLayout session={session} title="Inventory Dashboard">
       <div className="flex flex-col xl:grid xl:grid-cols-12 gap-6">
-        {/* Main Area */}
         <div className="xl:col-span-8 flex flex-col space-y-6 w-full">
           <SummaryCards className="mb-6 w-full" />
           <div className="mt-6 xl:mt-40 w-full">
@@ -102,7 +96,6 @@ export default function InventoryDashboard() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="xl:col-span-4 flex flex-col space-y-6 w-full">
           <QuickActions
             onAddProduct={() => setAddProductOpen(true)}
@@ -113,7 +106,6 @@ export default function InventoryDashboard() {
         </div>
       </div>
 
-      {/* Add Product Dialog */}
       <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>
         <DialogContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
           <DialogHeader>
@@ -123,7 +115,6 @@ export default function InventoryDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Order Dialog */}
       <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
         <DialogContent className="p-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
           <DialogHeader className="p-6 pb-0">

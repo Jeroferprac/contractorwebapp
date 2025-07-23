@@ -23,7 +23,7 @@ export default function SalesByProductBarChart() {
   if (!data.length) return <div className="h-48 flex items-center justify-center text-gray-400">No data</div>;
 
   return (
-    <div className="w-full h-64">
+    <div className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0 w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />
