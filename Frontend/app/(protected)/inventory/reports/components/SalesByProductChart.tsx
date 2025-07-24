@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getSalesDetailsByPeriod } from "@/lib/inventory";
+import { Download } from "lucide-react";
 
 interface SaleItem {
   product_id: string;
@@ -62,56 +63,28 @@ export default function SalesByProductChart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      const today = new Date();
-      const last90 = new Date();
-      last90.setDate(today.getDate() - 90);
-      const start = last90.toISOString().slice(0, 10);
-      const end = today.toISOString().slice(0, 10);
-      let sales: SaleDetail[] = [];
-      try {
-        sales = await getSalesDetailsByPeriod({ start_date: start, end_date: end });
-      } catch {
-        sales = [];
-      }
-      // Build a map of productId to productName
-      const productIdToName: Record<string, string> = {};
-      sales.forEach((sale) => {
-        sale.items.forEach((item) => {
-          if (item.product_id && item.product_name) {
-            productIdToName[item.product_id] = item.product_name;
-          }
-        });
-      });
-      // Build a map: { date: { productName: {revenue, quantity}, ... }, date: string }
-      const dateMap: Record<string, ChartRow> = {};
-      const productSet = new Set<string>();
-      sales.forEach((sale) => {
-        const date = sale.sale_date;
-        if (!dateMap[date]) dateMap[date] = { date };
-        sale.items.forEach((item) => {
-          const product = productIdToName[item.product_id] || item.product_id;
-          if (!dateMap[date][product]) dateMap[date][product] = { revenue: 0, quantity: 0 };
-          (dateMap[date][product] as { revenue: number; quantity: number }).revenue += Number(item.line_total);
-          (dateMap[date][product] as { revenue: number; quantity: number }).quantity += Number(item.quantity);
-          productSet.add(product);
-        });
-      });
-      setChartData(Object.values(dateMap));
-      setProducts(Array.from(productSet));
-      setLoading(false);
-    })();
+    // DEMO: Use sample data for area chart
+    const sampleChartData = [
+      { date: "Jul 10", "iPhone 17": { revenue: 800000, quantity: 10 }, "Dell Inspiron": { revenue: 521000, quantity: 10 } },
+      { date: "Jul 11", "iPhone 17": { revenue: 400000, quantity: 5 }, "Dell Inspiron": { revenue: 300000, quantity: 5 } },
+      { date: "Jul 12", "iPhone 17": { revenue: 600000, quantity: 8 }, "Dell Inspiron": { revenue: 200000, quantity: 3 } },
+      { date: "Jul 13", "iPhone 17": { revenue: 200000, quantity: 2 }, "Dell Inspiron": { revenue: 400000, quantity: 7 } },
+      { date: "Jul 14", "iPhone 17": { revenue: 500000, quantity: 6 }, "Dell Inspiron": { revenue: 350000, quantity: 4 } },
+    ];
+    setChartData(sampleChartData);
+    setProducts(["iPhone 17", "Dell Inspiron"]);
+    setLoading(false);
   }, []);
 
   if (loading) return <div className="h-64 flex items-center justify-center">Loading chart...</div>;
-  if (!chartData.length) return <div className="h-64 flex items-center justify-center text-gray-400">No data</div>;
+  if (!chartData.length) return <></>;
 
   const colors = [
     "#06b6d4", "#6366f1", "#f59e42", "#10b981", "#f43f5e", "#a21caf", "#eab308", "#0ea5e9", "#f472b6"
   ];
 
   return (
-    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
+    <Card className="bg-white dark:bg-[#232946] rounded-2xl shadow-md p-6 border-0">
       <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle className="text-blue-700 dark:text-blue-300">Sales by Product</CardTitle>
@@ -119,9 +92,13 @@ export default function SalesByProductChart() {
             Area chart: each color is a product, hover for full breakdown. Export to CSV available.
           </CardDescription>
         </div>
-        <Button size="sm" onClick={() => exportToCSV(chartData, products)}>
+        <button
+          onClick={() => exportToCSV(chartData, products)}
+          className="flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold shadow-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-200"
+        >
+          <Download className="w-4 h-4" />
           Export CSV
-        </Button>
+        </button>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ResponsiveContainer width="100%" height={250}>
@@ -134,61 +111,35 @@ export default function SalesByProductChart() {
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid vertical={false} />
+            <CartesianGrid vertical={false} stroke="#334155" strokeOpacity={0.3} />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               minTickGap={32}
-              tickFormatter={(value: string) => {
+              tick={{ fill: "#64748b", fontSize: 13 }}
+              tickFormatter={(value) => {
                 const date = new Date(value);
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 });
               }}
+              style={{ color: "#64748b" }}
+              className="dark:!text-blue-200"
+            />
+            <YAxis
+              tick={{ fill: "#64748b", fontSize: 13 }}
+              axisLine={false}
+              tickLine={false}
+              style={{ color: "#64748b" }}
+              className="dark:!text-blue-200"
             />
             <Tooltip
-              content={(
-                props: {
-                  active?: boolean;
-                  payload?: Array<{
-                    name: string;
-                    color: string;
-                    payload: ChartRow;
-                  }>;
-                  label?: string;
-                }
-              ) => {
-                if (!props || !props.active || !props.payload) return null;
-                return (
-                  <div className="bg-white rounded shadow p-2 text-xs">
-                    <div className="font-semibold mb-1">{props.label}</div>
-                    {products.map((product) => {
-                      const entry = props.payload?.find((e) => e.name === product);
-                      if (!entry) return null;
-                      return (
-                        <div key={product} className="mb-1">
-                          <div style={{ color: entry.color, fontWeight: 600 }}>{product}</div>
-                          <div>
-                            Revenue: ₹
-                            {typeof entry.payload[product] !== "string"
-                              ? (entry.payload[product] as { revenue: number }).revenue?.toLocaleString() ?? 0
-                              : 0}
-                          </div>
-                          <div>
-                            Quantity:{" "}
-                            {typeof entry.payload[product] !== "string"
-                              ? (entry.payload[product] as { quantity: number }).quantity ?? 0
-                              : 0}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              }}
+              contentStyle={{ background: "#232946", color: "#fff", border: "none", borderRadius: 8, fontSize: 14 }}
+              labelStyle={{ color: "#fff" }}
+              itemStyle={{ color: "#fff" }}
             />
             {products.map((product, idx) => (
               <Area

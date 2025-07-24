@@ -22,10 +22,12 @@ export function PurchaseByProductReport() {
 
   useEffect(() => {
     setLoading(true);
-    getPurchaseSummaryByProduct()
-      .then((res) => setData(Array.isArray(res) ? res : []))
-      .catch(() => setError("Failed to load purchase summary"))
-      .finally(() => setLoading(false));
+    const sampleData = [
+      { product_id: "1", product_name: "iPhone 17", total_quantity_purchased: 10, total_amount: 800000 },
+      { product_id: "2", product_name: "Dell Inspiron", total_quantity_purchased: 10, total_amount: 521000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
   return (
@@ -41,7 +43,7 @@ export function PurchaseByProductReport() {
         ) : error ? (
           <div className="p-4 text-center text-red-500">{error}</div>
         ) : !data.length ? (
-          <div className="p-4 text-center text-gray-500">No data available.</div>
+          <></>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm rounded-lg overflow-hidden">

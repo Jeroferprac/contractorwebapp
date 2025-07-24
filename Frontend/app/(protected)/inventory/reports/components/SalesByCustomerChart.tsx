@@ -9,19 +9,14 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  LabelList,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { getSalesDetailsByPeriod } from "@/lib/inventory";
 
 interface SalesByCustomer {
   customer: string;
   total: number;
-}
-
-interface SaleDetail {
-  customer_name: string;
-  total_amount: number;
 }
 
 export const SalesByCustomerChart = () => {
@@ -29,61 +24,39 @@ export const SalesByCustomerChart = () => {
   const [loading, setLoading] = React.useState<boolean>(true);
 
   React.useEffect(() => {
-    (async () => {
-      const today = new Date();
-      const last90 = new Date();
-      last90.setDate(today.getDate() - 90);
-      const start = last90.toISOString().slice(0, 10);
-      const end = today.toISOString().slice(0, 10);
-
-      try {
-        const sales: SaleDetail[] = await getSalesDetailsByPeriod({ start_date: start, end_date: end });
-        // Aggregate sales by customer
-        const customerTotals: Record<string, number> = {};
-        sales.forEach((sale) => {
-          const customer = sale.customer_name;
-          customerTotals[customer] = (customerTotals[customer] || 0) + Number(sale.total_amount);
-        });
-        setData(
-          Object.entries(customerTotals).map(([customer, total]) => ({
-            customer,
-            total,
-          }))
-        );
-      } catch {
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // DEMO: Use sample data
+    const sampleData = [
+      { customer: "Acme Corp", total: 120000 },
+      { customer: "Omega Pvt", total: 110000 },
+      { customer: "Lambda Works", total: 105000 },
+      { customer: "Sigma Group", total: 95000 },
+      { customer: "Beta Ltd", total: 90000 },
+      { customer: "Pi Holdings", total: 85000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
-  const CustomTooltip = ({
-    active,
-    payload,
-    label,
-  }: {
-    active?: boolean;
-    payload?: Array<{ value: number }>;
-    label?: string;
-  }) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
     if (!active || !payload || !payload.length) return null;
     const item = payload[0];
-
     return (
-      <div className="rounded-md border bg-background p-2 shadow-sm">
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-muted-foreground">
+      <div className="rounded-lg border bg-white dark:bg-[#232946] p-3 shadow-lg text-gray-900 dark:text-white font-semibold">
+        <div className="text-base font-bold">{label}</div>
+        <div className="text-sm text-blue-700 dark:text-blue-200 font-semibold">
           Sales: ₹{item.value?.toLocaleString()}
         </div>
       </div>
     );
   };
 
+  // Gradient for bars
+  const barFill = "url(#barGradient)";
+
   return (
-    <Card className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0">
+    <Card className="bg-white dark:bg-[#232946] rounded-2xl shadow-md p-8 border-0">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-medium text-blue-700 dark:text-blue-300">Sales by Customer</CardTitle>
+        <CardTitle className="text-lg font-bold text-blue-700 dark:text-blue-300">Sales by Customer</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -91,27 +64,54 @@ export const SalesByCustomerChart = () => {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={data}>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={data}
+              margin={{ left: 10, right: 10, top: 30, bottom: 30 }}
+              barCategoryGap={30}
+            >
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="#4f8cff" stopOpacity={0.8} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
               <XAxis
                 dataKey="customer"
-                stroke="#888888"
-                fontSize={12}
+                stroke="#334155"
+                fontSize={15}
                 tickLine={false}
                 axisLine={false}
+                tick={{ fill: "#334155", fontWeight: 600 }}
+                className="dark:!text-blue-200"
+                interval={0}
+                angle={-10}
+                textAnchor="end"
+                height={30}
               />
               <YAxis
-                stroke="#888888"
-                fontSize={12}
+                stroke="#334155"
+                fontSize={14}
                 tickLine={false}
                 axisLine={false}
+                tick={{ fill: "#334155" }}
+                className="dark:!text-blue-200"
                 tickFormatter={(value: number) =>
                   `₹${Number(value).toLocaleString("en-IN")}`
                 }
               />
-              <Tooltip content={CustomTooltip} />
-              <CartesianGrid strokeDasharray="3 3" />
-              <Bar dataKey="total" fill="#5E60CE" radius={[4, 4, 0, 0]} />
+              <Tooltip content={CustomTooltip} cursor={{ fill: "#e0e7ff", opacity: 0.1 }} />
+              <Bar dataKey="total" fill={barFill} barSize={32} radius={[14, 14, 0, 0]} >
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  style={{ fontWeight: 700, fontSize: 16 }}
+                  fill="#2563eb"
+                  className="dark:!fill-blue-200"
+                  formatter={(v: number) => `₹${v.toLocaleString()}`}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         )}

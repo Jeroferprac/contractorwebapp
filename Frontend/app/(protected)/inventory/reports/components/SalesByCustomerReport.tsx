@@ -32,7 +32,7 @@ export default function SalesByCustomerReport() {
         ) : error ? (
           <div className="p-4 text-red-500">{error}</div>
         ) : !data.length ? (
-          <div className="p-4 text-gray-500">No data available.</div>
+          <></>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
