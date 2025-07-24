@@ -43,6 +43,8 @@ class ProductOut(ProductBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    category_name: Optional[str] = None
+
 
     class Config:
         model_config = ConfigDict(from_attributes=True)

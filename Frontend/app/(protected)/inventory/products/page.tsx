@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   getProducts,
   createProduct,
@@ -88,7 +88,9 @@ export default function ProductsPage() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const recentActivities = products.slice(0, 5).map((product) => ({
+  // Memoize recentActivities to avoid infinite re-renders
+  const recentActivities = useMemo(() =>
+    products.slice(0, 5).map((product) => ({
     action: "Added",
     count: Number(product.current_stock) || 1,
     product: product.name,
@@ -96,7 +98,9 @@ export default function ProductsPage() {
     surname: "",
     avatar: "",
     time: product.created_at ? formatDistanceToNow(new Date(product.created_at), { addSuffix: true }) : "recently",
-  }))
+    })),
+    [products]
+  );
 
   async function handleAddProduct(form: CreateProductData) {
     try {

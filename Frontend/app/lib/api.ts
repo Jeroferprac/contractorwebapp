@@ -1,6 +1,7 @@
 import { getSession } from "next-auth/react";
 
 export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+console.log(`📡 API Base URL: ${BASE_URL}`);
 
 // 🔐 Authentication APIs
 const AUTH = {

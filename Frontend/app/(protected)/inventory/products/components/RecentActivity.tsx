@@ -88,45 +88,50 @@ export function RecentActivity({ activities = [] }: RecentActivitySlideshowProps
   // It calculates the maximum scroll distance for manual dragging.
   useEffect(() => {
     if (containerRef.current && contentRef.current) {
-      const containerWidth = containerRef.current.offsetWidth
-      const contentWidth = contentRef.current.scrollWidth
-      // The `maxDrag` is the total width of content minus the visible container width.
-      // We use Math.max(0, ...) to ensure it's not negative if content is smaller than container.
-      const maxDrag = Math.max(0, contentWidth - containerWidth)
-      setDragConstraints({ left: -maxDrag, right: 0 })
+      const containerWidth = containerRef.current.offsetWidth;
+      const contentWidth = contentRef.current.scrollWidth;
+      const maxDrag = Math.max(0, contentWidth - containerWidth);
+      const newConstraints = { left: -maxDrag, right: 0 };
+      // Only update if changed
+      if (
+        dragConstraints.left !== newConstraints.left ||
+        dragConstraints.right !== newConstraints.right
+      ) {
+        setDragConstraints(newConstraints);
+      }
     }
-  }, [displayActivities]) // Recalculate if activities change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayActivities]);
 
   // --- Auto-scroll Animation Logic ---
   // This effect handles the continuous auto-scrolling.
   useEffect(() => {
     // If paused or refs are not ready, do nothing.
-    if (isPaused || !containerRef.current || !contentRef.current) return
+    if (isPaused || !containerRef.current || !contentRef.current) return;
 
-    const containerWidth = containerRef.current.offsetWidth
-    const contentWidth = contentRef.current.scrollWidth
-    const scrollDistance = contentWidth - containerWidth
+    const containerWidth = containerRef.current.offsetWidth;
+    const contentWidth = contentRef.current.scrollWidth;
+    const scrollDistance = contentWidth - containerWidth;
 
     // If content is smaller than container, no need to scroll.
-    if (scrollDistance <= 0) return
+    if (scrollDistance <= 0) return;
 
     // Set up an interval for smooth, frame-based scrolling.
-    // The speed is controlled by the interval duration (50ms here).
     const interval = setInterval(() => {
-      const currentX = x.get() // Get current X position
-      const nextX = currentX - 1 // Move one pixel to the left
+      const currentX = x.get(); // Get current X position
+      const nextX = currentX - 1; // Move one pixel to the left
 
       // If we've scrolled past the end, reset to the beginning for a loop effect.
       if (Math.abs(nextX) >= scrollDistance) {
-        x.set(0)
+        x.set(0);
       } else {
-        x.set(nextX)
+        x.set(nextX);
       }
-    }, 40) // ~25 frames per second, adjust for desired speed
+    }, 40); // ~25 frames per second
 
     // Cleanup function to clear the interval when component unmounts or dependencies change.
-    return () => clearInterval(interval)
-  }, [isPaused, x, displayActivities]) // Dependencies: pause state, motion value, activities
+    return () => clearInterval(interval);
+  }, [isPaused, displayActivities]); // ✅ Only these dependencies!
 
   // --- Event Handlers for Dragging/Hovering ---
   // Pauses auto-scroll when dragging starts.
