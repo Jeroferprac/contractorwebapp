@@ -225,21 +225,33 @@ export default function WarehouseOverview() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Charts Section */}
-      <motion.div variants={itemVariants} className="flex flex-col lg:flex-row gap-6 w-full max-w-screen-2xl mx-auto px-2 md:px-4">
-        <motion.div variants={itemVariants} className="flex-1 min-w-0">
-          <WeeklyTransferChart data={weeklyTransfers} />
-        </motion.div>
-        <motion.div variants={itemVariants} className="w-full lg:w-[400px] xl:w-[450px] min-w-[300px]">
-          <WarehouseUtilizationDonut data={utilizationData} />
-        </motion.div>
-      </motion.div>
+      {/* Charts Section - Aligned with Tables */}
+      <div className="w-full max-w-screen-2xl mx-auto px-2 md:px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border-0 overflow-hidden min-h-[400px] flex flex-col justify-between"
+          >
+            <WeeklyTransferChart data={weeklyTransfers} />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border-0 overflow-hidden min-h-[400px] flex flex-col justify-between"
+          >
+            <WarehouseUtilizationDonut data={utilizationData} />
+          </motion.div>
+        </div>
+      </div>
 
       {/* Tables Section - Stack Vertically */}
       <motion.div variants={itemVariants} className="space-y-6">
-        <motion.div variants={itemVariants} className="w-full">
+        {lowStockItems.length > 0 && (
           <LowStockTable data={lowStockItems} />
-        </motion.div>
+        )}
         <motion.div variants={itemVariants} className="w-full">
           <RecentTransfersTable data={recentTransfers} />
         </motion.div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, MapPin, Package, Grid3X3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { WarehouseCard } from "./components/WarehouseCard"
+import { WarehouseTable } from "./components/WarehouseTable"
 import { WarehouseMap } from "./components/WarehouseMap"
 import { BinAccordion } from "./components/BinAccordion"
 import { WarehouseFilterBar } from "./components/WarehouseFilterBar"
@@ -141,11 +141,7 @@ export default function WarehousePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredWarehouses.map((warehouse) => (
                   <motion.div key={warehouse.id} variants={itemVariants}>
-                    <WarehouseCard
-                      warehouseId={warehouse.id}
-                      onSelect={() => setSelectedWarehouse(warehouse.id)}
-                      isSelected={selectedWarehouse === warehouse.id}
-                    />
+                    <WarehouseTable warehouses={filteredWarehouses} />
                   </motion.div>
                 ))}
               </div>

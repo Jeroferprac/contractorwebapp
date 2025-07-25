@@ -157,21 +157,21 @@ export default function ReportsPage() {
           <motion.div variants={itemVariants} className="h-full">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 group overflow-hidden relative h-full">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              <CardContent className="p-6 relative z-10 h-full flex flex-col">
-                <div className="flex items-center justify-between flex-1">
-                  <div className="space-y-2">
+              <CardContent className="p-6 relative z-10 h-full flex flex-col justify-center">
+                <div className="flex flex-row items-center justify-between gap-4 flex-1 min-h-[110px]">
+                  <div className="flex flex-col justify-center space-y-2">
                     <p className="text-sm text-muted-foreground">Total Transfers</p>
                     <p className="text-3xl font-bold group-hover:text-purple-600 transition-colors">
                       {totalTransfers.toLocaleString()}
                     </p>
                     <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      <TrendingUp className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-green-500">+12.5%</span>
                       <span className="text-xs text-muted-foreground">vs last month</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
-                    <FileText className="w-6 h-6 text-white" />
+                  <div className="flex items-center justify-center p-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <FileText className="w-8 h-8 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -180,20 +180,20 @@ export default function ReportsPage() {
 
           <motion.div variants={itemVariants} className="h-full">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 shadow-2xl hover:shadow-green-500/10 transition-all duration-500 group overflow-hidden relative h-full">
-              <CardContent className="p-6 relative z-10 h-full flex flex-col">
-                <div className="flex items-center justify-between flex-1">
-                  <div className="space-y-2">
+              <CardContent className="p-6 relative z-10 h-full flex flex-col justify-center">
+                <div className="flex flex-row items-center justify-between gap-4 flex-1 min-h-[110px]">
+                  <div className="flex flex-col justify-center space-y-2">
                     <p className="text-sm text-muted-foreground">Total Quantity</p>
                     <p className="text-3xl font-bold group-hover:text-green-600 transition-colors">
                       {totalQuantity.toLocaleString()}
                     </p>
                     <div className="flex items-center gap-1">
-                      <Package className="w-3 h-3 text-blue-500" />
+                      <Package className="w-4 h-4 text-blue-500" />
                       <span className="text-xs text-blue-500">Items moved</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
-                    <Package className="w-6 h-6 text-white" />
+                  <div className="flex items-center justify-center p-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <Package className="w-8 h-8 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -203,20 +203,20 @@ export default function ReportsPage() {
           <motion.div variants={itemVariants} className="h-full">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 group overflow-hidden relative h-full">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              <CardContent className="p-6 relative z-10 h-full flex flex-col">
-                <div className="flex items-center justify-between flex-1">
-                  <div className="space-y-2">
+              <CardContent className="p-6 relative z-10 h-full flex flex-col justify-center">
+                <div className="flex flex-row items-center justify-between gap-4 flex-1 min-h-[110px]">
+                  <div className="flex flex-col justify-center space-y-2">
                     <p className="text-sm text-muted-foreground">Completion Rate</p>
                     <p className="text-3xl font-bold group-hover:text-blue-600 transition-colors">
                       {totalTransfers > 0 ? Math.round((completedTransfers / totalTransfers) * 100) : 0}%
                     </p>
                     <div className="flex items-center gap-1">
-                      <BarChart3 className="w-3 h-3 text-green-500" />
+                      <BarChart3 className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-green-500">Excellent</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
-                    <BarChart3 className="w-6 h-6 text-white" />
+                  <div className="flex items-center justify-center p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <BarChart3 className="w-8 h-8 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -226,20 +226,20 @@ export default function ReportsPage() {
           <motion.div variants={itemVariants} className="h-full">
             <Card className="bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-white/10 shadow-2xl hover:shadow-orange-500/10 transition-all duration-500 group overflow-hidden relative h-full">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-              <CardContent className="p-6 relative z-10 h-full flex flex-col">
-                <div className="flex items-center justify-between flex-1">
-                  <div className="space-y-2">
+              <CardContent className="p-6 relative z-10 h-full flex flex-col justify-center">
+                <div className="flex flex-row items-center justify-between gap-4 flex-1 min-h-[110px]">
+                  <div className="flex flex-col justify-center space-y-2">
                     <p className="text-sm text-muted-foreground">Avg Transfer Time</p>
                     <p className="text-3xl font-bold group-hover:text-orange-600 transition-colors">
                       {averageTransferTime}
                     </p>
                     <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      <TrendingUp className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-green-500">Improving</span>
                     </div>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
-                    <TrendingUp className="w-6 h-6 text-white" />
+                  <div className="flex items-center justify-center p-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <TrendingUp className="w-8 h-8 text-white" />
                   </div>
                 </div>
               </CardContent>

@@ -58,7 +58,7 @@ export function StockPagination({
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
-          className="hidden h-8 w-8 p-0 lg:flex bg-transparent"
+          className={`hidden h-8 w-8 p-0 lg:flex rounded-xl shadow-md transition-all ${currentPage === 1 ? 'bg-muted text-muted-foreground' : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'}`}
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
         >
@@ -67,7 +67,7 @@ export function StockPagination({
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0 bg-transparent"
+          className={`h-8 w-8 p-0 rounded-xl shadow-md transition-all ${currentPage === 1 ? 'bg-muted text-muted-foreground' : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'}`}
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
@@ -76,7 +76,7 @@ export function StockPagination({
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0 bg-transparent"
+          className={`h-8 w-8 p-0 rounded-xl shadow-md transition-all ${currentPage === totalPages ? 'bg-muted text-muted-foreground' : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'}`}
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
@@ -85,7 +85,7 @@ export function StockPagination({
         </Button>
         <Button
           variant="outline"
-          className="hidden h-8 w-8 p-0 lg:flex bg-transparent"
+          className={`hidden h-8 w-8 p-0 lg:flex rounded-xl shadow-md transition-all ${currentPage === totalPages ? 'bg-muted text-muted-foreground' : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600'}`}
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
         >

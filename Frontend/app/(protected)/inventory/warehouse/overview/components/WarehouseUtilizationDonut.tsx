@@ -97,24 +97,16 @@ export function WarehouseUtilizationDonut({ data }: { data: UtilizationDatum[] }
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {enhancedData.reduce((sum, item) => sum + item.value, 0) / enhancedData.length}%
+                  {Math.round(
+                    enhancedData.reduce((sum, item) => sum + item.value, 0) / enhancedData.length
+                  )}%
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Avg Usage</p>
               </div>
             </div>
           </div>
-
-          {/* Horizontal legend */}
-          <div className="mt-6 flex flex-wrap gap-4 justify-center">
-            {enhancedData.map((entry, index) => (
-              <div key={index} className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: entry.color }} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{entry.value}%</span>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 }
