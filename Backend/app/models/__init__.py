@@ -5,10 +5,13 @@ from .contractor import ContractorProfile,Project,ProjectMedia
 from .inventory import Product,Category, Supplier, ProductSupplier, Warehouse, WarehouseTransfer, WarehouseTransferItem,WarehouseStock,Sale,SaleItem,PurchaseOrder,PurchaseOrderItem,InventoryTransaction
 from .customer import Customer
 from .price_list import PriceList, PriceListItem
+from .batch import Batch
+from .serial_number import SerialNumber
 
 
 __all__ = ["User", "UserSession", "Quotation", "QuotationAttachment", "ContractorProfile", "Project", "ProjectMedia", 
            "Product","Category", "Supplier", "ProductSupplier", "Warehouse", "WarehouseTransfer", "WarehouseTransferItem", "WarehouseStock",
-             "Sale", "SaleItem","PurchaseOrder", "PurchaseOrderItem","InventoryTransaction","Customer", "PriceList", "PriceListItem"]
+             "Sale", "SaleItem","PurchaseOrder", "PurchaseOrderItem","InventoryTransaction","Customer", "PriceList", "PriceListItem",
+             "Batch", "SerialNumber"]
 
   
