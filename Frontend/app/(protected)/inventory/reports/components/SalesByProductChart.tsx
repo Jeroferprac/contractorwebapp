@@ -5,29 +5,9 @@ import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer, YA
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { getSalesDetailsByPeriod } from "@/lib/inventory";
-import { Download } from "lucide-react";
-
-interface SaleItem {
-  product_id: string;
-  product_name?: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-}
-
-interface SaleDetail {
-  customer_name: string;
-  sale_date: string;
-  status: string;
-  total_amount: number;
-  items: SaleItem[];
-}
+import { useTheme } from "next-themes";
+import { BarChart3 } from "lucide-react";
 
 // Define a type for a chart row (date is a string, all other keys are product names)
 type ChartRow = {
@@ -35,32 +15,11 @@ type ChartRow = {
   [product: string]: { revenue: number; quantity: number } | string;
 };
 
-function exportToCSV(data: ChartRow[], products: string[]) {
-  if (!data.length) return;
-  const header = ["Date", ...products.flatMap(p => [p + " Revenue", p + " Quantity"])].join(",");
-  const rows = data.map(row => {
-    return [
-      row.date,
-      ...products.flatMap(p => [
-        (row[p] && typeof row[p] !== "string" ? (row[p] as { revenue: number }).revenue : 0),
-        (row[p] && typeof row[p] !== "string" ? (row[p] as { quantity: number }).quantity : 0)
-      ])
-    ].join(",");
-  });
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "sales_by_product.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export default function SalesByProductChart() {
   const [chartData, setChartData] = useState<ChartRow[]>([]);
   const [products, setProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
 
   useEffect(() => {
     // DEMO: Use sample data for area chart
@@ -84,25 +43,14 @@ export default function SalesByProductChart() {
   ];
 
   return (
-    <Card className="bg-white dark:bg-[#232946] rounded-2xl shadow-md p-6 border-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle className="text-blue-700 dark:text-blue-300">Sales by Product</CardTitle>
-          <CardDescription className="text-base text-gray-400 dark:text-gray-300">
-            Area chart: each color is a product, hover for full breakdown. Export to CSV available.
-          </CardDescription>
+    <Card className="w-full mt-0 rounded-2xl border border-white/20 dark:border-blue-200/20 shadow-2xl bg-white/70 dark:bg-[#232946]/40 ring-1 ring-inset ring-white/10 dark:ring-blue-200/10 backdrop-blur-lg p-4">
+      <CardContent className="px-2">
+        <div className="flex items-center gap-3 mb-6">
+          <BarChart3 className="w-7 h-7 text-primary dark:text-blue-400" />
+          <span className="text-xl font-extrabold text-primary dark:text-blue-100 tracking-tight">Sales by Product</span>
         </div>
-        <button
-          onClick={() => exportToCSV(chartData, products)}
-          className="flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold shadow-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-200"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
-      </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={260}>
+          <AreaChart data={chartData} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
             <defs>
               {products.map((product, idx) => (
                 <linearGradient key={product} id={`fill${idx}`} x1="0" y1="0" x2="0" y2="1">
@@ -111,35 +59,33 @@ export default function SalesByProductChart() {
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid vertical={false} stroke="#334155" strokeOpacity={0.3} />
+            <CartesianGrid vertical={false} stroke="#334155" strokeOpacity={theme === 'dark' ? 0.15 : 0.3} />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
               minTickGap={32}
-              tick={{ fill: "#64748b", fontSize: 13 }}
-              tickFormatter={(value) => {
+              tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontSize: 13 }}
+              className="text-sm font-medium text-muted-foreground dark:text-blue-100"
+              tickFormatter={(value: string) => {
                 const date = new Date(value);
                 return date.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 });
               }}
-              style={{ color: "#64748b" }}
-              className="dark:!text-blue-200"
             />
             <YAxis
-              tick={{ fill: "#64748b", fontSize: 13 }}
+              tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontSize: 13 }}
               axisLine={false}
               tickLine={false}
-              style={{ color: "#64748b" }}
-              className="dark:!text-blue-200"
+              className="text-sm font-medium text-muted-foreground dark:text-blue-100"
             />
             <Tooltip
-              contentStyle={{ background: "#232946", color: "#fff", border: "none", borderRadius: 8, fontSize: 14 }}
-              labelStyle={{ color: "#fff" }}
-              itemStyle={{ color: "#fff" }}
+              contentStyle={{ background: theme === "dark" ? "#232946" : "#fff", color: theme === "dark" ? "#fff" : "#232946", border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, boxShadow: "0 4px 24px 0 rgba(0,0,0,0.10)" }}
+              labelStyle={{ color: theme === "dark" ? "#fff" : "#232946", fontWeight: 700, fontSize: 15 }}
+              itemStyle={{ color: theme === "dark" ? "#fff" : "#232946", fontWeight: 600, fontSize: 14 }}
             />
             {products.map((product, idx) => (
               <Area
@@ -150,11 +96,20 @@ export default function SalesByProductChart() {
                 stroke={colors[idx % colors.length]}
                 stackId="a"
                 name={product}
-                isAnimationActive={false}
+                isAnimationActive={true}
               />
             ))}
           </AreaChart>
         </ResponsiveContainer>
+        {/* Custom Legend */}
+        <div className="flex flex-wrap gap-4 mt-6 items-center justify-center">
+          {products.map((product, idx) => (
+            <div key={product} className="flex items-center gap-2">
+              <span className="w-5 h-5 rounded-full" style={{ backgroundColor: colors[idx % colors.length] }} />
+              <span className="px-3 py-1 rounded-full bg-white/20 dark:bg-blue-900/30 text-sm font-bold text-primary dark:text-blue-100 shadow-sm border border-white/10 dark:border-blue-200/10">{product}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

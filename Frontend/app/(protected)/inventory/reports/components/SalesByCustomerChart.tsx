@@ -12,7 +12,8 @@ import {
   LabelList,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface SalesByCustomer {
   customer: string;
@@ -22,6 +23,7 @@ interface SalesByCustomer {
 export const SalesByCustomerChart = () => {
   const [data, setData] = React.useState<SalesByCustomer[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
+  const { theme } = useTheme();
 
   React.useEffect(() => {
     // DEMO: Use sample data
@@ -54,20 +56,21 @@ export const SalesByCustomerChart = () => {
   const barFill = "url(#barGradient)";
 
   return (
-    <Card className="bg-white dark:bg-[#232946] rounded-2xl shadow-md p-8 border-0">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-bold text-blue-700 dark:text-blue-300">Sales by Customer</CardTitle>
+    <Card className="rounded-2xl border border-white/20 dark:border-blue-200/20 shadow-2xl bg-white/70 dark:bg-[#232946]/40 ring-1 ring-inset ring-white/10 dark:ring-blue-200/10 backdrop-blur-lg p-4">
+      <CardHeader className="flex flex-row items-center gap-3 mb-1">
+        <Users className="w-7 h-7 text-primary dark:text-blue-300" />
+        <CardTitle className="text-xl font-extrabold text-primary dark:text-blue-100 tracking-tight">Sales by Customer</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-2 px-2">
         {loading ? (
-          <div className="flex items-center justify-center h-[150px]">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center h-[150px] text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={260}>
             <BarChart
               data={data}
-              margin={{ left: 10, right: 10, top: 30, bottom: 30 }}
+              margin={{ left: 10, right: 10, top: 32, bottom: 24 }}
               barCategoryGap={30}
             >
               <defs>
@@ -76,40 +79,46 @@ export const SalesByCustomerChart = () => {
                   <stop offset="100%" stopColor="#4f8cff" stopOpacity={0.8} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={theme === 'dark' ? 0.15 : 0.3} vertical={false} />
               <XAxis
                 dataKey="customer"
-                stroke="#334155"
+                stroke={theme === 'dark' ? '#c7d2fe' : '#334155'}
                 fontSize={15}
                 tickLine={false}
-                axisLine={false}
-                tick={{ fill: "#334155", fontWeight: 600 }}
-                className="dark:!text-blue-200"
+                axisLine={{ stroke: theme === 'dark' ? '#c7d2fe' : '#cbd5e1', strokeWidth: 2 }}
+                tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontWeight: 600, fontSize: 15 }}
                 interval={0}
-                angle={-10}
-                textAnchor="end"
                 height={30}
+                className="text-sm font-medium text-muted-foreground dark:text-blue-100"
               />
               <YAxis
-                stroke="#334155"
+                stroke={theme === 'dark' ? '#c7d2fe' : '#334155'}
                 fontSize={14}
                 tickLine={false}
-                axisLine={false}
-                tick={{ fill: "#334155" }}
-                className="dark:!text-blue-200"
+                axisLine={{ stroke: theme === 'dark' ? '#c7d2fe' : '#cbd5e1', strokeWidth: 2 }}
+                tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontWeight: 600, fontSize: 15, textAnchor: 'end', dx: -8 }}
                 tickFormatter={(value: number) =>
-                  `₹${Number(value).toLocaleString("en-IN")}`
+                  ` 9${Number(value).toLocaleString("en-IN")}`
                 }
+                width={80}
+                className="text-sm font-medium text-muted-foreground dark:text-blue-100"
               />
               <Tooltip content={CustomTooltip} cursor={{ fill: "#e0e7ff", opacity: 0.1 }} />
               <Bar dataKey="total" fill={barFill} barSize={32} radius={[14, 14, 0, 0]} >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <LabelList
                   dataKey="total"
                   position="top"
-                  style={{ fontWeight: 700, fontSize: 16 }}
-                  fill="#2563eb"
-                  className="dark:!fill-blue-200"
-                  formatter={(v: number) => `₹${v.toLocaleString()}`}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  content={({ x, y, value }: any) => (
+                    <foreignObject x={x - 20} y={y - 28} width={40} height={22} style={{ overflow: 'visible' }}>
+                      <div className="flex items-center justify-center">
+                        <span className="px-1.5 py-0.5 rounded-full bg-primary/90 dark:bg-blue-900/30 text-white text-xs font-bold shadow border border-white/10 dark:border-blue-200/10">
+                          ₹{Number(value).toLocaleString()}
+                        </span>
+                      </div>
+                    </foreignObject>
+                  )}
                 />
               </Bar>
             </BarChart>
