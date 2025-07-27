@@ -28,7 +28,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
-  const [editData, setEditData] = useState<any | null>(null);
+  const [editData, setEditData] = useState<ProductSupplier | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function refreshData() {
@@ -57,7 +57,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
     try {
       await deleteProductSupplier(id);
       refreshData();
-    } catch (e) {
+    } catch {
       alert("Failed to delete supplier price");
     } finally {
       setDeletingId(null);
@@ -75,7 +75,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
         open={formOpen}
         onClose={() => setFormOpen(false)}
         productId={productId}
-        initialData={editData}
+        initialData={editData ?? undefined}
         onSaved={refreshData}
       />
     </div>
@@ -119,7 +119,7 @@ export default function SupplierPricingComparison({ productId, onClose }: Suppli
           open={formOpen}
           onClose={() => setFormOpen(false)}
           productId={productId}
-          initialData={editData}
+          initialData={editData ?? undefined}
           onSaved={refreshData}
         />
         {onClose && (

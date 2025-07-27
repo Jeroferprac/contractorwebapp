@@ -14,16 +14,19 @@ export default function SalesByProductBarChart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getSalesSummaryByProduct()
-      .then((res) => setData(Array.isArray(res) ? res : []))
-      .finally(() => setLoading(false));
+    const sampleData = [
+      { product_id: "1", product_name: "iPhone 17", total_quantity_sold: 10, total_revenue: 800000 },
+      { product_id: "2", product_name: "Dell Inspiron", total_quantity_sold: 10, total_revenue: 521000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
   if (loading) return <div className="h-48 flex items-center justify-center">Loading chart...</div>;
-  if (!data.length) return <div className="h-48 flex items-center justify-center text-gray-400">No data</div>;
+  if (!data.length) return <></>;
 
   return (
-    <div className="w-full h-64">
+    <div className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0 w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" />

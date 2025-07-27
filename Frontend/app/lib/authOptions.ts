@@ -20,14 +20,19 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
+          if (!res.ok) {
+            console.error("Login failed:", res.status, res.statusText);
+            return null;
+          }
+
           const user = await res.json();
 
-          if (res.ok && user) {
+          if (user && user.access_token) {
             return {
               id: user.id,
               name: user.name,
               email: user.email,
-              backendAccessToken: user.access_token,
+              backendToken: user.access_token,
             };
           }
           return null;
@@ -38,19 +43,26 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.backendAccessToken = user.backendAccessToken;
+        token.backendToken = user.backendToken;
       }
       return token;
     },
     async session({ session, token }) {
-      session.backendAccessToken = token.backendAccessToken;
+      if (session.user) {
+        session.user.backendToken = token.backendToken;
+      }
       return session;
     },
   },
   pages: {
     signIn: "/login",
   },
+  debug: process.env.NODE_ENV === "development",
 };

@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { TrendingUp } from "lucide-react";
 
 const performanceData = [
   { name: "Apple", early: 75, onTime: 15, late: 10 },
@@ -10,20 +11,21 @@ const performanceData = [
 
 export function SupplierPerformanceChart() {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold">Supplier Performance Report (Top 5 Suppliers)</CardTitle>
-      </CardHeader>
-      <CardContent className="pb-4">
+    <Card className="rounded-2xl border border-white/20 dark:border-blue-200/20 shadow-2xl bg-white/70 dark:bg-[#232946]/40 ring-1 ring-inset ring-white/10 dark:ring-blue-200/10 backdrop-blur-lg p-8 max-w-full h-full min-h-[320px]">
+      <CardContent className="pt-2 px-2">
+        <div className="flex items-center gap-3 mb-3 dark:text-blue-100">
+          <TrendingUp className="w-7 h-7 text-primary dark:text-blue-400" />
+          <span className="text-xl font-extrabold text-primary dark:text-blue-100 tracking-tight">Supplier Performance Report (Top 5 Suppliers)</span>
+        </div>
         <div className="space-y-3">
           {performanceData.map((supplier, index) => (
             <div key={index} className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700">{supplier.name}</span>
-                <div className="flex space-x-4 text-xs text-gray-500">
-                  <span>{supplier.early}%</span>
-                  <span>{supplier.onTime}%</span>
-                  <span>{supplier.late}%</span>
+                <span className="text-sm font-medium text-muted-foreground">{supplier.name}</span>
+                <div className="flex space-x-4 text-xs text-muted-foreground">
+                  <span className="text-base font-bold text-primary">{supplier.early}%</span>
+                  <span className="text-base font-bold text-primary">{supplier.onTime}%</span>
+                  <span className="text-base font-bold text-primary">{supplier.late}%</span>
                 </div>
               </div>
 
@@ -37,19 +39,10 @@ export function SupplierPerformanceChart() {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs">
-          <div className="flex items-center">
-            <div className="w-2.5 h-2.5 bg-blue-500 rounded mr-1.5"></div>
-            <span className="text-gray-600">Early</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2.5 h-2.5 bg-yellow-400 rounded mr-1.5"></div>
-            <span className="text-gray-600">On Time</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-2.5 h-2.5 bg-pink-500 rounded mr-1.5"></div>
-            <span className="text-gray-600">Late</span>
-          </div>
+        <div className="flex items-center mt-4 gap-4 text-sm font-bold text-muted-foreground dark:text-blue-100">
+          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-xs font-bold text-blue-500">Early</span>
+          <span className="px-3 py-1 rounded-full bg-yellow-400/20 text-xs font-bold text-yellow-400">On Time</span>
+          <span className="px-3 py-1 rounded-full bg-pink-500/20 text-xs font-bold text-pink-500">Late</span>
         </div>
       </CardContent>
     </Card>

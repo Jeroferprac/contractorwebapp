@@ -1,40 +1,31 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from 'zustand';
 
 interface AuthState {
-  backendAccessToken: string | null
-  userId: string | null
-  hydrated: boolean
-  setToken: (token: string) => void
-  setUserId: (id: string) => void
-  clearAuth: () => void
-  setHydrated: () => void
-  syncSession: (token: string, userId: string) => void; // 👈 add this
-
+  userId: string | null;
+  backendToken: string | null;
+  hydrated: boolean;
 }
 
-export const useAuth = create<AuthState>()(
-  persist(
-    (set) => ({
-      backendAccessToken: null,
-      userId: null,
-      hydrated: false,
-      setToken: (token) => set({ backendAccessToken: token }),
-      setUserId: (id) => set({ userId: id }),
-      clearAuth: () => set({ backendAccessToken: null, userId: null }),
-      setHydrated: () => set({ hydrated: true }),
-      syncSession: (token, userId) =>
-        set({ backendAccessToken: token, userId, hydrated: true }), // 👈 sync both
-    }),
-    {
-      name: "auth-storage",
-      partialize: (state) => ({
-        backendAccessToken: state.backendAccessToken,
-        userId: state.userId,
-      }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
-    }
-  )
-)
+interface AuthActions {
+  setToken: (token: string) => void;
+  setUserId: (userId: string) => void;
+  clearAuth: () => void;
+  hydrate: (token: string, userId: string) => void;
+  getToken: () => string | null;
+}
+
+export const useAuth = create<AuthState & AuthActions>((set, get) => ({
+  userId: null,
+  backendToken: null,
+  hydrated: false,
+
+  setToken: (token) => set({ backendToken: token }),
+  setUserId: (userId) => set({ userId }),
+  clearAuth: () => set({ backendToken: null, userId: null }),
+  hydrate: (token, userId) => 
+    set({ backendToken: token, userId, hydrated: true }), // 👈 sync both
+  getToken: () => {
+    const state = get();
+    return state.backendToken;
+  },
+}));

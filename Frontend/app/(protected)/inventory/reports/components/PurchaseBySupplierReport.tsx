@@ -15,10 +15,12 @@ export default function PurchaseBySupplierReport() {
 
   useEffect(() => {
     setLoading(true);
-    getPurchaseSummaryBySupplier()
-      .then((res) => setData(Array.isArray(res) ? res : []))
-      .catch(() => setError("Failed to load purchase summary"))
-      .finally(() => setLoading(false));
+    const sampleData = [
+      { supplier_name: "Apple Inc.", total_po: 12, total_amount: 480000 },
+      { supplier_name: "Samsung", total_po: 8, total_amount: 320000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
   return (
@@ -32,7 +34,7 @@ export default function PurchaseBySupplierReport() {
         ) : error ? (
           <div className="p-4 text-red-500">{error}</div>
         ) : !data.length ? (
-          <div className="p-4 text-gray-500">No data available.</div>
+          <></>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

@@ -62,50 +62,107 @@ export const API = {
   PROJECTS,
 };
 
-// ✅ Universal Fetch Helper with Cookie Support
-export async function fetchWithAuth<T >(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
-  // Get session and token
-  const session = await getSession();
-  const baseHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+// API Client for making authenticated requests to Next.js API routes
+class ApiClient {
+  private baseURL: string;
 
-  let extraHeaders: Record<string, string> = {};
-  if (options.headers) {
-    if (options.headers instanceof Headers) {
-      options.headers.forEach((value, key) => {
-        extraHeaders[key] = value;
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    // Get session and token
+    const session = await getSession();
+    const token = session?.user?.backendToken;
+    
+    const config: RequestInit = {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    // Use relative URL for Next.js API routes
+    const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    try {
+      console.log('API Client: Making request to:', url);
+      console.log('API Client: Request config:', {
+        method: config.method,
+        headers: config.headers,
+        body: config.body
       });
-    } else if (Array.isArray(options.headers)) {
-      options.headers.forEach(([key, value]) => {
-        extraHeaders[key] = value;
-      });
-    } else {
-      extraHeaders = options.headers as Record<string, string>;
+      
+      const response = await fetch(url, config);
+      
+      // Handle authentication errors
+      if (response.status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Client: Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        
+        // Provide more detailed error information
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`API request failed: ${endpoint}`, error);
+      throw error;
     }
   }
 
-  const headers: Record<string, string> = {
-    ...baseHeaders,
-    ...extraHeaders,
-  };
-  if (session?.backendAccessToken) {
-    headers["Authorization"] = `Bearer ${session.backendAccessToken}`;
+  async get<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
-  const response = await fetch(url, {
-    ...options,
-    credentials: "include", // ✅ Always send cookies
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || `Error ${response.status}`);
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+    });
   }
 
-  return response.json();
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: "DELETE" });
+  }
+
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
 }
+
+// Use empty string as base URL for Next.js API routes
+export const apiClient = new ApiClient("");
+export const { get, post, put, delete: del, patch } = apiClient;

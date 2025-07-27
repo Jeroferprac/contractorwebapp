@@ -46,6 +46,7 @@ interface ProductTableViewProps {
   onToggleAllProducts: () => void
   onToggleProductSelection: (productId: string) => void
   onCompare: (productId: string) => void
+  onView: (product: Product) => void
   onEdit: (product: Product) => void
   onAdjust: (product: Product) => void
   onDelete: (product: Product) => void
@@ -65,6 +66,7 @@ export function ProductTableView({
   onToggleAllProducts,
   onToggleProductSelection,
   onCompare,
+  onView,
   onEdit,
   onAdjust,
   onDelete,
@@ -188,7 +190,7 @@ export function ProductTableView({
                 variant="outline"
                 className="font-medium text-foreground border-purple-500/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs font-sans"
               >
-                {product.category}
+                {product.category?.name || "Uncategorized"}
               </Badge>
             </div>
           </TableCell>
@@ -364,9 +366,18 @@ export function ProductTableView({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start text-foreground hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs lg:text-sm font-sans"
-                    onClick={() => onCompare(product.id)}
+                    onClick={() => onView(product)}
                   >
                     <Eye className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
+                    View Details
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-foreground hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs lg:text-sm font-sans"
+                    onClick={() => onCompare(product.id)}
+                  >
+                    <Layers className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
                     Compare Prices
                   </Button>
                   <Button
@@ -409,11 +420,11 @@ export function ProductTableView({
   return (
     <div className="w-full rounded-xl lg:rounded-2xl shadow-xl bg-gradient-to-br from-background via-background to-muted/30 border border-border overflow-hidden">
       <div className="bg-background rounded-lg lg:rounded-xl overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar">
-          <Table className="min-w-full">
+        <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
+          <Table className="min-w-full text-xs">
             <TableHeader>
-              <TableRow className="bg-muted/30 border-b border-border hover:bg-muted/30">
-                <TableHead className="w-8 lg:w-12 sticky left-0 bg-background z-10 border-r border-border py-3">
+              <TableRow className="bg-muted/30 border-b border-border hover:bg-muted/30 h-8">
+                <TableHead className="w-8 lg:w-12 sticky left-0 bg-background z-10 border-r border-border py-2 px-2 text-xs">
                   <Checkbox
                     checked={selectedProducts.length === products.length}
                     onCheckedChange={onToggleAllProducts}
@@ -426,7 +437,7 @@ export function ProductTableView({
                   return (
                     <TableHead
                       key={column.key}
-                      className="font-bold text-foreground text-left whitespace-nowrap text-xs lg:text-sm font-sans py-3"
+                      className="font-bold text-foreground text-left whitespace-nowrap text-xs font-sans py-2 px-2"
                     >
                       <div className="flex items-center gap-1 lg:gap-2">
                         <IconComponent className="w-3 h-3 lg:w-4 lg:h-4 text-purple-500" />
@@ -437,7 +448,7 @@ export function ProductTableView({
                 })}
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="text-xs">
               <AnimatePresence>
                 {products.map((product, index) => (
                   <motion.tr
@@ -446,9 +457,9 @@ export function ProductTableView({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.05 }}
-                    className="group hover:bg-muted/30 transition-all duration-300 border-b border-border/30"
+                    className="group hover:bg-muted/30 transition-all duration-300 border-b border-border/30 h-8 text-xs"
                   >
-                    <TableCell className="w-8 lg:w-12 sticky left-0 bg-background group-hover:bg-muted/30 z-10 border-r border-border py-3">
+                    <TableCell className="w-8 lg:w-12 sticky left-0 bg-background group-hover:bg-muted/30 z-10 border-r border-border py-2 px-2">
                       <Checkbox
                         checked={selectedProducts.includes(product.id)}
                         onCheckedChange={() => onToggleProductSelection(product.id)}

@@ -34,16 +34,14 @@ import type { Product } from "@/lib/inventory";
 
 interface ProductTableProps {
   products: Product[]
+  onView?: (product: Product) => void
   onEdit?: (product: Product) => void
   onDelete?: (product: Product) => void
   onAdjust?: (
     product: Product,
     data: { quantity: number; notes: string; transaction_type: "inbound" | "outbound" },
   ) => void
-
-  onAddProduct?: () => void // Added onAddProduct prop
-  // headerRight?: React.ReactNode // Removed unused prop
-
+  onAddProduct?: () => void
 }
 
 // Updated columns structure - removed SKU as separate column, added description
@@ -91,7 +89,7 @@ const getStockBars = (currentStock: string | number, minStock: string | number) 
 }
 
 
-export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
+export function ProductTable({ products, onView, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
   // State management
 
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
@@ -295,6 +293,7 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                   onToggleAllProducts={toggleAllProducts}
                   onToggleProductSelection={toggleProductSelection}
                   onCompare={setCompareProductId}
+                  onView={onView || (() => {})}
                   onEdit={onEdit || (() => {})}
                   onAdjust={setAdjustProduct}
                   onDelete={onDelete || (() => {})}

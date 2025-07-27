@@ -1,160 +1,76 @@
-import NextAuth, { NextAuthOptions, User, Account, Session } from "next-auth"
-import GitHubProvider from "next-auth/providers/github"
-import CredentialsProvider from "next-auth/providers/credentials"
-import type { JWT } from "next-auth/jwt"
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-interface BackendLoginResponse {
-  access_token: string
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  backendToken?: string;
+}
+
+interface Token {
+  backendToken?: string;
+}
+
+interface Session {
   user: {
-    id: string
-    email: string
-    name: string
-  }
+    id: string;
+    name: string;
+    email: string;
+    backendToken?: string;
+  };
+  backendToken?: string;
 }
 
-declare module "next-auth" {
-  interface Session {
-    backendAccessToken?: string
-    userId?: string
-  }
-
-  interface User {
-    backendAccessToken?: string
-    userId?: string
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    backendAccessToken?: string
-    userId?: string
-  }
-}
-
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
+const handler = NextAuth({
+  ...authOptions,
+  callbacks: {
+    async jwt({ token, user, account }) {
+      // Initial sign in
+      if (account && user) {
         try {
-          // Call your backend login API
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/login`, {
+          const response = await fetch("http://localhost:8000/api/v1/users/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+            },
             body: JSON.stringify({
-              email: credentials?.email,
-              password: credentials?.password,
+              email: user.email,
+              password: "", // This will be handled by the credentials provider
             }),
           });
-          
-          if (!res.ok) {
-            console.error("Login failed:", res.status, res.statusText);
-            return null;
-          }
-          
-          const data = await res.json();
 
-          if (data.access_token && data.user) {
-            // Attach backend token and userId to user object
+          if (response.ok) {
+            const data = await response.json();
             return {
-              ...data.user,
-              backendAccessToken: data.access_token,
-              userId: data.user.id,
+              ...token,
+              backendToken: data.access_token,
             };
           }
-          return null;
         } catch (error) {
-          console.error("Authorize error:", error);
-          return null;
-        }
-      },
-    }),
-  ],
-  secret: process.env.NEXTAUTH_SECRET,
-
-  callbacks: {
-    async jwt({ token, user, account }: {
-      token: JWT,
-      user?: User | null,
-      account?: Account | null,
-    }): Promise<JWT> {
-      // On initial sign in (manual or OAuth)
-      if (user && user.backendAccessToken) {
-        token.backendAccessToken = user.backendAccessToken;
-        token.userId = user.userId;
-      }
-
-      // GitHub OAuth logic (already present)
-      if (account?.provider === "github" && account.access_token) {
-        try {
-          const githubAccessToken = account.access_token
-
-          // 1. Get user profile
-          const userProfileResp = await fetch("https://api.github.com/user", {
-            headers: { Authorization: `Bearer ${githubAccessToken}` },
-          })
-          const userProfile = await userProfileResp.json()
-
-          // 2. Get email
-          const emailResp = await fetch("https://api.github.com/user/emails", {
-            headers: { Authorization: `Bearer ${githubAccessToken}` },
-          })
-          const emails = await emailResp.json()
-          const primaryEmail = emails.find((e: { primary: boolean }) => e.primary)?.email ?? userProfile.email
-
-          // 3. POST to FastAPI backend
-          const payload = {
-            provider: "github",
-            user_info: {
-              email: primaryEmail,
-              name: userProfile.name || userProfile.login,
-              provider_id: String(userProfile.id),
-              provider: "github"
-            }
-          }
-
-          const backendResp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/oauth/github/callback`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          })
-
-          const data: BackendLoginResponse = await backendResp.json()
-
-          if (!backendResp.ok) {
-            console.error("❌ Backend Error:", data)
-            throw new Error("Backend registration/login failed")
-          }
-
-          // 4. Add backend token and ID to token
-          token.backendAccessToken = data.access_token
-          token.userId = data.user.id
-        } catch (error) {
-          console.error("🚨 GitHub backend sync failed:", error)
+          console.error("Error in jwt callback:", error);
         }
       }
 
-      return token
+      // Return previous token if the access token has not expired yet
+      if (user && user.backendToken) {
+        token.backendToken = user.backendToken;
+      }
+
+      return token;
     },
+    async session({ session, token }) {
+      // Send properties to the client
+      if (token.backendToken) {
+        session.backendToken = token.backendToken;
+        if (session.user) {
+          session.user.backendToken = token.backendToken;
+        }
+      }
 
-    async session({ session, token }: {
-      session: Session,
-      token: JWT
-    }): Promise<Session> {
-      session.backendAccessToken = token.backendAccessToken
-      session.userId = token.userId
-      return session
-    }
-  }
-}
+      return session;
+    },
+  },
+});
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };

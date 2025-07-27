@@ -12,6 +12,7 @@ import {
   Building2,
   Boxes,
   ChevronRight,
+  Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import clsx from "clsx"
@@ -24,6 +25,7 @@ const navItems = [
   { name: "Contractor", href: "/contractor", icon: User },
   { name: "Projects", href: "/contractor/projects", icon: FolderKanban },
   { name: "Company", href: "/company", icon: Building2 },
+  { name: "Customers", href: "/customers", icon: Users },
   {
     name: "Inventory",
     href: "/inventory",

@@ -13,16 +13,19 @@ export default function PurchaseBySupplierChart() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getPurchaseSummaryBySupplier()
-      .then((res) => setData(Array.isArray(res) ? res : []))
-      .finally(() => setLoading(false));
+    const sampleData = [
+      { supplier_name: "Apple Inc.", total_po: 12, total_amount: 480000 },
+      { supplier_name: "Samsung", total_po: 8, total_amount: 320000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
   if (loading) return <div className="h-48 flex items-center justify-center">Loading chart...</div>;
-  if (!data.length) return <div className="h-48 flex items-center justify-center text-gray-400">No data</div>;
+  if (!data.length) return <></>;
 
   return (
-    <div className="w-full h-64">
+    <div className="bg-white rounded-2xl shadow-md p-6 dark:bg-[#232946] border-0 w-full h-64">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -34,7 +37,7 @@ export default function PurchaseBySupplierChart() {
           <XAxis type="number" />
           <YAxis dataKey="supplier_name" type="category" width={120} />
           <Tooltip
-            formatter={(value: any, name: string, props: any) =>
+            formatter={(value: unknown, name: string) =>
               name === "total_amount"
                 ? [
                     `₹${Number(value).toLocaleString()}`,

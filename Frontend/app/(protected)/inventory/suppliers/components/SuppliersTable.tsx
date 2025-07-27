@@ -11,7 +11,10 @@ export interface Supplier {
   contact_person: string;
   email: string;
   phone: string;
-  address?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   payment_terms?: number;
   created_at?: string;
 }

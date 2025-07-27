@@ -7,6 +7,33 @@ import type {
   // Add other types as needed
 } from "@/types/inventory";
 
+// Export the local Product interface if defined
+export interface Product {
+  id: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  category?: string;
+  brand?: string;
+  unit?: string;
+  current_stock: number;
+  min_stock_level: number;
+  reorder_point?: number;
+  max_stock_level?: number;
+  cost_price?: number;
+  selling_price?: number;
+  description?: string;
+  weight?: number;
+  dimensions?: string;
+  is_active?: boolean;
+  track_serial?: boolean;
+  track_batch?: boolean;
+  is_composite?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+// Correct API base
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
 
 // --- Product APIs ---
@@ -51,7 +78,6 @@ export const updateSupplier = (id: string, data: CreateSupplierData) =>
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-
   }).then(res => res.json());
 export const deleteSupplier = (id: string) =>
   fetch(`${API_BASE}/suppliers/${id}`, { method: 'DELETE' }).then(res => res.json());
@@ -60,7 +86,6 @@ export const deleteSupplier = (id: string) =>
 export const getProductSuppliers = () => fetch(`${API_BASE}/product-suppliers`).then(res => res.json());
 export const createProductSupplier = (data: Record<string, unknown>) =>
   fetch(`${API_BASE}/product-suppliers`, {
-
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -200,4 +225,16 @@ export async function getProductByBarcode(barcode: string): Promise<Product | nu
   const res = await fetch(`${API_BASE}/products/barcode/${barcode}`);
   if (!res.ok) return null;
   return await res.json();
+}
+// Example: Adjust the type and endpoint as needed for your backend
+export async function addProduct(productData: any) {
+  const response = await fetch("/api/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(productData),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to add product");
+  }
+  return response.json();
 }

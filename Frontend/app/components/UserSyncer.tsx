@@ -9,9 +9,9 @@ export function UserSyncer() {
   const setUser = useUserStore((s) => s.setUser);
 
   useEffect(() => {
-    if (!session?.backendAccessToken) return;
+    if (!session?.user?.backendToken) return;
     fetch(API.PROFILE, {
-      headers: { Authorization: `Bearer ${session.backendAccessToken}` },
+      headers: { Authorization: `Bearer ${session.user.backendToken}` },
     })
       .then((res) => res.json())
       .then((user) => setUser(user));

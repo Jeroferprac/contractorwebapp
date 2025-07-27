@@ -1,171 +1,130 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import React from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { getSalesDetailsByPeriod } from "@/lib/inventory";
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  LabelList,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Users } from "lucide-react";
+import { useTheme } from "next-themes";
 
-interface SaleItem {
-  product_id: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
+interface SalesByCustomer {
+  customer: string;
+  total: number;
 }
 
-interface SaleDetail {
-  customer_name: string;
-  sale_date: string;
-  status: string;
-  total_amount: number;
-  items: SaleItem[];
-}
+export const SalesByCustomerChart = () => {
+  const [data, setData] = React.useState<SalesByCustomer[]>([]);
+  const [loading, setLoading] = React.useState<boolean>(true);
+  const { theme } = useTheme();
 
-function exportToCSV(data: any[], customers: string[]) {
-  if (!data.length) return;
-  const header = ["Date", ...customers.flatMap(c => [c + " Revenue", c + " Quantity"])].join(",");
-  const rows = data.map(row => {
-    return [
-      row.date,
-      ...customers.flatMap(c => [row[c]?.revenue ?? 0, row[c]?.quantity ?? 0])
-    ].join(",");
-  });
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "sales_by_customer.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-export default function SalesByCustomerChart() {
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const today = new Date();
-      const last90 = new Date();
-      last90.setDate(today.getDate() - 90);
-      const start = last90.toISOString().slice(0, 10);
-      const end = today.toISOString().slice(0, 10);
-      let sales: SaleDetail[] = [];
-      try {
-        sales = await getSalesDetailsByPeriod(start, end);
-      } catch {
-        sales = [];
-      }
-      // Build a map: { date: { customer1: {revenue, quantity}, ... } }
-      const dateMap: Record<string, any> = {};
-      const customerSet = new Set<string>();
-      sales.forEach((sale) => {
-        const date = sale.sale_date;
-        if (!dateMap[date]) dateMap[date] = { date };
-        const revenue = Number(sale.total_amount);
-        const quantity = sale.items.reduce((sum, item) => sum + Number(item.quantity), 0);
-        const customer = sale.customer_name;
-        if (!dateMap[date][customer]) dateMap[date][customer] = { revenue: 0, quantity: 0 };
-        dateMap[date][customer].revenue += revenue;
-        dateMap[date][customer].quantity += quantity;
-        customerSet.add(customer);
-      });
-      setChartData(Object.values(dateMap));
-      setCustomers(Array.from(customerSet));
-      setLoading(false);
-    })();
+  React.useEffect(() => {
+    // DEMO: Use sample data
+    const sampleData = [
+      { customer: "Acme Corp", total: 120000 },
+      { customer: "Omega Pvt", total: 110000 },
+      { customer: "Lambda Works", total: 105000 },
+      { customer: "Sigma Group", total: 95000 },
+      { customer: "Beta Ltd", total: 90000 },
+      { customer: "Pi Holdings", total: 85000 },
+    ];
+    setData(sampleData);
+    setLoading(false);
   }, []);
 
-  if (loading) return <div className="h-64 flex items-center justify-center">Loading chart...</div>;
-  if (!chartData.length) return <div className="h-64 flex items-center justify-center text-gray-400">No data</div>;
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
+    if (!active || !payload || !payload.length) return null;
+    const item = payload[0];
+    return (
+      <div className="rounded-lg border bg-white dark:bg-[#232946] p-3 shadow-lg text-gray-900 dark:text-white font-semibold">
+        <div className="text-base font-bold">{label}</div>
+        <div className="text-sm text-blue-700 dark:text-blue-200 font-semibold">
+          Sales: ₹{item.value?.toLocaleString()}
+        </div>
+      </div>
+    );
+  };
 
-  const colors = [
-    "#06b6d4", "#6366f1", "#f59e42", "#10b981", "#f43f5e", "#a21caf", "#eab308", "#0ea5e9", "#f472b6"
-  ];
+  // Gradient for bars
+  const barFill = "url(#barGradient)";
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle>Sales by Customer</CardTitle>
-          <CardDescription>
-            Area chart: each color is a customer, hover for full breakdown. Export to CSV available.
-          </CardDescription>
-        </div>
-        <Button size="sm" onClick={() => exportToCSV(chartData, customers)}>
-          Export CSV
-        </Button>
+    <Card className="rounded-2xl border border-white/20 dark:border-blue-200/20 shadow-2xl bg-white/70 dark:bg-[#232946]/40 ring-1 ring-inset ring-white/10 dark:ring-blue-200/10 backdrop-blur-lg p-4">
+      <CardHeader className="flex flex-row items-center gap-3 mb-1">
+        <Users className="w-7 h-7 text-primary dark:text-blue-300" />
+        <CardTitle className="text-xl font-extrabold text-primary dark:text-blue-100 tracking-tight">Sales by Customer</CardTitle>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ResponsiveContainer width="100%" height={250}>
-          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              {customers.map((customer, idx) => (
-                <linearGradient key={customer} id={`fill${idx}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={colors[idx % colors.length]} stopOpacity={0.8} />
-                  <stop offset="95%" stopColor={colors[idx % colors.length]} stopOpacity={0.1} />
+      <CardContent className="pt-2 px-2">
+        {loading ? (
+          <div className="flex items-center justify-center h-[150px] text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart
+              data={data}
+              margin={{ left: 10, right: 10, top: 32, bottom: 24 }}
+              barCategoryGap={30}
+            >
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.95} />
+                  <stop offset="100%" stopColor="#4f8cff" stopOpacity={0.8} />
                 </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value: string) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-              }}
-            />
-            <Tooltip
-              content={(props: any) => {
-                if (!props.active || !props.payload) return null;
-                return (
-                  <div className="bg-white rounded shadow p-2 text-xs">
-                    <div className="font-semibold mb-1">{props.label}</div>
-                    {customers.map((customer, idx) => {
-                      const entry = props.payload.find((e: any) => e.name === customer);
-                      if (!entry) return null;
-                      return (
-                        <div key={customer} className="mb-1">
-                          <div style={{ color: entry.color, fontWeight: 600 }}>{customer}</div>
-                          <div>Revenue: ₹{entry.payload[customer]?.revenue?.toLocaleString() ?? 0}</div>
-                          <div>Quantity: {entry.payload[customer]?.quantity ?? 0}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              }}
-            />
-            {customers.map((customer, idx) => (
-              <Area
-                key={customer}
-                dataKey={customer + ".revenue"}
-                type="natural"
-                fill={`url(#fill${idx})`}
-                stroke={colors[idx % colors.length]}
-                stackId="a"
-                name={customer}
-                isAnimationActive={false}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={theme === 'dark' ? 0.15 : 0.3} vertical={false} />
+              <XAxis
+                dataKey="customer"
+                stroke={theme === 'dark' ? '#c7d2fe' : '#334155'}
+                fontSize={15}
+                tickLine={false}
+                axisLine={{ stroke: theme === 'dark' ? '#c7d2fe' : '#cbd5e1', strokeWidth: 2 }}
+                tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontWeight: 600, fontSize: 15 }}
+                interval={0}
+                height={30}
+                className="text-sm font-medium text-muted-foreground dark:text-blue-100"
               />
-            ))}
-          </AreaChart>
-        </ResponsiveContainer>
+              <YAxis
+                stroke={theme === 'dark' ? '#c7d2fe' : '#334155'}
+                fontSize={14}
+                tickLine={false}
+                axisLine={{ stroke: theme === 'dark' ? '#c7d2fe' : '#cbd5e1', strokeWidth: 2 }}
+                tick={{ fill: theme === 'dark' ? '#c7d2fe' : 'var(--muted-foreground)', fontWeight: 600, fontSize: 15, textAnchor: 'end', dx: -8 }}
+                tickFormatter={(value: number) =>
+                  ` 9${Number(value).toLocaleString("en-IN")}`
+                }
+                width={80}
+                className="text-sm font-medium text-muted-foreground dark:text-blue-100"
+              />
+              <Tooltip content={CustomTooltip} cursor={{ fill: "#e0e7ff", opacity: 0.1 }} />
+              <Bar dataKey="total" fill={barFill} barSize={32} radius={[14, 14, 0, 0]} >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  content={({ x, y, value }: any) => (
+                    <foreignObject x={x - 20} y={y - 28} width={40} height={22} style={{ overflow: 'visible' }}>
+                      <div className="flex items-center justify-center">
+                        <span className="px-1.5 py-0.5 rounded-full bg-primary/90 dark:bg-blue-900/30 text-white text-xs font-bold shadow border border-white/10 dark:border-blue-200/10">
+                          ₹{Number(value).toLocaleString()}
+                        </span>
+                      </div>
+                    </foreignObject>
+                  )}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
-} 
+};
