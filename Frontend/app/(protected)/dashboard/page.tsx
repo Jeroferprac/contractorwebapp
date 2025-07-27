@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   console.log("💡 Session in Dashboard:", session);
-  console.log("🔐 Backend token:", session?.backendAccessToken);
+  console.log("🔐 Backend token:", session?.user?.backendToken);
 
   useEffect(() => {
     if (status === "unauthenticated") {

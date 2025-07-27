@@ -102,14 +102,17 @@ export default function SuppliersPage() {
   const handleAddSupplier = async (data: SupplierFormData) => {
     setModalLoading(true);
     try {
-      const newSupplier = await createSupplier(data);
-      setSuppliers((prev) => [newSupplier, ...prev]);
+      await createSupplier(data);
       toast({ title: "Supplier added", description: `${data.name} was added successfully.`, variant: "success" });
       setModalOpen(false);
       setActivities((prev: Activity[]) => [
         { action: "Added Supplier", item: data.name, time: new Date().toLocaleTimeString() },
         ...prev,
       ]);
+      
+      // Refresh suppliers from server
+      const updatedSuppliers = await getSuppliers();
+      setSuppliers(updatedSuppliers);
     } catch (err: unknown) {
       const error = err as Error;
       toast({ title: "Error", description: error.message || "Failed to add supplier", variant: "destructive" });
@@ -139,8 +142,7 @@ export default function SuppliersPage() {
     if (!editSupplier) return;
     setModalLoading(true);
     try {
-      const updated = await updateSupplier(editSupplier.id!, data);
-      setSuppliers((prev) => prev.map((s) => (s.id === editSupplier.id ? updated : s)));
+      await updateSupplier(editSupplier.id!, data);
       toast({ title: "Supplier updated", description: `${data.name} was updated successfully.`, variant: "success" });
       setEditSupplier(null);
       setModalOpen(false);
@@ -148,6 +150,10 @@ export default function SuppliersPage() {
         { action: "Updated Supplier", item: data.name, time: new Date().toLocaleTimeString() },
         ...prev,
       ]);
+      
+      // Refresh suppliers from server
+      const updatedSuppliers = await getSuppliers();
+      setSuppliers(updatedSuppliers);
     } catch (err: unknown) {
       const error = err as Error;
       toast({ title: "Error", description: error.message || "Failed to update supplier", variant: "destructive" });
@@ -160,13 +166,16 @@ export default function SuppliersPage() {
   const handleDeleteSupplier = async (id: string) => {
     try {
       await deleteSupplier(id);
-      setSuppliers((prev) => prev.filter((s) => s.id !== id));
       toast({ title: "Supplier deleted", description: `Supplier was deleted successfully.`, variant: "success" });
       setDeleteId(null);
       setActivities((prev: Activity[]) => [
         { action: "Deleted Supplier", item: id, time: new Date().toLocaleTimeString() },
         ...prev,
       ]);
+      
+      // Refresh suppliers from server
+      const updatedSuppliers = await getSuppliers();
+      setSuppliers(updatedSuppliers);
     } catch (err: unknown) {
       const error = err as Error;
       toast({ title: "Error", description: error.message || "Failed to delete supplier", variant: "destructive" });

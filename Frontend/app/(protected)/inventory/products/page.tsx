@@ -9,6 +9,7 @@ import {
   adjustInventory,
 } from "@/lib/inventory"
 import { ProductTable } from "./components/ProductTable"
+import { ProductViewModal } from "./components/ProductViewModal"
 import type { Product } from "@/lib/inventory"
 import { RecentActivity } from "./components/RecentActivity"
 import { DashboardLayout } from "@/components/layout/dashboard-layout"
@@ -36,6 +37,7 @@ export default function ProductsPage() {
   const [addSupplierOpen, setAddSupplierOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [viewProduct, setViewProduct] = useState<Product | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [orderDialogOpen, setOrderDialogOpen] = useState(false)
   const [orderLoading, setOrderLoading] = useState(false)
@@ -77,6 +79,11 @@ export default function ProductsPage() {
     setEditProduct(null); // Reset edit state
   }
 
+  // Handler for viewing a product
+  function handleViewProduct(product: Product) {
+    setViewProduct(product);
+  }
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -98,14 +105,16 @@ export default function ProductsPage() {
 
   async function handleAddProduct(form: CreateProductData) {
     try {
-      const newProduct = await createProduct(form)
+      await createProduct(form)
       setDialogOpen(false)
-      setProducts((prev) => [newProduct, ...prev])
       toast({
         title: "Product added",
         description: `Product '${form.name}' was added successfully.`,
         variant: "success",
       })
+      
+      // Refresh the product list from server
+      await fetchProducts()
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add product"
       setAddError(errorMessage)
@@ -132,8 +141,7 @@ export default function ProductsPage() {
     if (!editProduct) return
     setEditLoading(true)
     try {
-      const updated = await updateProduct(editProduct.id, form)
-      setProducts((prev) => prev.map((p) => (p.id === editProduct.id ? updated : p)))
+      await updateProduct(editProduct.id, form)
       toast({
         title: "Product updated",
         description: `Product '${form.name}' was updated successfully.`,
@@ -141,18 +149,25 @@ export default function ProductsPage() {
       })
       setEditProduct(null)
       setEditDialogOpen(false)
+      
+      // Refresh the product list from server
+      await fetchProducts()
 
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add supplier"
+      const errorMessage = err instanceof Error ? err.message : "Failed to update product"
       toast({ title: "Error", description: errorMessage, variant: "error" })
+    } finally {
+      setEditLoading(false)
     }
   }
 
   async function handleDeleteProduct(id: string) {
     try {
       await deleteProduct(id)
-      setProducts((prev) => prev.filter((p) => p.id !== id))
       toast({ title: "Product deleted", description: "Product was deleted successfully.", variant: "success" })
+      
+      // Refresh the product list from server
+      await fetchProducts()
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to delete product"
       if (errorMessage.includes("Failed to delete product")) {
@@ -348,6 +363,7 @@ export default function ProductsPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <ProductTable
           products={products}
+          onView={handleViewProduct}
           onEdit={(product) => {
             setEditProduct(product)
             setEditDialogOpen(true)
@@ -495,6 +511,15 @@ export default function ProductsPage() {
           <SaleForm onSubmit={handleCreateOrder} onCancel={() => setOrderDialogOpen(false)} loading={orderLoading} />
         </DialogContent>
       </Dialog>
+
+      {/* Product View Modal */}
+      <ProductViewModal
+        product={viewProduct}
+        open={!!viewProduct}
+        onOpenChange={(open) => {
+          if (!open) setViewProduct(null);
+        }}
+      />
     </DashboardLayout>
   );
 }

@@ -1,47 +1,66 @@
 import { Customer, CustomerSales, CustomerPayment } from "@/types/customer";
+import { apiClient } from "./api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Helper function to sanitize customer data
+function sanitizeCustomerData(data: Partial<Customer>): Partial<Customer> {
+  const sanitized = { ...data };
+  
+  // Convert empty strings to undefined for optional fields
+  Object.keys(sanitized).forEach(key => {
+    const value = sanitized[key as keyof Customer];
+    if (value === '') {
+      sanitized[key as keyof Customer] = undefined;
+    }
+  });
+  
+  // Ensure credit_limit is a number or undefined
+  if (sanitized.credit_limit !== undefined) {
+    sanitized.credit_limit = Number(sanitized.credit_limit) || 0;
+  }
+  
+  // Ensure payment_terms is a number
+  if (sanitized.payment_terms !== undefined) {
+    sanitized.payment_terms = Number(sanitized.payment_terms) || 30;
+  }
+  
+  // Ensure is_active is a boolean
+  if (sanitized.is_active !== undefined) {
+    sanitized.is_active = Boolean(sanitized.is_active);
+  }
+  
+  return sanitized;
+}
 
 export async function getCustomers(): Promise<Customer[]> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/`);
-  if (!res.ok) throw new Error("Failed to fetch customers");
-  return res.json();
+  console.log('Customer API: Fetching customers from /api/customers');
+  return apiClient.get<Customer[]>("/api/customers");
 }
 
 export async function getCustomer(id: string): Promise<Customer> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch customer");
-  return res.json();
+  console.log('Customer API: Fetching customer with ID:', id);
+  return apiClient.get<Customer>(`/api/customers/${id}`);
 }
 
 export async function createCustomer(data: Partial<Customer>): Promise<Customer> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to create customer");
-  return res.json();
+  console.log('Customer API: Creating customer with data:', data);
+  const sanitizedData = sanitizeCustomerData(data);
+  console.log('Customer API: Sanitized data:', sanitizedData);
+  return apiClient.post<Customer>("/api/customers", sanitizedData);
 }
 
 export async function updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to update customer");
-  return res.json();
+  console.log('Customer API: Updating customer with ID:', id, 'data:', data);
+  const sanitizedData = sanitizeCustomerData(data);
+  console.log('Customer API: Sanitized data:', sanitizedData);
+  return apiClient.put<Customer>(`/api/customers/${id}`, sanitizedData);
 }
 
 export async function getCustomerSales(id: string): Promise<CustomerSales[]> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/${id}/sales`);
-  if (!res.ok) throw new Error("Failed to fetch customer sales");
-  return res.json();
+  console.log('Customer API: Fetching sales for customer ID:', id);
+  return apiClient.get<CustomerSales[]>(`/api/customers/${id}/sales`);
 }
 
 export async function getCustomerPayments(id: string): Promise<CustomerPayment[]> {
-  const res = await fetch(`${API_BASE}/api/v1/customers/${id}/payments`);
-  if (!res.ok) throw new Error("Failed to fetch customer payments");
-  return res.json();
+  console.log('Customer API: Fetching payments for customer ID:', id);
+  return apiClient.get<CustomerPayment[]>(`/api/customers/${id}/payments`);
 } 

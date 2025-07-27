@@ -46,6 +46,7 @@ interface ProductTableViewProps {
   onToggleAllProducts: () => void
   onToggleProductSelection: (productId: string) => void
   onCompare: (productId: string) => void
+  onView: (product: Product) => void
   onEdit: (product: Product) => void
   onAdjust: (product: Product) => void
   onDelete: (product: Product) => void
@@ -65,6 +66,7 @@ export function ProductTableView({
   onToggleAllProducts,
   onToggleProductSelection,
   onCompare,
+  onView,
   onEdit,
   onAdjust,
   onDelete,
@@ -364,9 +366,18 @@ export function ProductTableView({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start text-foreground hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs lg:text-sm font-sans"
-                    onClick={() => onCompare(product.id)}
+                    onClick={() => onView(product)}
                   >
                     <Eye className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
+                    View Details
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-foreground hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 transition-all duration-300 text-xs lg:text-sm font-sans"
+                    onClick={() => onCompare(product.id)}
+                  >
+                    <Layers className="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
                     Compare Prices
                   </Button>
                   <Button

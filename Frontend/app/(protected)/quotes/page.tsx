@@ -6,6 +6,7 @@ import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { Eye, Edit } from "lucide-react";
 
 interface Quotation {
   id: string;
@@ -26,11 +27,11 @@ export default function QuotesPage() {
 
   useEffect(() => {
     const fetchQuotations = async () => {
-      if (!session?.backendAccessToken) return;
+      if (!session?.user?.backendToken) return;
       try {
         const res = await fetch("http://localhost:8000/api/v1/quotation/quotes", {
           headers: {
-            Authorization: `Bearer ${session.backendAccessToken}`,
+            Authorization: `Bearer ${session.user.backendToken}`,
           },
         });
         if (!res.ok) throw new Error("Failed to fetch quotations");
@@ -81,6 +82,7 @@ export default function QuotesPage() {
                     <th className="px-4 py-3 font-semibold">Budget (₹)</th>
                     <th className="px-4 py-3 font-semibold">Deadline</th>
                     <th className="px-4 py-3 font-semibold">Attachments</th>
+                    <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,6 +112,28 @@ export default function QuotesPage() {
                         ) : (
                           <span className="text-gray-500 text-sm">No Attachments</span>
                         )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/quotes/${quote.id}`)}
+                            className="flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/quotes/${quote.id}/edit`)}
+                            className="flex items-center gap-1"
+                          >
+                            <Edit className="w-3 h-3" />
+                            Edit
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

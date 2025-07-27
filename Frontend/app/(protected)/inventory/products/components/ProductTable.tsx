@@ -34,6 +34,7 @@ import type { Product } from "@/lib/inventory";
 
 interface ProductTableProps {
   products: Product[]
+  onView?: (product: Product) => void
   onEdit?: (product: Product) => void
   onDelete?: (product: Product) => void
   onAdjust?: (
@@ -88,7 +89,7 @@ const getStockBars = (currentStock: string | number, minStock: string | number) 
 }
 
 
-export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
+export function ProductTable({ products, onView, onEdit, onDelete, onAdjust, onAddProduct }: ProductTableProps) {
   // State management
 
   const [adjustProduct, setAdjustProduct] = useState<Product | null>(null)
@@ -292,6 +293,7 @@ export function ProductTable({ products, onEdit, onDelete, onAdjust, onAddProduc
                   onToggleAllProducts={toggleAllProducts}
                   onToggleProductSelection={toggleProductSelection}
                   onCompare={setCompareProductId}
+                  onView={onView || (() => {})}
                   onEdit={onEdit || (() => {})}
                   onAdjust={setAdjustProduct}
                   onDelete={onDelete || (() => {})}

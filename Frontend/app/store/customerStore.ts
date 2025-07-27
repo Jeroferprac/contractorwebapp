@@ -24,7 +24,7 @@ interface CustomerState {
   fetchCustomerPayments: (id: string) => Promise<void>;
 }
 
-export const useCustomerStore = create<CustomerState>((set) => ({
+export const useCustomerStore = create<CustomerState>((set, get) => ({
   customers: [],
   selectedCustomer: null,
   sales: [],
@@ -34,10 +34,13 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   fetchCustomers: async () => {
     set({ loading: true, error: null });
     try {
+      console.log('CustomerStore: Fetching customers...');
       const customers = await getCustomers();
+      console.log('CustomerStore: Customers fetched successfully:', customers);
       set({ customers });
     } catch (error: any) {
-      set({ error: error.message });
+      console.error('CustomerStore: Error fetching customers:', error);
+      set({ error: error.message || 'Failed to fetch customers' });
     } finally {
       set({ loading: false });
     }
@@ -48,7 +51,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const selectedCustomer = await getCustomer(id);
       set({ selectedCustomer });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.message || 'Failed to fetch customer' });
     } finally {
       set({ loading: false });
     }
@@ -56,10 +59,14 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   createCustomer: async (data) => {
     set({ loading: true, error: null });
     try {
+      console.log('CustomerStore: Creating customer with data:', data);
       await apiCreateCustomer(data);
-      await (useCustomerStore.getState().fetchCustomers());
+      console.log('CustomerStore: Customer created successfully');
+      // Refresh the customer list
+      await get().fetchCustomers();
     } catch (error: any) {
-      set({ error: error.message });
+      console.error('CustomerStore: Error creating customer:', error);
+      set({ error: error.message || 'Failed to create customer' });
     } finally {
       set({ loading: false });
     }
@@ -67,10 +74,14 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   updateCustomer: async (id, data) => {
     set({ loading: true, error: null });
     try {
+      console.log('CustomerStore: Updating customer with ID:', id, 'data:', data);
       await apiUpdateCustomer(id, data);
-      await (useCustomerStore.getState().fetchCustomers());
+      console.log('CustomerStore: Customer updated successfully');
+      // Refresh the customer list
+      await get().fetchCustomers();
     } catch (error: any) {
-      set({ error: error.message });
+      console.error('CustomerStore: Error updating customer:', error);
+      set({ error: error.message || 'Failed to update customer' });
     } finally {
       set({ loading: false });
     }
@@ -81,7 +92,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const sales = await getCustomerSales(id);
       set({ sales });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.message || 'Failed to fetch customer sales' });
     } finally {
       set({ loading: false });
     }
@@ -92,7 +103,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
       const payments = await getCustomerPayments(id);
       set({ payments });
     } catch (error: any) {
-      set({ error: error.message });
+      set({ error: error.message || 'Failed to fetch customer payments' });
     } finally {
       set({ loading: false });
     }
