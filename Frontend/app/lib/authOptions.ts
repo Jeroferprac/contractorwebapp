@@ -11,7 +11,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          const res = await fetch("http://localhost:8000/api/v1/users/login", {
+          const res = await fetch("http://localhost:8000/api/v1/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -55,7 +55,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (token.backendToken && session.user) {
         session.user.backendToken = token.backendToken;
       }
       return session;

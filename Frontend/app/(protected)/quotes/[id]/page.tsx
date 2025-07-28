@@ -127,36 +127,31 @@ export default function QuoteDetailPage() {
 
   if (loading) {
     return (
-      <DashboardLayout session={session} title="Quote Details">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading quote details...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading quote details...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   if (error || !quote) {
     return (
-      <DashboardLayout session={session} title="Quote Details">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-500 mb-4">{error || 'Quote not found'}</p>
-            <Button onClick={() => router.push('/quotes')}>
-              Back to Quotes
-            </Button>
-          </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-500 mb-4">{error || 'Quote not found'}</p>
+          <Button onClick={() => router.push('/quotes')}>
+            Back to Quotes
+          </Button>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout session={session} title="Quote Details">
-      <div className="max-w-6xl mx-auto py-8 px-4">
+    <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">

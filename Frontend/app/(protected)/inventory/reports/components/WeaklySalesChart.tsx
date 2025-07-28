@@ -153,7 +153,7 @@ export function WeeklySalesChart() {
                       {/* Tooltip */}
                       {tooltip && tooltip.day === days[dayIdx] && tooltip.hour === `${hours[hourIdx].toString().padStart(2, "0")}:00` && tooltip.value === intensity && intensity > 0 && (
                         <div
-                          className={`absolute z-20 left-1/2 -translate-x-1/2 ${hourIdx < 2 ? 'top-12' : '-top-12'} bg-white dark:bg-[#232946] text-gray-900 dark:text-white px-4 py-2 rounded-xl shadow-xl text-sm font-semibold whitespace-nowrap border border-gray-200 dark:border-blue-900 pointer-events-none font-bold animate-fade-in`}
+                          className={`absolute z-20 left-1/2 -translate-x-1/2 ${hourIdx < 2 ? 'top-12' : '-top-12'} bg-white dark:bg-[#232946] text-gray-900 dark:text-white px-4 py-2 rounded-xl shadow-xl text-sm font-bold whitespace-nowrap border border-gray-200 dark:border-blue-900 pointer-events-none animate-fade-in`}
                         >
                           <div>{tooltip.day}, {tooltip.hour}</div>
                           <div>Sales: <span className="font-bold text-primary dark:text-blue-200">{intensity}</span></div>

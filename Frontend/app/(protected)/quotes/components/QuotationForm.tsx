@@ -31,7 +31,7 @@ export default function QuotationForm() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const token = session?.backendAccessToken || session?.accessToken;
+    const token = session?.user?.backendToken;
     console.log("Session:", session);
     console.log("Status:", status);
     console.log("Token:", token);
@@ -70,10 +70,10 @@ export default function QuotationForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+    <div className="w-full max-w-2xl mx-auto">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg p-8 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-xl space-y-6"
+        className="w-full p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl space-y-6"
       >
         <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Submit Your Quotation</h2>
 

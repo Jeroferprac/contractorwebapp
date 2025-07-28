@@ -78,6 +78,19 @@ class ApiClient {
     const session = await getSession();
     const token = session?.user?.backendToken;
     
+    console.log('API Client Debug:');
+    console.log('- Session:', session);
+    console.log('- Session user:', session?.user);
+    console.log('- Token:', token);
+    console.log('- Token type:', typeof token);
+    console.log('- Token length:', token?.length);
+    console.log('- Endpoint:', endpoint);
+    
+    if (!token) {
+      console.error('API Client: No token found in session!');
+      console.error('API Client: Session structure:', JSON.stringify(session, null, 2));
+    }
+    
     const config: RequestInit = {
       headers: {
         "Content-Type": "application/json",
@@ -86,6 +99,8 @@ class ApiClient {
       },
       ...options,
     };
+
+    console.log('API Client: Final headers:', config.headers);
 
     // Use relative URL for Next.js API routes
     const url = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -100,8 +115,12 @@ class ApiClient {
       
       const response = await fetch(url, config);
       
+      console.log('API Client: Response status:', response.status);
+      console.log('API Client: Response headers:', Object.fromEntries(response.headers.entries()));
+      
       // Handle authentication errors
       if (response.status === 401) {
+        console.error('API Client: Authentication failed - 401 response');
         throw new Error("Authentication failed. Please log in again.");
       }
       

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { getPurchaseSummaryBySupplier } from "@/lib/inventory";
 
 interface PurchaseSummarySupplier {
   supplier_name: string;
@@ -11,7 +10,6 @@ interface PurchaseSummarySupplier {
 export default function PurchaseBySupplierReport() {
   const [data, setData] = useState<PurchaseSummarySupplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -31,10 +29,8 @@ export default function PurchaseBySupplierReport() {
       <CardContent>
         {loading ? (
           <div className="p-4">Loading...</div>
-        ) : error ? (
-          <div className="p-4 text-red-500">{error}</div>
         ) : !data.length ? (
-          <></>
+          <div className="p-4 text-gray-500">No data available</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

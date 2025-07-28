@@ -222,54 +222,54 @@ export default function CustomersPage() {
   return (
     <DashboardLayout title="Customers">
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-gray-900 px-4 py-4">
-        {/* Welcome Message - Moved to Top */}
+        {/* Welcome Message */}
         <div className="max-w-5xl mx-auto mb-6">
-          <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-3 text-slate-800 dark:text-slate-100 mb-2">
-              <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              Welcome back, <span className="text-blue-600 dark:text-blue-400">{userDisplayName}!</span>
+          <div className="text-center px-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-slate-800 dark:text-slate-100 mb-2">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
+              <span>Welcome back, <span className="text-blue-600 dark:text-blue-400">{userDisplayName}!</span></span>
             </h1>
-            <p className="text-base text-slate-600 dark:text-slate-300">Here are your customers and their details.</p>
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">Manage your customer relationships and track their information.</p>
           </div>
         </div>
         {/* Stat Cards Row */}
-        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-4 py-3 transition-all duration-200">
-            <div className="bg-white/20 dark:bg-white/10 rounded-full p-2"><Users className="w-5 h-5" /></div>
-            <div>
+        <div className="max-w-5xl mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-3 sm:px-4 py-3 transition-all duration-200">
+            <div className="bg-white/20 dark:bg-white/10 rounded-full p-1.5 sm:p-2"><Users className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs uppercase tracking-wider opacity-90">Total</div>
-              <div className="text-xl font-bold">{total}</div>
+              <div className="text-lg sm:text-xl font-bold">{total}</div>
             </div>
           </Card>
-          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-700 dark:to-emerald-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-4 py-3 transition-all duration-200">
-            <div className="bg-white/20 dark:bg-white/10 rounded-full p-2"><UserCheck className="w-5 h-5" /></div>
-            <div>
+          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-700 dark:to-emerald-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-3 sm:px-4 py-3 transition-all duration-200">
+            <div className="bg-white/20 dark:bg-white/10 rounded-full p-1.5 sm:p-2"><UserCheck className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs uppercase tracking-wider opacity-90">Active</div>
-              <div className="text-xl font-bold">{active}</div>
+              <div className="text-lg sm:text-xl font-bold">{active}</div>
             </div>
           </Card>
-          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-4 py-3 transition-all duration-200">
-            <div className="bg-white/20 dark:bg-white/10 rounded-full p-2"><UserX className="w-5 h-5" /></div>
-            <div>
+          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-3 sm:px-4 py-3 transition-all duration-200">
+            <div className="bg-white/20 dark:bg-white/10 rounded-full p-1.5 sm:p-2"><UserX className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs uppercase tracking-wider opacity-90">Inactive</div>
-              <div className="text-xl font-bold">{inactive}</div>
+              <div className="text-lg sm:text-xl font-bold">{inactive}</div>
             </div>
           </Card>
-          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-4 py-3 transition-all duration-200">
-            <div className="bg-white/20 dark:bg-white/10 rounded-full p-2"><UserPlus className="w-5 h-5" /></div>
-            <div>
+          <Card className="flex flex-row items-center gap-3 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800 text-white shadow-lg hover:shadow-xl rounded-2xl px-3 sm:px-4 py-3 transition-all duration-200">
+            <div className="bg-white/20 dark:bg-white/10 rounded-full p-1.5 sm:p-2"><UserPlus className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs uppercase tracking-wider opacity-90">New This Month</div>
-              <div className="text-xl font-bold">{newThisMonth}</div>
+              <div className="text-lg sm:text-xl font-bold">{newThisMonth}</div>
             </div>
           </Card>
         </div>
         {/* Filter/Search Bar */}
         <div className="max-w-5xl mx-auto mb-4">
-          <div className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-lg border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-lg border border-slate-200 dark:border-slate-700">
             {/* All Customers Dropdown */}
             <div className="flex items-center gap-2">
               <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                <SelectTrigger className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 font-medium shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 min-w-[180px]">
+                <SelectTrigger className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 font-medium shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 min-w-[180px] w-full sm:w-auto">
                   <SelectValue placeholder={`All Customers (${customers.length})`} />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-slate-800 border-0 text-slate-700 dark:text-slate-200">
@@ -287,33 +287,36 @@ export default function CustomersPage() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={handleSearchKey}
-                className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400"
+                className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-slate-500 dark:placeholder:text-slate-400 w-full"
               />
             </div>
 
             {/* Filters Button */}
             <Button 
               variant="outline" 
-              className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 flex items-center gap-2 transition-colors"
+              className="bg-slate-100 dark:bg-slate-700 border-0 text-slate-700 dark:text-slate-200 rounded-lg px-4 py-2 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 flex items-center gap-2 transition-colors w-full sm:w-auto"
               onClick={() => {
                 // Toggle advanced filters visibility or open filter modal
                 console.log('Advanced filters clicked');
               }}
             >
               <Filter className="w-4 h-4" />
-              Filters
+              <span className="hidden sm:inline">Filters</span>
+              <span className="sm:hidden">Filter</span>
             </Button>
           </div>
         </div>
         {/* Main Card/Table Section */}
         <Card className="max-w-7xl mx-auto bg-white dark:bg-slate-800 border-0 shadow-2xl rounded-3xl overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
-            <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 gap-3">
+            <CardTitle className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               Customer Directory
             </CardTitle>
-            <Button onClick={handleAdd} className="bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600 font-bold rounded-xl px-4 py-1.5 transition-all flex items-center gap-2 hover:shadow-xl transform hover:scale-105 text-sm pb-2">
-              <Plus className="w-3 h-3" /> Add Customer
+            <Button onClick={handleAdd} className="bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg hover:from-purple-600 hover:to-blue-600 font-bold rounded-xl px-3 sm:px-4 py-1.5 transition-all flex items-center gap-2 hover:shadow-xl transform hover:scale-105 text-xs sm:text-sm w-full sm:w-auto">
+              <Plus className="w-3 h-3" /> 
+              <span className="hidden sm:inline">Add Customer</span>
+              <span className="sm:hidden">Add Customer</span>
             </Button>
           </CardHeader>
           <CardContent className="p-0">
@@ -352,9 +355,9 @@ export default function CustomersPage() {
                     <TableHeader>
                       <TableRow className="bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 border-b-2 border-slate-300 dark:border-slate-600">
                         <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs">Customer</TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs">Contact</TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs">Location</TableHead>
-                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs">Financial</TableHead>
+                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs hidden md:table-cell">Contact</TableHead>
+                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs hidden lg:table-cell">Location</TableHead>
+                        <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-left py-4 px-4 uppercase tracking-wide text-xs hidden xl:table-cell">Financial</TableHead>
                         <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-center py-4 px-4 uppercase tracking-wide text-xs">Status</TableHead>
                         <TableHead className="font-semibold text-slate-700 dark:text-slate-200 text-center py-4 px-4 uppercase tracking-wide text-xs">Actions</TableHead>
                       </TableRow>
@@ -372,10 +375,25 @@ export default function CustomersPage() {
                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                   {c.contact_person || 'No contact'}
                                 </p>
+                                {/* Mobile contact info */}
+                                <div className="md:hidden mt-1 space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                    <Mail className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                    <span className="text-xs break-all text-slate-700 dark:text-slate-300">
+                                      {c.email || 'No email'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Phone className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                    <span className="text-xs truncate text-slate-700 dark:text-slate-300">
+                                      {c.phone || 'No phone'}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <div className="space-y-1">
                               <div className="flex items-center space-x-2">
                                 <Mail className="h-3 w-3 text-blue-600 dark:text-blue-400" />
@@ -391,7 +409,7 @@ export default function CustomersPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             <div className="space-y-1">
                               <div className="flex items-center space-x-2">
                                 <MapPin className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -404,7 +422,7 @@ export default function CustomersPage() {
                               </p>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden xl:table-cell">
                             <div className="space-y-1">
                               <div className="flex items-center space-x-2">
                                 <CreditCard className="h-3 w-3 text-orange-600 dark:text-orange-400" />
@@ -430,12 +448,14 @@ export default function CustomersPage() {
                                 {c.is_active ? (
                                   <>
                                     <CheckCircle className="mr-1 h-3 w-3" />
-                                    Active
+                                    <span className="hidden sm:inline">Active</span>
+                                    <span className="sm:hidden">✓</span>
                                   </>
                                 ) : (
                                   <>
                                     <XCircle className="mr-1 h-3 w-3" />
-                                    Inactive
+                                    <span className="hidden sm:inline">Inactive</span>
+                                    <span className="sm:hidden">✗</span>
                                   </>
                                 )}
                               </span>
@@ -474,19 +494,19 @@ export default function CustomersPage() {
         </Card>
         {/* View Details Modal */}
         <Dialog open={!!viewCustomer} onOpenChange={() => setViewCustomer(null)}>
-          <DialogContent className="bg-white dark:bg-[#232946] border-0 shadow-2xl rounded-2xl max-w-4xl w-full p-0 overflow-hidden">
+          <DialogContent className="bg-white dark:bg-[#232946] border-0 shadow-2xl rounded-2xl max-w-4xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
             <DialogTitle className="sr-only">Customer Details</DialogTitle>
             <div className="relative">
               {/* Header with gradient background */}
               <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 text-white">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold">{viewCustomer?.name}</h2>
-                      <p className="text-purple-100 text-sm">Customer Details</p>
+                      <h2 className="text-lg sm:text-xl font-bold">{viewCustomer?.name}</h2>
+                      <p className="text-purple-100 text-xs sm:text-sm">Customer Details</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -498,12 +518,14 @@ export default function CustomersPage() {
                       {viewCustomer?.is_active ? (
                         <>
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Active
+                          <span className="hidden sm:inline">Active</span>
+                          <span className="sm:hidden">✓</span>
                         </>
                       ) : (
                         <>
                           <XCircle className="w-3 h-3 mr-1" />
-                          Inactive
+                          <span className="hidden sm:inline">Inactive</span>
+                          <span className="sm:hidden">✗</span>
                         </>
                       )}
                     </span>
