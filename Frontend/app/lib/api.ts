@@ -70,6 +70,9 @@ export async function fetchWithAuth<T >(
 ): Promise<T> {
   // Get session and token
   const session = await getSession();
+  console.log('🔐 Session:', session ? 'Found' : 'Not found')
+  console.log('🔑 Backend token:', session?.backendAccessToken ? 'Present' : 'Missing')
+  
   const baseHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -95,7 +98,13 @@ export async function fetchWithAuth<T >(
   };
   if (session?.backendAccessToken) {
     headers["Authorization"] = `Bearer ${session.backendAccessToken}`;
+    console.log('✅ Authorization header added')
+  } else {
+    console.log('❌ No backend token available')
   }
+
+  console.log('🌐 Making request to:', url)
+  console.log('📋 Headers:', headers)
 
   const response = await fetch(url, {
     ...options,
@@ -103,8 +112,12 @@ export async function fetchWithAuth<T >(
     headers,
   });
 
+  console.log('📡 Response status:', response.status)
+  console.log('📡 Response ok:', response.ok)
+
   if (!response.ok) {
     const errorText = await response.text();
+    console.log('❌ Error response:', errorText)
     throw new Error(errorText || `Error ${response.status}`);
   }
 

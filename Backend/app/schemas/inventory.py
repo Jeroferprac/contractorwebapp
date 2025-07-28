@@ -209,7 +209,7 @@ class WarehouseStockBase(BaseModel):
     bin_location: Optional[str] = None
 
 class WarehouseStockCreate(WarehouseStockBase):
-    pass
+    available_quantity: Optional[Annotated[Decimal, Field(max_digits=10, decimal_places=2)]] = None
 
 class WarehouseStockUpdate(WarehouseStockBase):
     product_id: Optional[UUID] = None

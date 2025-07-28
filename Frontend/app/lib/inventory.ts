@@ -1,4 +1,4 @@
-import { BASE_URL } from './api';
+import { BASE_URL, fetchWithAuth } from './api';
 import type {
   CreateProductData,
   CreateSupplierData,
@@ -10,7 +10,7 @@ import type {
 const API_BASE = `${BASE_URL}/api/v1/inventory/inventory`;
 
 // --- Product APIs ---
-export const getProducts = () => fetch(`${API_BASE}/products`).then(res => res.json());
+export const getProducts = () => fetchWithAuth(`${API_BASE}/products`);
 export const createProduct = (data: CreateProductData) =>
   fetch(`${API_BASE}/products`, {
     method: 'POST',

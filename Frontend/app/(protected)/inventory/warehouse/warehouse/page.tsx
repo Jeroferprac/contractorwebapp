@@ -1,215 +1,206 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Plus, MapPin, Package, Grid3X3 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { WarehouseTable } from "./components/WarehouseTable"
-import { WarehouseMap } from "./components/WarehouseMap"
-import { BinAccordion } from "./components/BinAccordion"
-import { WarehouseFilterBar } from "./components/WarehouseFilterBar"
-import { getWarehouses } from "@/lib/warehouse"
-import type { Warehouse, WarehouseCardWarehouse } from "@/types/warehouse"
+import { motion } from "framer-motion"
+import { WarehouseManagementHeader } from "./components/ManagementHeader"
+import { WarehouseFiltersBar } from "./components/WarehouseFiltersBar"
+import { WarehouseStatsWidgets } from "./components/StatsWidget"
+import { WarehouseDataTable } from "./components/WarehouseTable"
+import { BinMapView } from "./components/WarehouseMap"
+import { AddBinModal } from "./components/BinAddModal"
+import { getWarehouses, getWarehouseStocks } from "@/lib/warehouse"
+import { getProducts } from "@/lib/inventory"
+import type { Warehouse, WarehouseStock } from "@/types/warehouse"
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+// Loading component
+function LoadingSpinner() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center gap-4"
+      >
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-purple-200 rounded-full animate-spin border-t-purple-600"></div>
+          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-ping border-t-purple-400"></div>
+        </div>
+        <motion.p
+          className="text-muted-foreground font-medium"
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+        >
+          Loading warehouse data...
+        </motion.p>
+      </motion.div>
+    </div>
+  )
 }
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-}
-
-// Add mapping function for UI fields
-function mapWarehouseToCardWarehouse(w: Warehouse): WarehouseCardWarehouse {
-  return {
-    ...w,
-    address: w.address ?? "N/A",
-    totalBins: 0, // TODO: Replace with real value if available
-    stockCount: 0, // TODO: Replace with real value if available
-    status: "active", // TODO: Replace with real value if available
-    region: w.address ?? "N/A", // Or use a real region field if available
-    manager: w.contact_person || "N/A",
-    utilization: 0, // TODO: Replace with real value if available
-    lastUpdated: w.updated_at || w.created_at,
-  }
-}
-
-export default function WarehousePage() {
-  const [warehouses, setWarehouses] = useState<WarehouseCardWarehouse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [regionFilter, setRegionFilter] = useState("all")
-  const [viewMode, setViewMode] = useState<"grid" | "map">("grid")
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string | null>(null)
+export default function BinsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
+  const [viewMode, setViewMode] = useState<"list" | "map">("list")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filters, setFilters] = useState({
+    warehouse: "",
+    binTypes: [] as string[],
+    status: "all" as "all" | "active" | "inactive",
+  })
 
+  // Real data states
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+  const [stocks, setStocks] = useState<WarehouseStock[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Listen for Add Bin event from filters bar
+  useEffect(() => {
+    const handler = () => setShowAddModal(true)
+    window.addEventListener('open-add-bin-modal', handler)
+    return () => window.removeEventListener('open-add-bin-modal', handler)
+  }, [])
+
+  // Fetch real data
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
-      const data = await getWarehouses()
-      // Map to UI type
-      setWarehouses(data.map(mapWarehouseToCardWarehouse))
-      setLoading(false)
+      setError(null)
+      try {
+        console.log("Fetching warehouses...")
+        const warehousesData = await getWarehouses()
+        console.log("Warehouses fetched:", warehousesData)
+        console.log("Warehouses type:", typeof warehousesData, "Length:", Array.isArray(warehousesData) ? warehousesData.length : 'Not array')
+        
+        console.log("Fetching stocks...")
+        const stocksData = await getWarehouseStocks()
+        console.log("Stocks fetched:", stocksData)
+        console.log("Stocks type:", typeof stocksData, "Length:", Array.isArray(stocksData) ? stocksData.length : 'Not array')
+        
+        console.log("Fetching products...")
+        const productsData = await getProducts() as any[]
+        console.log("Products fetched:", productsData)
+        console.log("Products type:", typeof productsData, "Length:", Array.isArray(productsData) ? productsData.length : 'Not array')
+        
+        console.log("Setting state...")
+        setWarehouses(warehousesData)
+        setStocks(stocksData)
+        setProducts(productsData)
+        console.log("State set successfully")
+      } catch (err) {
+        console.error("Error fetching warehouse data:", err)
+        setError(`Failed to load warehouse data: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [])
 
-  // Remove warehouseCards and mapWarehouseApiToCard
-  const uniqueRegions = Array.from(new Set(warehouses.map(w => w.region).filter(Boolean)))
-  const filteredWarehouses = warehouses.filter((warehouse) => {
-    const matchesSearch =
-      (warehouse.name?.toLowerCase() ?? "").includes(searchTerm.toLowerCase()) ||
-      (warehouse.address?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || (warehouse as any).status === statusFilter || (warehouse as any).is_active === (statusFilter === "active")
-    const matchesRegion = regionFilter === "all" || (warehouse as any).region === regionFilter
-    return matchesSearch && matchesStatus && matchesRegion
-  })
+  // Helper functions
+  const getWarehouseName = (warehouseId: string) => {
+    const warehouse = warehouses.find(w => w.id === warehouseId)
+    return warehouse?.name || warehouseId
+  }
+
+  const getProductName = (productId: string) => {
+    const product = products.find(p => p.id === productId)
+    return product?.name || productId
+  }
+
+  const refreshData = async () => {
+    setLoading(true)
+    try {
+              const [warehousesData, stocksData, productsData] = await Promise.all([
+          getWarehouses(),
+          getWarehouseStocks(),
+          getProducts() as Promise<any[]>,
+        ])
+        setWarehouses(warehousesData)
+        setStocks(stocksData)
+        setProducts(productsData)
+    } catch (err) {
+      console.error("Error refreshing data:", err)
+      setError("Failed to refresh data. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-lg">Loading warehouses...</div>
+    return <LoadingSpinner />
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={refreshData}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 space-y-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-        >
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
-              Warehouse Directory
-            </h1>
-            <p className="text-muted-foreground mt-1">Manage and monitor your warehouse locations and inventory</p>
-          </div>
+    <div className="flex-1 space-y-8 p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 min-h-screen">
+      <WarehouseManagementHeader
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-card border rounded-lg p-1">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className={viewMode === "grid" ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white" : ""}
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === "map" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("map")}
-                className={viewMode === "map" ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white" : ""}
-              >
-                <MapPin className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </motion.div>
+      <WarehouseFiltersBar 
+        filters={filters}
+        onFiltersChange={setFilters}
+        warehouses={warehouses || []}
+        statusOptions={["all", "active", "inactive"]}
+        onAddBin={() => setShowAddModal(true)}
+        onExport={(type) => {
+          if (type === 'csv') {
+            // Export CSV logic
+            console.log('Exporting CSV...')
+          } else if (type === 'pdf') {
+            // Export PDF logic
+            console.log('Exporting PDF...')
+          }
+        }}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
-        {/* Filter Bar */}
-        <WarehouseFilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          regionFilter={regionFilter}
-          onRegionChange={setRegionFilter}
-          regions={uniqueRegions}
+      <WarehouseStatsWidgets 
+        warehouses={warehouses}
+        stocks={stocks}
+      />
+
+      {viewMode === "list" ? (
+        <WarehouseDataTable 
+          searchQuery={searchQuery} 
+          filters={filters}
+          warehouses={warehouses}
+          stocks={stocks}
+          products={products}
+          onRefresh={refreshData}
         />
+      ) : (
+        <BinMapView 
+          warehouses={warehouses}
+          stocks={stocks}
+        />
+      )}
 
-        {/* Main Content */}
-        <AnimatePresence mode="wait">
-          {viewMode === "grid" ? (
-            <motion.div
-              key="grid"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              className="space-y-6"
-            >
-              {/* Warehouse Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredWarehouses.map((warehouse) => (
-                  <motion.div key={warehouse.id} variants={itemVariants}>
-                    <WarehouseTable warehouses={filteredWarehouses} />
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Bin Details Accordion */}
-              {selectedWarehouse && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <BinAccordion
-                    warehouseId={selectedWarehouse}
-                    warehouse={warehouses.find((w) => w.id === selectedWarehouse)!}
-                  />
-                </motion.div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="map"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-            >
-              <WarehouseMap
-                warehouses={filteredWarehouses}
-                selectedWarehouse={selectedWarehouse}
-                onWarehouseSelect={setSelectedWarehouse}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Empty State */}
-        {filteredWarehouses.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">No warehouses found</h3>
-            <p className="text-muted-foreground mb-4">Try adjusting your search criteria or add a new warehouse.</p>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Warehouse
-            </Button>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Floating Action Button */}
-      <motion.div
-        className="fixed bottom-6 right-6 z-50"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 300, damping: 20 }}
-      >
-        <Button
-          size="lg"
-          onClick={() => setShowAddModal(true)}
-          className="h-14 w-14 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </motion.div>
+      <AddBinModal 
+        open={showAddModal} 
+        onOpenChange={setShowAddModal}
+        warehouses={warehouses}
+        products={products}
+        onSuccess={refreshData}
+      />
     </div>
   )
 }

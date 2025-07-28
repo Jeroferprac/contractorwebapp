@@ -25,7 +25,7 @@ export function StockPagination({
   const endIndex = Math.min(currentPage * itemsPerPage, totalItems)
 
   return (
-    <div className="flex items-center justify-between mt-6 pt-4 border-t border-border/50">
+    <div className="flex items-center justify-between p-6 border-t bg-gradient-to-r from-background to-background/50">
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted-foreground">Rows per page:</span>
         <Select value={itemsPerPage.toString()} onValueChange={(value) => onItemsPerPageChange(Number(value))}>
@@ -41,7 +41,7 @@ export function StockPagination({
         </Select>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-6">
         <span className="text-sm text-muted-foreground">
           {startIndex}-{endIndex} of {totalItems}
         </span>
@@ -56,6 +56,7 @@ export function StockPagination({
           >
             <ChevronsLeft className="w-4 h-4" />
           </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -70,6 +71,7 @@ export function StockPagination({
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
             const pageNum = i + Math.max(1, currentPage - 2)
             if (pageNum > totalPages) return null
+
             return (
               <Button
                 key={pageNum}
@@ -96,6 +98,7 @@ export function StockPagination({
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+
           <Button
             variant="outline"
             size="sm"

@@ -5,6 +5,8 @@ export interface Warehouse {
   address: string;
   contact_person?: string;
   phone?: string;
+  email?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -14,9 +16,11 @@ export interface WarehouseStock {
   warehouse_id: string;
   product_id: string;
   bin_location?: string;
-  quantity: number;
-  reserved_quantity?: number;
-  created_at: string;
+  quantity: string | number;
+  reserved_quantity?: string | number;
+  available_quantity?: string | number;
+  notes?: string;
+  created_at?: string;
   updated_at?: string;
 }
 

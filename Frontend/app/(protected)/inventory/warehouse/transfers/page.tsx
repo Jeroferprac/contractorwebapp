@@ -179,9 +179,9 @@ export default function TransfersPage() {
             </Button>
 
             <Button
-              size="sm"
+              type="button"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600 rounded-xl px-4 py-2 font-medium transition-all duration-300 shadow-lg flex items-center gap-2"
               onClick={() => setShowTransferForm(true)}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Transfer
@@ -189,80 +189,80 @@ export default function TransfersPage() {
           </div>
         </motion.div>
 
-        {/* Summary Stats Cards */}
+        {/* Summary Cards */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6"
         >
-          <motion.div variants={itemVariants} className="h-full">
-            <div className="bg-gradient-to-br from-card to-card/50 border shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
-              <div className="flex items-center justify-between flex-1">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Transfers This Week</p>
-                  <p className="text-3xl font-bold group-hover:text-blue-600 transition-colors">
+          <motion.div variants={itemVariants}>
+            <div className="bg-white border shadow-lg rounded-xl p-6 hover:shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 group hover:-translate-y-2 dark:bg-gray-900 dark:border-gray-700">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full">
+                  <ArrowUpDown className="w-6 h-6 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Transfers This Week</p>
+                  <p className="text-3xl font-bold group-hover:text-blue-600 transition-colors dark:text-white">
                     {transferSummary.thisWeek}
                   </p>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     <ArrowUpDown className="w-3 h-3 text-green-500" />
                     <span className="text-xs text-green-500">+{transferSummary.weeklyChange}%</span>
-                    <span className="text-xs text-muted-foreground">vs last week</span>
+                    <span className="text-xs text-muted-foreground dark:text-gray-400">vs last week</span>
                   </div>
                 </div>
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full shrink-0">
-                  <ArrowUpDown className="w-6 h-6 text-white" />
-                </div>
               </div>
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="h-full">
-            <div className="bg-gradient-to-br from-card to-card/50 border shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
-              <div className="flex items-center justify-between flex-1">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Inbound Transfers</p>
-                  <p className="text-3xl font-bold group-hover:text-green-600 transition-colors">
-                    {transferSummary.totalInbound}
-                  </p>
-                  <p className="text-xs text-muted-foreground">This month</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full shrink-0">
+          <motion.div variants={itemVariants}>
+            <div className="bg-white border shadow-lg rounded-xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-300 group hover:-translate-y-2 dark:bg-gray-900 dark:border-gray-700">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full">
                   <ArrowUpDown className="w-6 h-6 text-white rotate-180" />
                 </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Inbound Transfers</p>
+                  <p className="text-3xl font-bold group-hover:text-green-600 transition-colors dark:text-white">
+                    {transferSummary.totalInbound}
+                  </p>
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">This month</p>
+                </div>
               </div>
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="h-full">
-            <div className="bg-gradient-to-br from-card to-card/50 border shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
-              <div className="flex items-center justify-between flex-1">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Outbound Transfers</p>
-                  <p className="text-3xl font-bold group-hover:text-orange-600 transition-colors">
+          <motion.div variants={itemVariants}>
+            <div className="bg-white border shadow-lg rounded-xl p-6 hover:shadow-2xl hover:shadow-orange-500/25 transition-all duration-300 group hover:-translate-y-2 dark:bg-gray-900 dark:border-gray-700">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full">
+                  <ArrowUpDown className="w-6 h-6 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Outbound Transfers</p>
+                  <p className="text-3xl font-bold group-hover:text-orange-600 transition-colors dark:text-white">
                     {transferSummary.totalOutbound}
                   </p>
-                  <p className="text-xs text-muted-foreground">This month</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full shrink-0">
-                  <ArrowUpDown className="w-6 h-6 text-white" />
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">This month</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="h-full">
-            <div className="bg-gradient-to-br from-card to-card/50 border shadow-lg rounded-lg p-6 hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
-              <div className="flex items-center justify-between flex-1">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Completion Rate</p>
-                  <p className="text-3xl font-bold group-hover:text-purple-600 transition-colors">
+          <motion.div variants={itemVariants}>
+            <div className="bg-white border shadow-lg rounded-xl p-6 hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 group hover:-translate-y-2 dark:bg-gray-900 dark:border-gray-700">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                  <ArrowUpDown className="w-6 h-6 text-white" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Completion Rate</p>
+                  <p className="text-3xl font-bold group-hover:text-purple-600 transition-colors dark:text-white">
                     {transferSummary.thisWeek > 0 ? Math.round((transferSummary.completed / transferSummary.thisWeek) * 100) : 0}%
                   </p>
-                  <p className="text-xs text-muted-foreground">Success rate</p>
-                </div>
-                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shrink-0">
-                  <ArrowUpDown className="w-6 h-6 text-white" />
+                  <p className="text-xs text-muted-foreground dark:text-gray-400">Success rate</p>
                 </div>
               </div>
             </div>
@@ -293,19 +293,6 @@ export default function TransfersPage() {
           </motion.div>
         </motion.div>
 
-        {/* Filters */}
-        <motion.div variants={itemVariants} initial="hidden" animate="visible">
-          <TransferFilter
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            warehouseFilter={warehouseFilter}
-            onWarehouseChange={setWarehouseFilter}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            warehouseOptions={[...new Set(warehouses.map((w) => w.name))]}
-          />
-        </motion.div>
-
         {/* Transfer Table */}
         <motion.div variants={itemVariants} initial="hidden" animate="visible">
           {isMobile ? (
@@ -317,7 +304,12 @@ export default function TransfersPage() {
       </div>
 
       {/* Transfer Form Modal */}
-      <TransferForm open={showTransferForm} onOpenChange={setShowTransferForm} onSuccess={fetchTransfers} />
+      <TransferForm
+        isOpen={showTransferForm}
+        onClose={() => setShowTransferForm(false)}
+        isEditing={true}
+        transfer={null}
+      />
     </div>
   )
 }

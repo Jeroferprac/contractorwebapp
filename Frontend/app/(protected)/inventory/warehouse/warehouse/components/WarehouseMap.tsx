@@ -1,253 +1,294 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useMemo } from "react"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { MapPin, Package, Eye, Settings } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { Badge } from "@/components/ui/badge"
+import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import type { Warehouse, WarehouseStock } from "@/types/warehouse"
 
-interface Warehouse {
-  id: string
-  name: string
-  address: string
-  totalBins: number
-  stockCount: number
-  status: "active" | "inactive"
-  region: string
-  manager: string
-  utilization: number
-  lastUpdated: string
-}
-
-interface WarehouseMapProps {
+interface BinMapViewProps {
   warehouses: Warehouse[]
-  selectedWarehouse: string | null
-  onWarehouseSelect: (id: string) => void
+  stocks: WarehouseStock[]
 }
 
-export function WarehouseMap({ warehouses, selectedWarehouse, onWarehouseSelect }: WarehouseMapProps) {
-  const [showBins, setShowBins] = useState(false)
+interface BinLocation {
+  id: string
+  binCode: string
+  warehouseId: string
+  warehouseName: string
+  quantity: number
+  reservedQuantity: number
+  availableQuantity: number
+  x: number
+  y: number
+  status: 'active' | 'nearly-full' | 'full' | 'empty'
+}
 
-  // Dynamically generate map regions from warehouse data
-  const uniqueRegions = Array.from(new Set(warehouses.map(w => w.region || "Unknown")))
-  const regionColors = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444", "#6366f1"]
-  const mapRegions = uniqueRegions.map((region, idx) => ({
-    id: region.toLowerCase().replace(/\s+/g, "-"),
-    name: region,
-    x: 20 + (idx * 20), // Spread out regions horizontally (customize as needed)
-    y: 40 + (idx * 10), // Spread out regions vertically (customize as needed)
-    color: regionColors[idx % regionColors.length],
-  }))
+export function BinMapView({ warehouses, stocks }: BinMapViewProps) {
+  const [selectedBin, setSelectedBin] = useState<BinLocation | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
 
-  const getWarehousePosition = (warehouse: Warehouse) => {
-    const regionIdx = uniqueRegions.indexOf(warehouse.region || "Unknown")
-    const region = mapRegions[regionIdx]
-    if (region) {
-      return { x: region.x, y: region.y }
+  // Generate bin locations from real stock data
+  const binLocations = useMemo(() => {
+    const bins: BinLocation[] = []
+    
+    stocks.forEach((stock, index) => {
+      if (stock.bin_location) {
+        const warehouse = warehouses.find(w => w.id === stock.warehouse_id)
+        const quantity = typeof stock.quantity === 'string' ? parseFloat(stock.quantity) : stock.quantity || 0
+        const reservedQty = typeof stock.reserved_quantity === 'string' ? parseFloat(stock.reserved_quantity) : stock.reserved_quantity || 0
+        const availableQty = typeof stock.available_quantity === 'string' ? parseFloat(stock.available_quantity) : stock.available_quantity || 0
+        
+        // Calculate status based on quantity
+        let status: 'active' | 'nearly-full' | 'full' | 'empty' = 'empty'
+        if (quantity > 0) {
+          if (quantity >= 100) status = 'full'
+          else if (quantity >= 50) status = 'nearly-full'
+          else status = 'active'
+        }
+
+        // Generate position based on warehouse and bin location
+        const warehouseIndex = warehouses.findIndex(w => w.id === stock.warehouse_id)
+        const zoneX = 50 + (warehouseIndex % 2) * 250
+        const zoneY = 50 + Math.floor(warehouseIndex / 2) * 200
+        
+        // Position within zone based on bin location
+        const binNumber = parseInt(stock.bin_location.replace(/\D/g, '')) || index
+        const x = zoneX + 50 + (binNumber % 3) * 50
+        const y = zoneY + 50 + Math.floor((binNumber % 6) / 3) * 60
+
+        bins.push({
+          id: stock.id,
+          binCode: stock.bin_location,
+          warehouseId: stock.warehouse_id,
+          warehouseName: warehouse?.name || 'Unknown Warehouse',
+          quantity,
+          reservedQuantity: reservedQty,
+          availableQuantity: availableQty,
+          x,
+          y,
+          status
+        })
+      }
+    })
+
+    // Add some empty bins for visual balance
+    warehouses.forEach((warehouse, warehouseIndex) => {
+      const existingBins = bins.filter(bin => bin.warehouseId === warehouse.id)
+      const zoneX = 50 + (warehouseIndex % 2) * 250
+      const zoneY = 50 + Math.floor(warehouseIndex / 2) * 200
+      
+      // Add empty bins if needed
+      for (let i = existingBins.length; i < 6; i++) {
+        const x = zoneX + 50 + (i % 3) * 50
+        const y = zoneY + 50 + Math.floor(i / 3) * 60
+        
+        bins.push({
+          id: `empty-${warehouse.id}-${i}`,
+          binCode: `BIN-${warehouse.code}-${String.fromCharCode(65 + i)}`,
+          warehouseId: warehouse.id,
+          warehouseName: warehouse.name,
+          quantity: 0,
+          reservedQuantity: 0,
+          availableQuantity: 0,
+          x,
+          y,
+          status: 'empty'
+        })
+      }
+    })
+
+    return bins
+  }, [warehouses, stocks])
+
+  // Group bins by warehouse for zone display
+  const warehouseZones = useMemo(() => {
+    const zones: { warehouse: Warehouse; bins: BinLocation[] }[] = []
+    
+    warehouses.forEach(warehouse => {
+      const warehouseBins = binLocations.filter(bin => bin.warehouseId === warehouse.id)
+      zones.push({ warehouse, bins: warehouseBins })
+    })
+    
+    return zones
+  }, [warehouses, binLocations])
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return '#10b981'
+      case 'nearly-full': return '#f59e0b'
+      case 'full': return '#ef4444'
+      case 'empty': return '#94a3b8'
+      default: return '#94a3b8'
     }
-    return { x: 50, y: 50 }
+  }
+
+  const handleBinClick = (bin: BinLocation, event: React.MouseEvent) => {
+    setSelectedBin(bin)
+    setTooltipPosition({ x: event.clientX, y: event.clientY })
+  }
+
+  const handleMouseLeave = () => {
+    setSelectedBin(null)
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Map View */}
-      <div className="lg:col-span-3">
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg h-[600px]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-blue-500" />
-                Warehouse Distribution Map
-              </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Switch id="show-bins" checked={showBins} onCheckedChange={setShowBins} />
-                <Label htmlFor="show-bins" className="text-sm">
-                  Show Bins
-                </Label>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="h-full">
-            <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg overflow-hidden">
-              {/* Background Map Grid */}
-              <div className="absolute inset-0 opacity-10">
-                <svg width="100%" height="100%" className="absolute inset-0">
-                  <defs>
-                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-                </svg>
-              </div>
-
-              {/* Region Zones */}
-              {mapRegions.map((region) => (
-                <motion.div
-                  key={region.id}
-                  className="absolute w-32 h-24 rounded-lg border-2 border-dashed opacity-30 hover:opacity-60 transition-opacity"
-                  style={{
-                    left: `${region.x}%`,
-                    top: `${region.y}%`,
-                    borderColor: region.color,
-                    backgroundColor: `${region.color}20`,
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="absolute -top-6 left-2 text-xs font-medium" style={{ color: region.color }}>
-                    {region.name}
-                  </div>
-                </motion.div>
-              ))}
-
-              {/* Warehouse Markers */}
-              {warehouses.map((warehouse) => {
-                const position = getWarehousePosition(warehouse)
-                const isSelected = selectedWarehouse === warehouse.id
-
-                return (
-                  <motion.div
-                    key={warehouse.id}
-                    className={`absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 ${
-                      isSelected ? "z-20" : "z-10"
-                    }`}
-                    style={{
-                      left: `${position.x}%`,
-                      top: `${position.y}%`,
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => onWarehouseSelect(warehouse.id)}
-                  >
-                    {/* Warehouse Pin */}
-                    <div
-                      className={`w-8 h-8 rounded-full border-2 shadow-lg transition-all duration-300 ${
-                        isSelected
-                          ? "bg-purple-500 border-purple-600 shadow-purple-500/50"
-                          : warehouse.status === "active"
-                            ? "bg-green-500 border-green-600 hover:bg-green-600"
-                            : "bg-red-500 border-red-600 hover:bg-red-600"
-                      }`}
-                    >
-                      <Package className="w-4 h-4 text-white m-auto mt-1" />
-                    </div>
-
-                    {/* Tooltip */}
-                    <motion.div
-                      className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-card border shadow-lg rounded-lg p-3 min-w-48 ${
-                        isSelected ? "opacity-100" : "opacity-0 hover:opacity-100"
-                      } transition-opacity duration-200`}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: isSelected ? 1 : 0, y: isSelected ? 0 : 10 }}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm">{warehouse.name}</h4>
-                          <Badge
-                            className={
-                              warehouse.status === "active"
-                                ? "bg-green-500/10 text-green-500 border-green-500/20"
-                                : "bg-red-500/10 text-red-500 border-red-500/20"
-                            }
-                          >
-                            {warehouse.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{warehouse.address}</p>
-                        <div className="flex justify-between text-xs">
-                          <span>Bins: {warehouse.totalBins}</span>
-                          <span>Stock: {warehouse.stockCount.toLocaleString()}</span>
-                        </div>
-                        {showBins && (
-                          <div className="pt-2 border-t">
-                            <div className="grid grid-cols-4 gap-1">
-                              {Array.from({ length: Math.min(12, warehouse.totalBins) }).map((_, i) => (
-                                <div key={i} className="w-3 h-3 rounded-sm bg-blue-500/20 border border-blue-500/40" />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      {/* Arrow */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-card" />
-                    </motion.div>
-                  </motion.div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Warehouse Layout</h2>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 bg-white/80 dark:bg-slate-800/80 border-white/20 rounded-2xl"
+          >
+            <ZoomIn className="h-4 w-4 mr-2" />
+            Zoom In
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 bg-white/80 dark:bg-slate-800/80 border-white/20 rounded-2xl"
+          >
+            <ZoomOut className="h-4 w-4 mr-2" />
+            Zoom Out
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 bg-white/80 dark:bg-slate-800/80 border-white/20 rounded-2xl"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 bg-white/80 dark:bg-slate-800/80 border-white/20 rounded-2xl"
+          >
+            <Maximize className="h-4 w-4 mr-2" />
+            Fullscreen
+          </Button>
+        </div>
       </div>
 
-      {/* Warehouse List Sidebar */}
-      <div className="space-y-4">
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-lg">Warehouses</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {warehouses.map((warehouse) => (
-              <motion.div
-                key={warehouse.id}
-                className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                  selectedWarehouse === warehouse.id
-                    ? "bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/30"
-                    : "hover:bg-muted/50 hover:border-border"
-                }`}
-                onClick={() => onWarehouseSelect(warehouse.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-sm">{warehouse.name}</h4>
-                  <Badge
-                    className={
-                      warehouse.status === "active"
-                        ? "bg-green-500/10 text-green-500 border-green-500/20"
-                        : "bg-red-500/10 text-red-500 border-red-500/20"
-                    }
+      <Card className="p-8 border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-lg rounded-3xl">
+        <div className="relative h-[600px] bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-2xl overflow-hidden">
+          {/* Warehouse Layout SVG */}
+          <svg
+            viewBox="0 0 800 600"
+            className="w-full h-full"
+            style={{
+              background:
+                'url(\'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="20" height="20" fill="%23f8fafc"/><rect width="1" height="20" fill="%23e2e8f0"/><rect width="20" height="1" fill="%23e2e8f0"/></svg>\')',
+            }}
+          >
+            {/* Render warehouse zones */}
+            {warehouseZones.map((zone, zoneIndex) => {
+              const zoneX = 50 + (zoneIndex % 2) * 250
+              const zoneY = 50 + Math.floor(zoneIndex / 2) * 200
+              
+              return (
+                <g key={zone.warehouse.id}>
+                  {/* Zone rectangle */}
+              <rect
+                    x={zoneX}
+                    y={zoneY}
+                width="200"
+                height="150"
+                fill="rgba(59, 130, 246, 0.1)"
+                stroke="rgba(59, 130, 246, 0.3)"
+                strokeWidth="2"
+                rx="16"
+              />
+                  <text 
+                    x={zoneX + 100} 
+                    y={zoneY - 10} 
+                    textAnchor="middle" 
+                    className="fill-slate-600 text-sm font-medium"
                   >
-                    {warehouse.status}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">{warehouse.region}</p>
-                <div className="flex justify-between text-xs">
-                  <span>Bins: {warehouse.totalBins}</span>
-                  <span>{warehouse.utilization}% full</span>
-                </div>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
+                    {zone.warehouse.name}
+              </text>
 
-        {/* Map Controls */}
-        <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-lg">Map Controls</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-blue-500/10 bg-transparent"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View All Warehouses
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-blue-500/10 bg-transparent"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Map Settings
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+                  {/* Bins in this zone */}
+                  {zone.bins.map((bin, binIndex) => (
+              <motion.circle
+                      key={bin.id}
+                      cx={bin.x}
+                      cy={bin.y}
+                r="8"
+                      fill={getStatusColor(bin.status)}
+                className="cursor-pointer"
+                whileHover={{ scale: 1.2 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                      transition={{ delay: 0.1 + binIndex * 0.05 }}
+                      onClick={(e) => handleBinClick(bin, e)}
+                      onMouseLeave={handleMouseLeave}
+                    />
+                  ))}
+                </g>
+              )
+            })}
+          </svg>
+
+          {/* Tooltip */}
+          <AnimatePresence>
+            {selectedBin && (
+          <motion.div
+                className="absolute bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-white/20 pointer-events-none z-10"
+                style={{
+                  left: tooltipPosition.x + 10,
+                  top: tooltipPosition.y - 10,
+                  transform: 'translate(-50%, -100%)'
+                }}
+                initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                transition={{ duration: 0.2 }}
+          >
+            <div className="space-y-2">
+                  <p className="font-semibold text-sm">{selectedBin.binCode}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    {selectedBin.quantity}/{selectedBin.quantity + selectedBin.availableQuantity} items 
+                    ({selectedBin.quantity > 0 ? Math.round((selectedBin.quantity / (selectedBin.quantity + selectedBin.availableQuantity)) * 100) : 0}% full)
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {selectedBin.warehouseName}
+                  </p>
+              <Badge className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-xl">
+                    {selectedBin.status === 'active' ? 'Active' : 
+                     selectedBin.status === 'nearly-full' ? 'Nearly Full' :
+                     selectedBin.status === 'full' ? 'Full' : 'Empty'}
+              </Badge>
+            </div>
+          </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Legend */}
+        <div className="mt-8 flex flex-wrap items-center gap-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-green-500"></div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Active ({"<"}50 items)</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Nearly Full (50-99 items)</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Full ({">"}100 items)</span>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 rounded-full bg-slate-400"></div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Empty</span>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 }
