@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, extract, and_, or_
+from sqlalchemy import func, extract, and_, or_, desc,cast, Date,Integer,String
 from typing import Optional, List, Literal, Annotated
 from uuid import UUID
 from datetime import date, datetime
@@ -12,19 +12,20 @@ from sqlalchemy.exc import IntegrityError
 
 from app.schemas.inventory import (
     ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
-    SupplierCreate, SupplierUpdate, SupplierOut,
+    SupplierCreate, SupplierUpdate, SupplierOut,PaymentStatus,
     ProductSupplierCreate, ProductSupplierUpdate, ProductSupplierOut,
     WarehouseBase,WarehouseCreate,WarehouseOut,WarehouseTransferCreate,WarehouseStockCreate,WarehouseStockOut,
     WarehouseTransferItemOut,WarehouseTransferOut,WarehouseTransferItemCreate,WarehouseUpdate,TransferStatus,
-    SaleBase, SaleCreate, SaleItemBase, SaleOut,
+    SaleBase, SaleCreate, SaleItemBase, SaleOut,SaleUpdate,GroupedSalesSummary,
     PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate, MonthlySalesSummary,
     PurchaseOrderItemCreate, PurchaseOrderItemOut,WarehouseStockUpdate,
     InventoryTransactionCreate, InventoryTransactionOut
 )
 from app.models.inventory import (
-    Product,Category,Supplier, ProductSupplier, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
+    Product,Category,Supplier, ProductSupplier,WarehouseStock, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
     PurchaseOrderItem, PurchaseOrder, InventoryTransaction)
-
+from app.models.customer import Customer
+from app.CRUD.sale import generate_sale_number,create_sale_record
 from app.CRUD.inventory import (create_warehouse_stock,get_all_warehouse_stocks,delete_warehouse_stock,update_warehouse_stock,
                                 get_warehouse_stock)
 from app.api.deps import get_db
@@ -475,60 +476,277 @@ def delete_stock(stock_id: UUID, db: Session = Depends(get_db)):
 
 
                 ##################   Sales API Calls  ######################
-## List All Sales
+##Top-Customers
+@router.get("/sales/summary/top-customers")
+def get_top_customers_summary(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    warehouse_id: Optional[UUID] = Query(None),
+    db: Session = Depends(get_db)
+):
+    query = db.query(
+        Sale.customer_id,
+        Customer.name.label("customer_name"),
+        func.sum(Sale.total_amount).label("total_sales")
+    ).join(Customer, Customer.id == Sale.customer_id)
+
+    if start_date:
+        query = query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        query = query.filter(Sale.sale_date <= end_date)
+    if warehouse_id:
+        query = query.filter(Sale.warehouse_id == warehouse_id)
+
+    query = query.group_by(Sale.customer_id, Customer.name)
+    query = query.order_by(desc("total_sales"))
+    top_customers = query.limit(5).all()
+
+    total_all_sales = sum(row.total_sales for row in top_customers)
+
+    result = [
+        {
+            "customer_id": row.customer_id,
+            "customer_name": row.customer_name,
+            "total_sales": float(row.total_sales),
+            "percentage_of_total_sales": round((row.total_sales / total_all_sales) * 100, 2) if total_all_sales else 0
+        }
+        for row in top_customers
+    ]
+
+    return result
+
+##List Sales
 @router.get("/sales", response_model=List[SaleOut])
-def list_sales(db: Session = Depends(get_db)):
-    return db.query(Sale).options(joinedload(Sale.items)).all()
+def list_sales(
+    db: Session = Depends(get_db),
+    customer_id: UUID | None = None,
+    warehouse_id: UUID | None = None,
+    status: str | None = None,
+    payment_status: PaymentStatus | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    search: str | None = None
+):
+    query = db.query(Sale)
 
-## Create a Sale (with items)
-@router.post("/sales", response_model=SaleOut, status_code=201)
-def create_sale(data: SaleCreate, db: Session = Depends(get_db)):
-    sale = Sale(
-        customer_name=data.customer_name,
-        sale_date=data.sale_date or date.today(),
-        total_amount=data.total_amount,
-        status=data.status,
-        notes=data.notes,
-    )
-    db.add(sale)
-    db.flush()  # So we get sale.id
-
-    # Add sale items
-    # Add sale items and adjust inventory
-    for item in data.items:
-    # Fetch product
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
-
-    # Check stock availability
-    if product.current_stock < item.quantity:
-        raise HTTPException(status_code=400, detail=f"Insufficient stock for product {product.name}")
-
-    # Reduce stock
-    product.current_stock -= item.quantity
-
-    # Create SaleItem
-    sale_item = SaleItem(
-        sale_id=sale.id,
-        product_id=item.product_id,
-        quantity=item.quantity,
-        unit_price=item.unit_price,
-        line_total=item.line_total
+    if customer_id:
+        query = query.filter(Sale.customer_id == customer_id)
+    if warehouse_id:
+        query = query.filter(Sale.warehouse_id == warehouse_id)
+    if status:
+        query = query.filter(Sale.status == status)
+    if payment_status:
+        query = query.filter(Sale.payment_status == payment_status)
+    if start_date:
+        query = query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        query = query.filter(Sale.sale_date <= end_date)
+    if search:
+        query = query.filter(
+            or_(
+                Sale.customer_name.ilike(f"%{search}%"),
+                Sale.sale_number.ilike(f"%{search}%")
+            )
         )
-    db.add(sale_item)
 
+    query = query.order_by(Sale.sale_date.desc())
+    return query.all()
+
+@router.post("/sales", response_model=SaleOut, status_code=201)
+def create_sale(
+    sale_in: SaleCreate,
+    db: Session = Depends(get_db)
+):
+    customer = db.query(Customer).filter(Customer.id == sale_in.customer_id).first()
+    if not customer:
+     raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Step 1: Create Sale object
+    sale_number = generate_sale_number()
+    sale = Sale(
+     sale_number=sale_number,
+     customer_id=sale_in.customer_id,
+     customer_name=customer.name, 
+     warehouse_id=sale_in.warehouse_id,
+     sale_date=sale_in.sale_date or date.today(),
+     due_date=sale_in.due_date,
+     status=sale_in.status,
+     payment_status=sale_in.payment_status,
+     subtotal=sale_in.subtotal,
+     tax_amount=sale_in.tax_amount,
+     discount_amount=sale_in.discount_amount,
+     paid_amount=sale_in.paid_amount,
+     shipping_address=sale_in.shipping_address,
+     created_by=sale_in.created_by,
+     total_amount=0,  # Will update below
+     notes=sale_in.notes,
+   )
+
+    db.add(sale)
+    db.flush()  # To access sale.id
+
+    # Step 2: Add sale items and calculate totals
+    total_amount = 0
+    for item in sale_in.items:
+        product = db.query(Product).filter(Product.id == item.product_id).with_for_update().first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        if product.current_stock < item.quantity:
+            raise HTTPException(status_code=400, detail="Insufficient stock")
+
+        product.current_stock = Product.current_stock - item.quantity
+        db.add(product)
+        item_total = (item.unit_price - (item.discount or 0) + (item.tax or 0)) * item.quantity
+        total_amount += item_total
+
+        sale_item = SaleItem(
+            sale_id=sale.id,
+            product_id=item.product_id,
+            quantity=item.quantity,
+            unit_price=item.unit_price,
+            discount=item.discount,
+            tax=item.tax,
+            line_total=item_total,
+        )
+        db.add(sale_item)
+
+    # Step 3: Update Sale total
+    sale.total_amount = (sale_in.subtotal or 0) + (sale_in.tax_amount or 0) - (sale_in.discount_amount or 0)
 
     db.commit()
     db.refresh(sale)
-    return sale
+
+    # ✅ Return the created sale details
+    return get_sale(db=db, sale_id=sale.id)
+
+##Overdue
+@router.get("/sales/overdue", response_model=List[SaleOut])
+def get_overdue_sales(
+    customer_id: UUID = Query(None),
+    warehouse_id: UUID = Query(None),
+    from_date: Optional[date] = Query(None),
+    to_date: Optional[date] = Query(None),
+    db: Session = Depends(get_db)
+):
+    today = date.today()
+
+    filters = [
+        Sale.due_date < today,
+        Sale.payment_status != "paid"
+    ]
+
+    if customer_id:
+        filters.append(Sale.customer_id == customer_id)
+    if warehouse_id:
+        filters.append(Sale.warehouse_id == warehouse_id)
+    if from_date:
+        filters.append(Sale.sale_date >= from_date)
+    if to_date:
+        filters.append(Sale.sale_date <= to_date)
+
+    overdue_sales = db.query(Sale).filter(and_(*filters)).all()
+
+    return overdue_sales
+
+## sale grouped by daily,weekly,monthly
+@router.get("/sales/summary/grouped", response_model=List[GroupedSalesSummary])
+def grouped_sales_summary(
+    group_by: str = Query("monthly", enum=["daily", "weekly", "monthly"]),
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Sale)
+
+    if start_date:
+        query = query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        query = query.filter(Sale.sale_date <= end_date)
+
+    if group_by == "daily":
+        grouped = (
+            query.with_entities(
+                cast(Sale.sale_date, Date).label("label"),
+                func.count(Sale.id).label("total_sales"),
+                func.sum(Sale.total_amount).label("total_revenue")
+            )
+            .group_by("label")
+            .order_by("label")
+            .all()
+        )
+        return [
+            GroupedSalesSummary(
+                label=row.label.isoformat(),
+                total_sales=row.total_sales,
+                total_revenue=float(row.total_revenue or 0)
+            )
+            for row in grouped
+        ]
+
+    elif group_by == "weekly":
+        grouped = (
+            query.with_entities(
+                func.concat(
+                    extract('year', Sale.sale_date).cast(Integer),
+                    '-W',
+                    func.lpad(extract('week', Sale.sale_date).cast(Integer).cast(String), 2, '0')
+                ).label("label"),
+                func.count(Sale.id).label("total_sales"),
+                func.sum(Sale.total_amount).label("total_revenue")
+            )
+            .group_by("label")
+            .order_by("label")
+            .all()
+        )
+        return [
+            GroupedSalesSummary(
+                label=row.label,
+                total_sales=row.total_sales,
+                total_revenue=float(row.total_revenue or 0)
+            )
+            for row in grouped
+        ]
+
+    else:  # monthly
+        grouped = (
+            query.with_entities(
+                func.to_char(Sale.sale_date, 'YYYY-MM').label("label"),
+                func.count(Sale.id).label("total_sales"),
+                func.sum(Sale.total_amount).label("total_revenue")
+            )
+            .group_by("label")
+            .order_by("label")
+            .all()
+        )
+        return [
+            GroupedSalesSummary(
+                label=row.label,
+                total_sales=row.total_sales,
+                total_revenue=float(row.total_revenue or 0)
+            )
+            for row in grouped
+        ]
+##########################################################################
+
 
 ## Sales Summary (Basic Report)
 @router.get("/sales/summary")
-def sales_summary(db: Session = Depends(get_db)):
-    total_sales = db.query(func.count(Sale.id)).scalar()
-    total_revenue = db.query(func.coalesce(func.sum(Sale.total_amount), 0)).scalar()
-    latest_sale = db.query(Sale).order_by(Sale.sale_date.desc()).first()
+def sales_summary(
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Sale)
+
+    if start_date:
+        query = query.filter(Sale.sale_date >= start_date)
+    if end_date:
+        query = query.filter(Sale.sale_date <= end_date)
+
+    total_sales = query.count()
+    total_revenue = query.with_entities(func.coalesce(func.sum(Sale.total_amount), 0)).scalar()
+    latest_sale = query.order_by(Sale.sale_date.desc()).first()
 
     return {
         "total_sales": total_sales,
@@ -538,15 +756,24 @@ def sales_summary(db: Session = Depends(get_db)):
 
 ####Sales Summary Monthly basis
 @router.get("/sales/summary/monthly", response_model=List[MonthlySalesSummary])
-def monthly_sales_summary(db: Session = Depends(get_db)):
-    results = (
+def monthly_sales_summary(
+    year: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    query = (
         db.query(
             extract('year', Sale.sale_date).label('year'),
             extract('month', Sale.sale_date).label('month'),
             func.count(Sale.id).label('total_sales'),
             func.sum(Sale.total_amount).label('total_revenue')
         )
-        .group_by('year', 'month')
+    )
+
+    if year:
+        query = query.filter(extract('year', Sale.sale_date) == year)
+
+    results = (
+        query.group_by('year', 'month')
         .order_by('year', 'month')
         .all()
     )
@@ -561,29 +788,160 @@ def monthly_sales_summary(db: Session = Depends(get_db)):
         for row in results
     ]
 
+
+############################################################################
+
 ## Get Sale by ID
-@router.get("/sales/{id}", response_model=SaleOut)
-def get_sale(id: UUID, db: Session = Depends(get_db)):
-    sale = db.query(Sale).options(joinedload(Sale.items)).filter(Sale.id == id).first()
+@router.get("/sales/{sale_id}", response_model=SaleOut)
+def get_sale(
+    sale_id: UUID,
+    db: Session = Depends(get_db)
+):
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
     return sale
 
-
 ## Update Sale (status, notes, etc.)
-@router.put("/sales/{id}", response_model=SaleOut)
-def update_sale(id: UUID, data: SaleBase, db: Session = Depends(get_db)):
-    sale = db.query(Sale).filter(Sale.id == id).first()
+@router.put("/sales/{sale_id}", response_model=SaleOut)
+def update_sale(
+    sale_id: UUID,
+    sale_data: SaleUpdate,
+    db: Session = Depends(get_db)
+):
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
 
-    for key, value in data.model_dump(exclude_unset=True).items():
+    # Update sale fields (excluding items)
+    for key, value in sale_data.dict(exclude={"items"}, exclude_unset=True).items():
         setattr(sale, key, value)
+
+    # Handle sale items if provided
+    if sale_data.items is not None:
+        sale.items.clear()
+        calculated_subtotal = 0
+        for item_data in sale_data.items:
+            item_total = (
+                (item_data.unit_price or 0)
+                - (item_data.discount or 0)
+                + (item_data.tax or 0)
+            ) * item_data.quantity
+            calculated_subtotal += (item_data.unit_price or 0) * item_data.quantity
+
+            item = SaleItem(
+                sale_id=sale.id,
+                product_id=item_data.product_id,
+                quantity=item_data.quantity,
+                unit_price=item_data.unit_price,
+                discount=item_data.discount,
+                tax=item_data.tax,
+                line_total=item_total,
+            )
+            sale.items.append(item)
+
+        # Only set subtotal if items were provided
+        sale.subtotal = calculated_subtotal
+
+    # ✅ Place this block AFTER handling items and BEFORE recalculating total
+    if sale_data.items is None and sale_data.subtotal is not None:
+        sale.subtotal = sale_data.subtotal
+
+    if sale_data.tax_amount is not None:
+        sale.tax_amount = sale_data.tax_amount
+
+    if sale_data.discount_amount is not None:
+        sale.discount_amount = sale_data.discount_amount
+
+    # ✅ Recalculate total amount
+    sale.total_amount = (
+        Decimal(sale.subtotal or 0)
+        + Decimal(sale.tax_amount or 0)
+        - Decimal(sale.discount_amount or 0)
+    )
 
     db.commit()
     db.refresh(sale)
     return sale
 
+
+
+## Confirm Sale
+
+@router.post("/sales/{sale_id}/confirm", response_model=SaleOut)
+def confirm_sale(sale_id: UUID, db: Session = Depends(get_db)):
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+
+    if not sale.items or len(sale.items) == 0:
+        raise HTTPException(status_code=400, detail="Cannot confirm a sale without items.")
+
+    sale.status = "confirmed"
+    sale.updated_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(sale)
+    return sale
+
+##Ship Sale
+@router.post("/sales/{sale_id}/ship", response_model=SaleOut)
+def ship_sale(sale_id: UUID, db: Session = Depends(get_db)):
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+
+    if sale.status != "confirmed":
+        raise HTTPException(status_code=400, detail="Only confirmed sales can be shipped.")
+
+    if not sale.warehouse_id:
+        raise HTTPException(status_code=400, detail="Warehouse not assigned for this sale.")
+
+    # Deduct stock from warehouse
+    for item in sale.items:
+        stock = db.query(WarehouseStock).filter(
+            WarehouseStock.product_id == item.product_id,
+            WarehouseStock.warehouse_id == sale.warehouse_id
+        ).first()
+        if not stock:
+            raise HTTPException(
+            status_code=400,
+            detail=f"No stock record found for product ID {item.product_id}"
+        )
+
+        available_quantity = stock.quantity - stock.reserved_quantity
+        
+        if available_quantity < item.quantity:
+            raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock for product ID {item.product_id}"
+            )
+        
+        stock.quantity -= item.quantity
+        stock.reserved_quantity = max(stock.reserved_quantity - item.quantity, 0)
+        db.add(stock)
+        
+    sale.status = "shipped"
+    sale.shipped_at = datetime.utcnow()
+    sale.updated_at = datetime.utcnow()
+
+    db.add(sale)
+    db.commit()
+    db.refresh(sale)
+    return sale 
+
+## Invoice
+@router.get("/sales/{sale_id}/invoice", response_model=SaleOut)
+def get_invoice(sale_id: UUID, db: Session = Depends(get_db)):
+    sale = db.query(Sale).filter(Sale.id == sale_id).first()
+    if not sale:
+        raise HTTPException(status_code=404, detail="Sale not found")
+
+    # Eager load items and customer
+    sale.items  # triggers lazy loading if needed
+    sale.customer  # access related customer if relationship exists
+
+    return sale
 
                     #############   purchase order API Calls  ########################
 

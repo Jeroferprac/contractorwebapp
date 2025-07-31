@@ -1,6 +1,7 @@
 import uuid
 from uuid import uuid4
-from sqlalchemy import Column, String, Text, DECIMAL, TIMESTAMP, func, UniqueConstraint, Integer, ForeignKey, Boolean, Date,DateTime
+import enum
+from sqlalchemy import Column, String,Enum, Text, DECIMAL, TIMESTAMP, func, UniqueConstraint, Integer, ForeignKey, Boolean, Date,DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from typing import Optional
 from app.models.base import BaseModel
@@ -143,10 +144,16 @@ class WarehouseStock(BaseModel):
     )
     product = relationship("Product", backref="warehouse_stocks")
     warehouse = relationship("Warehouse", backref="stocks")
- 
+
+class PaymentStatusEnum(str, enum.Enum):
+    unpaid = "unpaid"
+    partial = "partial"
+    paid = "paid"
+
 class Sale(BaseModel):
     __tablename__ = "sales"
 
+    # Existing fields
     customer_name = Column(String(255), nullable=True)
     sale_date = Column(Date, server_default=func.current_date())
     total_amount = Column(DECIMAL(12, 2), nullable=True)
@@ -154,8 +161,24 @@ class Sale(BaseModel):
     notes = Column(Text, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    items = relationship("SaleItem", back_populates="sale", cascade="all, delete")
+    # Newly added fields
+    sale_number = Column(String(50), unique=True, nullable=False)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=True)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    due_date = Column(Date, nullable=True)
+    subtotal = Column(DECIMAL(12, 2), nullable=True)
+    tax_amount = Column(DECIMAL(12, 2), nullable=True)
+    discount_amount = Column(DECIMAL(12, 2), nullable=True)
+    paid_amount = Column(DECIMAL(12, 2), nullable=True, default=0)
+    payment_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.unpaid)
+    shipping_address = Column(Text, nullable=True)
+    created_by = Column(UUID(as_uuid=True), nullable=True)
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    shipped_at = Column(TIMESTAMP, nullable=True)
 
+
+    items = relationship("SaleItem", back_populates="sale", cascade="all, delete")
+    customer = relationship("Customer", back_populates="sales", lazy="selectin")
 
 class SaleItem(BaseModel):
     __tablename__ = "sale_items"
@@ -164,11 +187,14 @@ class SaleItem(BaseModel):
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"))
     quantity = Column(DECIMAL(10, 2))
     unit_price = Column(DECIMAL(10, 4))
-    line_total = Column(DECIMAL(12, 2))
+    discount = Column(DECIMAL(5, 2), default=0.0)   
+    tax = Column(DECIMAL(5, 2), default=0.0)       
+    line_total = Column(DECIMAL(12, 2))             # total_price
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     sale = relationship("Sale", back_populates="items")
     product = relationship("Product")
+
 
 class PurchaseOrder(BaseModel):
     __tablename__ = "purchase_orders"

@@ -48,6 +48,10 @@ contractor_portal/
 │   │   │    ├── users.py      # User management routes
 │   │   │    ├── contractor.py # Contractor routes
 │   │   │    ├── inventory.py  # inventory routes
+│   │   │    ├── batch.py      # batch routes
+│   │   │    ├── customer.py   # customer routes
+│   │   │    ├── price_list.py # price_list routes
+│   │   │    ├── serial_number.py  # serial_number routes
 |   |   │    └── quotation/    # Quotation routes
 │   │   │       ├── __init__.py  
 │   │   │       └──  quote.py  
@@ -60,12 +64,20 @@ contractor_portal/
 │   ├── CRUD/
 │   │   ├── __init__.py      # Init file
 │   │   ├── inventory.py     # Inventory CRUD operations
+│   │   ├── batch.py         # batch CRUD operations
+│   │   ├── customer.py      # customer CRUD operations
+│   │   ├── price_list.py    # price_list CRUD operations
+│   │   ├── serial_number.py # serial_number CRUD operations
 │   ├── models/
 │   │   ├── __init__.py      # Init file
 │   │   ├── base.py          # Base model class
 │   │   ├── contractor.py    # Contractor model
 │   │   ├── inventory.py     # inventory model
 │   │   ├── quotation.py     # quotation model
+│   │   ├── batch.py         # batch model
+│   │   ├── customer.py      # customer model
+│   │   ├── price_list.py    # price_list model
+│   │   ├── serial_number.py # serial_number model
 │   │   ├── user.py          # User model
 │   │   └── session.py       # Session model 
 │   ├── schemas/
@@ -74,6 +86,10 @@ contractor_portal/
 │   │   ├── contractor.py    # Contractor schemas
 │   │   ├── inventory.py     # inventory schemas
 │   │   ├── quotation.py     # quotation schemas
+│   │   ├── batch.py         # batch schemas
+│   │   ├── customer.py      # customer schemas
+│   │   ├── price_list.py    # price_list schemas
+│   │   ├── serial_number.py # serial_number schemas
 │   │   └── user.py          # User schemas
 │   ├── services/
 │   │   ├── __init__.py      # Init file
