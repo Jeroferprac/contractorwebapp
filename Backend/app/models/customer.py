@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Text, Boolean, DateTime, ForeignKey, DECIMAL, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
 from uuid import uuid4
 from datetime import datetime
@@ -25,3 +26,5 @@ class Customer(BaseModel):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    sales = relationship("Sale", back_populates="customer")
