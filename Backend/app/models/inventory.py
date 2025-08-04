@@ -179,6 +179,8 @@ class Sale(BaseModel):
 
     items = relationship("SaleItem", back_populates="sale", cascade="all, delete")
     customer = relationship("Customer", back_populates="sales", lazy="selectin")
+    shipments = relationship('Shipment', back_populates='sale', cascade='all, delete')
+
 
 class SaleItem(BaseModel):
     __tablename__ = "sale_items"

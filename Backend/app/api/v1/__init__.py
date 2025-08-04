@@ -9,6 +9,7 @@ from .customer import router as customer_router
 from .price_list import router as price_list_router
 from .batch import router as batch_router
 from .serial_number import router as serial_number_router
+from .shipping import router as shipping_router
 
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(customer_router, tags=["Customers"])
 api_router.include_router(price_list_router, tags=["Price-lists"])
 api_router.include_router(batch_router, tags=["Batches"])
 api_router.include_router(serial_number_router, tags=["Serial Numbers"])
+api_router.include_router(shipping_router, tags=["Shipping Track"])
