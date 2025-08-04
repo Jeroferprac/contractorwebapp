@@ -455,8 +455,11 @@ def create_stock(stock: WarehouseStockCreate, db: Session = Depends(get_db)):
     return create_warehouse_stock(db, stock)
 
 @router.get("/warehouse-stocks", response_model=List[WarehouseStockOut])
-def list_stocks(db: Session = Depends(get_db)):
-    return get_all_warehouse_stocks(db)
+def list_stocks(
+    warehouse_id: Optional[UUID] = Query(None, description="Optionally filter by warehouse ID"),
+    db: Session = Depends(get_db),
+):
+    return get_all_warehouse_stocks(db, warehouse_id=warehouse_id)
 
 @router.get("/warehouse-stocks/{stock_id}", response_model=WarehouseStockOut)
 def get_stock(stock_id: UUID, db: Session = Depends(get_db)):
@@ -1093,7 +1096,130 @@ def inventory_report(db: Session = Depends(get_db)):
         "total_inbound_transactions": total_inbound,
         "total_outbound_transactions": total_outbound
     }
+#5.GET /inventory/profit-loss - Analysis
+@router.get("/profit-loss", summary="Profit/Loss Analysis")
+def profit_loss_report(
+    start_date: date = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="End date (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    # Fetch sale items in date range
+    items = (
+        db.query(SaleItem)
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .join(Product, Product.id == SaleItem.product_id)
+        .filter(Sale.sale_date >= start_date, Sale.sale_date <= end_date)
+        .all()
+    )
 
+    total_revenue = Decimal("0.00")
+    total_cogs = Decimal("0.00")
+
+    for item in items:
+        quantity = item.quantity or 0
+        unit_price = item.unit_price or 0
+        line_total = item.line_total or (quantity * unit_price)
+        cost_price = item.product.cost_price or Decimal("0.00")
+        cogs = cost_price * quantity
+
+        total_revenue += Decimal(line_total)
+        total_cogs += Decimal(cogs)
+
+    gross_profit = total_revenue - total_cogs
+    profit_margin = (gross_profit / total_revenue * 100) if total_revenue > 0 else 0
+
+    return {
+        "total_revenue": float(total_revenue),
+        "total_cogs": float(total_cogs),
+        "gross_profit": float(gross_profit),
+        "profit_margin": round(float(profit_margin), 2)
+    }
+
+#############################
+@router.get("/profit-loss/customer", summary="Customer-wise Profit/Loss")
+def profit_loss_by_customer(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    db: Session = Depends(get_db)
+):
+    items = (
+        db.query(SaleItem, Sale, Product)
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .join(Product, Product.id == SaleItem.product_id)
+        .filter(Sale.sale_date >= start_date, Sale.sale_date <= end_date)
+        .all()
+    )
+
+    from collections import defaultdict
+    customer_data = defaultdict(lambda: {"revenue": Decimal("0"), "cogs": Decimal("0")})
+
+    for item, sale, product in items:
+        revenue = item.quantity * item.unit_price
+        cogs = item.quantity * (product.cost_price or Decimal("0.00"))
+        customer_data[sale.customer_name]["revenue"] += revenue
+        customer_data[sale.customer_name]["cogs"] += cogs
+
+    results = []
+    for customer, values in customer_data.items():
+        revenue = values["revenue"]
+        cogs = values["cogs"]
+        profit = revenue - cogs
+        margin = (profit / revenue * 100) if revenue > 0 else 0
+        results.append({
+            "customer_name": customer,
+            "total_revenue": float(revenue),
+            "total_cogs": float(cogs),
+            "gross_profit": float(profit),
+            "profit_margin": round(float(margin), 2)
+        })
+
+    return results
+############################
+@router.get("/profit-loss/product", summary="Product-wise Profit/Loss")
+def profit_loss_by_product(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    db: Session = Depends(get_db)
+):
+    items = (
+        db.query(SaleItem, Product)
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .join(Product, Product.id == SaleItem.product_id)
+        .filter(Sale.sale_date >= start_date, Sale.sale_date <= end_date)
+        .all()
+    )
+
+    from collections import defaultdict
+    product_data = defaultdict(lambda: {
+        "product_id": None,
+        "product_name": None,
+        "quantity_sold": Decimal("0.00"),
+        "revenue": Decimal("0.00"),
+        "cogs": Decimal("0.00")
+    })
+
+    for item, product in items:
+        qty = item.quantity or Decimal("0")
+        revenue = qty * item.unit_price
+        cogs = qty * (product.cost_price or Decimal("0.00"))
+
+        product_data[product.id]["product_id"] = str(product.id)
+        product_data[product.id]["product_name"] = product.name
+        product_data[product.id]["quantity_sold"] += qty
+        product_data[product.id]["revenue"] += revenue
+        product_data[product.id]["cogs"] += cogs
+
+    results = []
+    for data in product_data.values():
+        profit = data["revenue"] - data["cogs"]
+        margin = (profit / data["revenue"] * 100) if data["revenue"] > 0 else 0
+        results.append({
+            **data,
+            "profit": float(profit),
+            "margin": round(float(margin), 2)
+        })
+
+    return results
 
 
 ####################### Inventory summary based on product suppliers ##################

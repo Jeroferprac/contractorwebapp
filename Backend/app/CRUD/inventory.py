@@ -3,7 +3,7 @@ from app.schemas.inventory import WarehouseStockCreate, WarehouseStockUpdate
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List
+from typing import List,Optional
 
 # crud/inventory.py
 
@@ -44,8 +44,11 @@ def update_warehouse_stock(db: Session, stock_id: UUID, stock_data: WarehouseSto
     return stock
 
 
-def get_all_warehouse_stocks(db: Session) -> List[WarehouseStock]:
-    return db.query(WarehouseStock).all()
+def get_all_warehouse_stocks(db: Session, warehouse_id: Optional[UUID] = None) -> List[WarehouseStock]:
+    query = db.query(WarehouseStock)
+    if warehouse_id is not None:
+        query = query.filter(WarehouseStock.warehouse_id == warehouse_id)
+    return query.all()
 
 def get_warehouse_stock(db: Session, stock_id: UUID) -> WarehouseStock:
     return db.query(WarehouseStock).filter(WarehouseStock.id == stock_id).first()
