@@ -8,11 +8,12 @@ from .price_list import PriceList, PriceListItem
 from .batch import Batch
 from .serial_number import SerialNumber
 from .shipping import Shipment
+from .tax import ProductTax,TaxGroup
 
 
 __all__ = ["User", "UserSession", "Quotation", "QuotationAttachment", "ContractorProfile", "Project", "ProjectMedia", 
            "Product","Category", "Supplier", "ProductSupplier", "Warehouse", "WarehouseTransfer", "WarehouseTransferItem", "WarehouseStock",
-             "Sale", "SaleItem","Shipment","PurchaseOrder", "PurchaseOrderItem","InventoryTransaction","Customer", "PriceList", "PriceListItem",
+             "Sale", "SaleItem","Shipment","ProductTax","TaxGroup","PurchaseOrder", "PurchaseOrderItem","InventoryTransaction","Customer", "PriceList", "PriceListItem",
              "Batch", "SerialNumber"]
 
   

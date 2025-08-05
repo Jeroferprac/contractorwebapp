@@ -34,6 +34,8 @@ class Product(BaseModel):
 
     category = relationship("Category", back_populates="products")
     transactions = relationship("InventoryTransaction", back_populates="product")
+    tax_groups = relationship("ProductTax", back_populates="product", cascade="all, delete")
+
 
     @property
     def category_name(self) -> Optional[str]:
