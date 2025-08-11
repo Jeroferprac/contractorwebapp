@@ -25,6 +25,7 @@ from app.models.inventory import (
     Product,Category,Supplier, ProductSupplier,WarehouseStock, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
     PurchaseOrderItem, PurchaseOrder, InventoryTransaction)
 from app.models.customer import Customer
+from app.CRUD.notification import notify_admins
 from app.CRUD.sale import generate_sale_number,create_sale_record
 from app.CRUD.inventory import (create_warehouse_stock,get_all_warehouse_stocks,delete_warehouse_stock,update_warehouse_stock,
                                 get_warehouse_stock)
@@ -599,7 +600,30 @@ def create_sale(
             raise HTTPException(status_code=400, detail="Insufficient stock")
 
         product.current_stock = Product.current_stock - item.quantity
+        # Product.current_stock -= item.quantity
         db.add(product)
+        db.flush()
+        # create_low_stock_notification(db, product)
+        if product.min_stock_level is not None and product.current_stock <= product.min_stock_level:
+         notify_admins(
+         db,
+         notif_type="low_stock",
+         title=f"Low Stock: {product.name}",
+         message=f"Only {product.current_stock} left for {product.name}.",
+         reference_id=product.id,
+         reference_type="product"
+        )
+         
+        elif product.current_stock <= product.reorder_point:  # Adapt logic as needed
+         notify_admins(
+        db,
+        notif_type="reorder",
+        title=f"Reorder Needed: {product.name}",
+        message=f"{product.name} is out of stock, please reorder.",
+        reference_id=product.id,
+        reference_type="product"
+        )
+
         item_total = (item.unit_price - (item.discount or 0) + (item.tax or 0)) * item.quantity
         total_amount += item_total
 
