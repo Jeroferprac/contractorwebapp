@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query,UploadFile,File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, extract, and_, or_, desc,cast, Date,Integer,String
-from typing import Optional, List, Literal, Annotated
+from typing import Optional, List, Literal, Annotated,Dict
 from uuid import UUID
 from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict, condecimal
@@ -9,6 +9,14 @@ from decimal import Decimal
 from collections import defaultdict
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import IntegrityError
+from fastapi.responses import JSONResponse
+from pyzbar import pyzbar
+import numpy as np
+import cv2,io
+from fastapi.responses import StreamingResponse
+import barcode
+from barcode.writer import ImageWriter
+
 
 from app.schemas.inventory import (
     ProductCreate, ProductOut, ProductUpdate, ProductBulkUpdate, CategoryOut,
@@ -19,7 +27,7 @@ from app.schemas.inventory import (
     SaleBase, SaleCreate, SaleItemBase, SaleOut,SaleUpdate,GroupedSalesSummary,
     PurchaseOrderCreate, PurchaseOrderOut, PurchaseOrderUpdate, MonthlySalesSummary,
     PurchaseOrderItemCreate, PurchaseOrderItemOut,WarehouseStockUpdate,
-    InventoryTransactionCreate, InventoryTransactionOut
+    InventoryTransactionCreate, InventoryTransactionOut,BarcodeGenerateRequest,BarcodeScanResponse
 )
 from app.models.inventory import (
     Product,Category,Supplier, ProductSupplier,WarehouseStock, Warehouse,WarehouseTransfer,WarehouseTransferItem, Sale, SaleItem, 
@@ -108,6 +116,50 @@ def low_stock_products(db: Session = Depends(get_db)):
         )
     ).all()
 
+class GenerateRequest(BaseModel):
+    value: str
+    fmt: str = "code128"  # optional: default format
+    image: bool = True    # return PNG image if True, else SVG
+
+@router.post("/products/barcode/generate")
+async def generate_barcode(req: BarcodeGenerateRequest):
+    try:
+        writer = ImageWriter() if req.image else None
+        barcode_class = barcode.get_barcode_class(req.fmt)
+        bar = barcode_class(req.value, writer=writer)
+        buffer = io.BytesIO()
+        bar.write(buffer)
+        buffer.seek(0)
+        media_type = "image/png" if req.image else "image/svg+xml"
+        return StreamingResponse(buffer, media_type=media_type)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.post("/products/barcode/scan", response_model=BarcodeScanResponse)
+async def scan_barcode(file: UploadFile = File(...)):
+    try:
+        image_data = await file.read()
+        nparr = np.frombuffer(image_data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        decoded = pyzbar.decode(img)
+        if not decoded:
+            return JSONResponse({"success": False, "items": []}, status_code=400)
+
+        items: List[Dict] = []
+        for obj in decoded:
+            items.append({
+                "type": obj.type,
+                "data": obj.data.decode('utf-8'),
+                "rect": {
+                    "left": obj.rect.left,
+                    "top": obj.rect.top,
+                    "width": obj.rect.width,
+                    "height": obj.rect.height
+                }
+            })
+        return {"success": True, "items": items}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 # GET /api/products/barcode/{barcode} - Get product by barcode
 @router.get("/products/barcode/{barcode}", response_model=ProductOut)
 def get_product_by_barcode(barcode: str, db: Session = Depends(get_db)):

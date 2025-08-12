@@ -76,10 +76,20 @@ class ProductOut(ProductBase):
 # --- Bulk update schema ---
 class ProductBulkUpdate(BaseModel):
     products: List[dict]  # List of product updates with id and fields to update
+    
+#----------------Barcode Schemas-----------------------#
+class BarcodeGenerateRequest(BaseModel):
+    value: str
+    fmt: str = "code128"
+    image: bool = True
+class BarcodeItem(BaseModel):
+    type: str
+    data: str
+    rect: dict
 
-# --- Category response schema ---
-# app/schemas/inventory.py or wherever your schema is
-
+class BarcodeScanResponse(BaseModel):
+    success: bool
+    items: List[BarcodeItem]
 
                ###################     Supplier    #####################
 # --- Shared Base ---
