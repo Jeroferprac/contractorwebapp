@@ -17,25 +17,28 @@ router = APIRouter(prefix='/shipments', tags=['shipments'])
 def create_shipment(shp: ShipmentCreate, db: Session = Depends(get_db)):
     sale = db.get(Sale, shp.sale_id)
     if not sale:
-        raise HTTPException(status_code=404, detail='Linked sale not found')
+        raise HTTPException(status_code=404, detail="Linked sale not found")
 
     shipment = Shipment(**shp.model_dump())
     db.add(shipment)
     db.commit()
     db.refresh(shipment)
 
-    notify_admins(
-        db=db,
-        notif_type="shipment",
-        title=f"Shipment Sent for Sale {shipment.sale.sale_number}",
-        message=(
-            f"Shipment {shipment.tracking_number} via {shipment.carrier_name} has been shipped."
-        ),
-        reference_id=shipment.id,
-        reference_type="shipment"
-    )
-
+    if shipment.status == "shipped" and shipment.sale:
+        notify_admins(
+            db=db,
+            notif_type="shipment",
+            title=f"Shipment Sent for Sale {shipment.sale.sale_number}",
+            message=(
+                f"Shipment {shipment.tracking_number} via {shipment.carrier_name} "
+                f"has been shipped."
+            ),
+            reference_id=shipment.id,
+            reference_type="shipment"
+        )
+    db.commit()
     return shipment
+
 
 
 @router.get('/', response_model=List[ShipmentOut])

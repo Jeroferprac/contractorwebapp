@@ -52,6 +52,7 @@ def notify_admins(
     reference_type: str = None
 ):
     admins = db.query(User).filter(User.role == "admin").all()
+    print(f"[DEBUG] Found admins: {[a.id for a in admins]}", flush=True)
     for admin in admins:
         create_notification(
             db=db,

@@ -6,9 +6,9 @@ from app.models.shipping import Shipment
 from app.models.notification import Notification
 from app.models.user import User
 from app.CRUD.notification import notify_admins
+import logging
 
-# @event.listens_for(Session, "after_flush")
-# def notify_events(session, flush_context):
+logger = logging.getLogger(__name__)
 @event.listens_for(Session, "before_flush")
 def notify_events(session, flush_context, instances):
     # 1. Low stock & reorder: When a Sale is created
@@ -36,21 +36,25 @@ def notify_events(session, flush_context, instances):
                     )
 
     # 2. Shipment notifications
-    for obj in session.new.union(session.dirty):
-        if isinstance(obj, Shipment):
-            history = inspect(obj).attrs.status.history
-            if history.has_changes() and obj.status == "shipped":
-                if obj.sale:  # Safely check sale relationship
-                    notify_admins(
-                        db=session,
-                        notif_type="shipment",
-                        title=f"Shipment Sent for Sale {obj.sale.sale_number}",
-                        message=(
-                            f"Shipment {obj.tracking_number} via {obj.carrier_name} has been shipped."
-                        ),
-                        reference_id=obj.id,
-                        reference_type="shipment"
-                    )
+    # for obj in session.new.union(session.dirty):
+    #     if isinstance(obj, Shipment):
+    #         history = inspect(obj).attrs.status.history
+    #         if history.has_changes() and obj.status == "shipped":
+    #             logger.info(f"Shipment listener triggered for {obj.id}, status changed to shipped")
+    #             # session.refresh(obj, ["sale"])
+    #             if obj.sale:
+    #                 notify_admins(
+    #                     db=session,
+    #                     notif_type="shipment",
+    #                     title=f"Shipment Sent for Sale {obj.sale.sale_number}",
+    #                     message=(
+    #                         f"Shipment {obj.tracking_number} via {obj.carrier_name} has been shipped."
+    #                     ),
+    #                     reference_id=obj.id,
+    #                     reference_type="shipment"
+    #                 )
+    #             else:
+    #                 logger.warning(f"Shipment {obj.id} has no linked sale; notification skipped.")
 
     # 3. Payment due notifications
     for obj in session.new.union(session.dirty):
@@ -64,3 +68,23 @@ def notify_events(session, flush_context, instances):
                     reference_id=obj.id,
                     reference_type="sale"
                 )
+@event.listens_for(Session, "after_flush_postexec")
+def notify_events(session, flush_context):
+    for obj in session.new.union(session.dirty):
+        if isinstance(obj, Shipment):
+            history = inspect(obj).attrs.status.history
+            if history.has_changes() and obj.status == "shipped":
+                # At this point, obj.sale should be loaded
+                session.expire(obj, ["sale"])
+                if obj.sale:
+                    notify_admins(
+                        db=session,
+                        notif_type="shipment",
+                        title=f"Shipment Sent for Sale {obj.sale.sale_number}",
+                        message=(
+                            f"Shipment {obj.tracking_number} via {obj.carrier_name} has been shipped."
+                        ),
+                        reference_id=obj.id,
+                        reference_type="shipment"
+                    )
+
