@@ -38,6 +38,23 @@ class ProductCreate(ProductBase):
 class ProductUpdate(ProductBase):
     name: Optional[str] = None
     sku: Optional[str] = None
+    barcode: Optional[str] = None
+    category_name: Optional[str] = None
+    brand: Optional[str] = None
+    unit: Optional[str] = None  # sqft, pcs, etc.
+    current_stock: Optional[Decimal] = 0
+    min_stock_level: Optional[Decimal] = 0
+    reorder_point: Optional[Decimal] = 0
+    max_stock_level: Optional[Decimal] = None
+    cost_price: Optional[Decimal] = None
+    selling_price: Optional[Decimal] = None
+    description: Optional[str] = None
+    weight: Optional[Decimal] = None
+    dimensions: Optional[str] = None
+    is_active: Optional[bool] = True
+    track_serial: Optional[bool] = False
+    track_batch: Optional[bool] = False
+    is_composite: Optional[bool] = False
 
 class CategoryOut(BaseModel):
     id: UUID

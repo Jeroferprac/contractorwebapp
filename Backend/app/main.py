@@ -31,6 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def startup_event():
+    # This ensures your SQLAlchemy before_flush event hook is registered
+    import app.models.events
+
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

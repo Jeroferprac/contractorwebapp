@@ -49,6 +49,9 @@ contractor_portal/
 │   │   │    ├── contractor.py # Contractor routes
 │   │   │    ├── inventory.py  # inventory routes
 │   │   │    ├── batch.py      # batch routes
+│   │   │    ├── shipping.py   # shipping routes
+│   │   │    ├── tax.py        # tax routes
+│   │   │    ├── notification.py   # notification routes
 │   │   │    ├── customer.py   # customer routes
 │   │   │    ├── price_list.py # price_list routes
 │   │   │    ├── serial_number.py  # serial_number routes
@@ -65,8 +68,10 @@ contractor_portal/
 │   │   ├── __init__.py      # Init file
 │   │   ├── inventory.py     # Inventory CRUD operations
 │   │   ├── batch.py         # batch CRUD operations
+│   │   ├── notification.py  # notification CRUD operations
 │   │   ├── customer.py      # customer CRUD operations
 │   │   ├── price_list.py    # price_list CRUD operations
+│   │   ├── sale.py          # Sale CRUD operations
 │   │   ├── serial_number.py # serial_number CRUD operations
 │   ├── models/
 │   │   ├── __init__.py      # Init file
@@ -78,6 +83,9 @@ contractor_portal/
 │   │   ├── customer.py      # customer model
 │   │   ├── price_list.py    # price_list model
 │   │   ├── serial_number.py # serial_number model
+│   │   ├── shipping.py      # Ship model
+│   │   ├── tax.py           # Tax model
+│   │   ├── notification.py  # notification model
 │   │   ├── user.py          # User model
 │   │   └── session.py       # Session model 
 │   ├── schemas/
@@ -87,6 +95,9 @@ contractor_portal/
 │   │   ├── inventory.py     # inventory schemas
 │   │   ├── quotation.py     # quotation schemas
 │   │   ├── batch.py         # batch schemas
+│   │   ├── shipping.py      # Ship schemas
+│   │   ├── tax.py           # Tax schemas
+│   │   ├── notification.py  # notification schemas
 │   │   ├── customer.py      # customer schemas
 │   │   ├── price_list.py    # price_list schemas
 │   │   ├── serial_number.py # serial_number schemas

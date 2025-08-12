@@ -11,6 +11,7 @@ from .batch import router as batch_router
 from .serial_number import router as serial_number_router
 from .shipping import router as shipping_router
 from .tax import router as tax_router
+from .notification import router as notification_router
 
 
 api_router = APIRouter()
@@ -26,3 +27,4 @@ api_router.include_router(batch_router, tags=["Batches"])
 api_router.include_router(serial_number_router, tags=["Serial Numbers"])
 api_router.include_router(shipping_router, tags=["Shipping Track"])
 api_router.include_router(tax_router, tags=["tax"])
+api_router.include_router(notification_router, tags=["notifications"])

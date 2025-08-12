@@ -8,20 +8,38 @@ from app.models.shipping import Shipment
 from app.schemas.shipping import (
     ShipmentCreate, ShipmentOut, ShipmentUpdate
 )
+from app.CRUD.notification import notify_admins
+from app.models.inventory import Sale
 
 router = APIRouter(prefix='/shipments', tags=['shipments'])
 
 @router.post('/', response_model=ShipmentOut, status_code=201)
 def create_shipment(shp: ShipmentCreate, db: Session = Depends(get_db)):
-    # Validate sale exists
-    from app.models.inventory import Sale
-    if not db.get(Sale, shp.sale_id):
-        raise HTTPException(status_code=404, detail='Linked sale not found')
-    new = Shipment(**shp.model_dump())
-    db.add(new)
+    sale = db.get(Sale, shp.sale_id)
+    if not sale:
+        raise HTTPException(status_code=404, detail="Linked sale not found")
+
+    shipment = Shipment(**shp.model_dump())
+    db.add(shipment)
     db.commit()
-    db.refresh(new)
-    return new
+    db.refresh(shipment)
+
+    if shipment.status == "shipped" and shipment.sale:
+        notify_admins(
+            db=db,
+            notif_type="shipment",
+            title=f"Shipment Sent for Sale {shipment.sale.sale_number}",
+            message=(
+                f"Shipment {shipment.tracking_number} via {shipment.carrier_name} "
+                f"has been shipped."
+            ),
+            reference_id=shipment.id,
+            reference_type="shipment"
+        )
+    db.commit()
+    return shipment
+
+
 
 @router.get('/', response_model=List[ShipmentOut])
 def list_shipments(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
@@ -43,6 +61,16 @@ def update_shipment(shipment_id: UUID, data: ShipmentUpdate, db: Session = Depen
         setattr(shp, key, val)
     db.commit()
     db.refresh(shp)
+    # notify_admins(
+    #     db=db,
+    #     notif_type="shipment",
+    #     title=f"Shipment Sent for Sale {Shipment.sale.sale_number}",
+    #     message=(
+    #         f"Shipment {Shipment.tracking_number} via {Shipment.carrier_name} has been shipped."
+    #     ),
+    #     reference_id=Shipment.id,
+    #     reference_type="shipment"
+    # )
     return shp
 
 # @router.get('/{shipment_id}/track')
