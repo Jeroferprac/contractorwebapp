@@ -49,8 +49,8 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     connectable = create_engine(
     database_url,
-    poolclass=pool.NullPool,
-    connect_args={"options": "-c statement_timeout=0"}  
+    poolclass=pool.NullPool
+    # connect_args={"options": "-c statement_timeout=0"}  
     )
     
 
