@@ -31,6 +31,7 @@ const navItems = [
     children: [
       { name: "Dashboard", href: "/inventory" },
       { name: "Products", href: "/inventory/products" },
+      { name: "Warehouse", href: "/inventory/warehouse" },
       { name: "Purchase Orders", href: "/inventory/purchase-orders" },
       { name: "Sales Orders", href: "/inventory/sales" },
       { name: "Suppliers", href: "/inventory/suppliers" },
