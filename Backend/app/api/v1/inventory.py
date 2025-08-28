@@ -272,8 +272,17 @@ def update_product(id: UUID, product_in: ProductUpdate, db: Session = Depends(ge
         if db.query(Product).filter(and_(Product.barcode == product_in.barcode, Product.id != id)).first():
             raise HTTPException(status_code=400, detail="Barcode already exists")
 
-    for key, value in product_in.dict(exclude_unset=True).items():
-        setattr(product, key, value)
+    update_data = product_in.model_dump(exclude_unset=True)
+
+    if "category_name" in update_data:
+        category_name_val = update_data.pop("category_name")
+        category = db.query(Category).filter(Category.name == category_name_val).first()
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+        product.category_id = category.id
+
+    for field, value in update_data.items():
+        setattr(product, field, value)
 
     db.commit()
     db.refresh(product)
